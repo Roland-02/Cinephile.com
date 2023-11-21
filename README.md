@@ -1,4 +1,4 @@
-# Your project name here
+# Film Recommendation App
 
 ## Information about this repository
 
