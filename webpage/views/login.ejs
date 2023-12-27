@@ -1,0 +1,39 @@
+<!--
+    -allow user to login into account
+    -validate username/password
+
+-->
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+    <meta charset=utf-8>
+    <meta name="viewport" content="width=device-width">
+    <title>Login page</title>
+
+    <script></script>
+</head>
+
+<body>
+    <h1>Login</h1>
+
+    <div class="form">
+        <label for="uname"></label>
+        <input type="text" id="username" placeholder="Username" required />
+        <p></p>
+
+        <label for="password"></label>
+        <input type="password" id="password" placeholder="Password" required />
+        <p></p>
+
+        <input type="checkbox" onclick="togglePword()" /> Show Password
+        <p></p>
+
+        <button id="logintbn" onclick="loginSubmit()" type="submit">Login</button>
+    </div>
+
+
+
+</body>
+
+</html>

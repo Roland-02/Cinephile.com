@@ -8,7 +8,7 @@ var bcrypt = require('bcrypt');
 
 
 //get request - open createAccount.ejs page
-router.get('/', function (req, res, next) {
+router.get(['/','/createAccount', '/signup'], function (req, res, next) {
     res.render('createAccount', { title: 'Express', session: req.session, message: null, email: null });
 });
 
