@@ -1,4 +1,4 @@
-//for database connection
+//MYSQL database connection
 const mysql = require('mysql');
 require("dotenv").config();
 
@@ -15,7 +15,7 @@ const db = mysql.createPool({
 function getConnection(callback) {
     db.getConnection((err, connection) => {
         if (err) throw (err)
-        console.log("DB connected successful: " + connection.threadId)
+        console.log("DB connected successfully: ")
         callback(err, connection);
     });
 
