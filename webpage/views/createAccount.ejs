@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width">
 
   <title>Create account</title>
-  <script></script>
+  <script src="/scripts/createAccount.js"></script>
 
 </head>
 
@@ -29,14 +29,14 @@
     <p></p>
 
     <label for="password"></label>
-    <input type="password" id="password" placeholder="Password" name="password" required>
+    <input type="password" id="password" placeholder="Password" name="password"  required>
     <p></p>
 
     <label for="Confpassword"></label>
-    <input type="password" id="Confpassword" placeholder="Confirm Password" required>
+    <input type="password" id="confPassword" placeholder="Confirm Password" required>
     <p></p>
 
-    <input type="checkbox" onclick=togglePword()> Show Password
+    <input type="checkbox" onclick=togglePassword()> Show password
     <p></p>
 
     <button id="createAccountbtn" type="submit">Create account</button>

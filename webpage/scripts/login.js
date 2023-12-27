@@ -7,7 +7,7 @@ window.onload = function () {
         event.preventDefault(); // Prevent form submission
 
         //frontend validation
-        var email = document.getElementById('email').value;
+        var email = document.getElementById('username').value;
         var password = document.getElementById('password').value;
 
         // Perform your validation logic here
@@ -37,4 +37,14 @@ function validateEmail(email) {
 
 function validatePassword(password) {
     return (password && password.trim().length !== 0);
+}
+
+function togglePassword() {
+    var passwordField = document.getElementById("password");
+
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+    } else {
+        passwordField.type = "password";
+    }
 }
