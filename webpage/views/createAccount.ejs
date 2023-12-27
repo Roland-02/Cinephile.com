@@ -1,0 +1,49 @@
+<!--allow user to create account
+    -store user login details
+-->
+
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset=utf-8>
+  <meta name="viewport" content="width=device-width">
+
+  <title>Create account</title>
+  <script></script>
+
+</head>
+
+<body>
+
+  <h1>Create account</h1>
+
+  <form id="createAccount-form" method='POST' action='/createAccount'>
+
+    <label for="username"></label>
+    <input type="text" id="username" placeholder="Username" name="username" required>
+    <p></p>
+
+    <label for="email"></label>
+    <input type="text" id="email" placeholder="Email" name="email" required >
+    <p></p>
+
+    <label for="password"></label>
+    <input type="password" id="password" placeholder="Password" name="password" required>
+    <p></p>
+
+    <label for="Confpassword"></label>
+    <input type="password" id="Confpassword" placeholder="Confirm Password" required>
+    <p></p>
+
+    <input type="checkbox" onclick=togglePword()> Show Password
+    <p></p>
+
+    <button id="createAccountbtn" type="submit">Create account</button>
+    
+  </form>
+
+
+</body>
+
+</html>

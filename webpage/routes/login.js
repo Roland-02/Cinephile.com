@@ -9,7 +9,7 @@ const session = require('express-session');
 
 
 //get request - open login.ejs page
-router.get('/', function (req, res, next) {
+router.get(['/','/login', '/signin'], function (req, res) {
     res.render('login', { title: 'Express', session: req.session, message: null, email: null });
 });
 
