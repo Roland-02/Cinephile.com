@@ -21,6 +21,7 @@ router.post('/', async (req, res) => {
 
     if (!email || !password) {
         //empty fields
+        console.log('empty fields')
         return res.render('login', { title: 'Express', session: req.session, message: null, email: null });
     }
 
@@ -29,6 +30,8 @@ router.post('/', async (req, res) => {
         if (err) throw (err)
         const sqlSearch = "SELECT * FROM user_login WHERE email = ?";
         const search_query = mysql.format(sqlSearch, [email]);
+
+        console.log('before connection');
 
         await connection.query(search_query, async (err, result) => {
 
@@ -51,6 +54,7 @@ router.post('/', async (req, res) => {
                     if (isMatch) {
                         //successful login
                         connection.release()
+                        console.log('user logged in')
                         res.cookie('sessionEmail', req.session.email); // Store email in a cookie
                         return res.redirect('index');
                     }

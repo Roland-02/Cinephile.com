@@ -1,8 +1,3 @@
-<!--
-    -allow user to login into account
-    -validate username/password
-
--->
 <!DOCTYPE HTML>
 <html lang="en">
 
@@ -18,12 +13,12 @@
     <h1>Login</h1>
 
     <form id="login-form" method="POST" action="/login">
-        <label for="uname"></label>
-        <input type="text" id="username" placeholder="Username" required />
+        <label for="email"></label>
+        <input type="text" name="email" id="email" placeholder="Email address" required />
         <p></p>
 
         <label for="password"></label>
-        <input type="password" id="password" placeholder="Password" required />
+        <input type="password" name="password" id="password" placeholder="Password" required />
         <p></p>
 
         <input type="checkbox" onclick="togglePassword()" /> Show Password
