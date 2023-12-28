@@ -21,7 +21,6 @@ router.post('/', async (req, res) => {
 
     if (!email || !password) {
         //empty fields
-        console.log('empty fields')
         return res.render('login', { title: 'Express', session: req.session, message: null, email: null });
     }
 

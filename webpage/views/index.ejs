@@ -17,62 +17,52 @@
 
     <!--Main Navigation-->
     <header>
-        <!-- Jumbotron -->
-
+        <!-- Nav bar -->
         <div class="p-3 text-center bg-white border-bottom">
-            <h1>Film Recommender</h1>
-
             <div class="container">
-                <div class="row gy-3">
+                <div class="row align-items-center justify-content-between">
+
+                    <!-- Left elements -->
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                        <% if (session && session.email) { %>
+                            <!-- Show sign out, watchlist, cart, and profile buttons -->
+                            <form action="/signout" method="POST">
+                                <button type="submit" class="border rounded py-1 px-3 nav-link">
+                                    <p class="d-none d-md-block mb-0">Sign out</p>
+                                </button>
+                            </form>
+                            <% } else { %>
+                                <!-- Show sign up and sign in buttons -->
+                                <a href="/createAccount" class="border rounded py-1 px-3 nav-link d-inline-block">
+                                    <p class="d-none d-md-block mb-0">Sign up</p>
+                                </a>
+                                <a href="/login" class="border rounded py-1 px-3 nav-link d-inline-block">
+                                    <p class="d-none d-md-block mb-0">Sign in</p>
+                                </a>
+                                <% } %>
+                    </div>
+
+                    <!-- Centered title -->
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                        <h1>Film Recommender</h1>
+                    </div>
 
                     <!-- Right elements -->
-                    <div class="order-lg-last col-lg-5 col-sm-8 col-8">
-                        <div class="d-flex float-end">
-                            <% if (session && session.email) { %>
-                                <!-- Show sign out, watchlist, cart, and profile buttons -->
-                                <form action="/signout" method="POST">
-                                    <button type="submit"
-                                        class="me-1 border rounded py-1 px-3 nav-link d-flex align-items-center">
-                                        <i class="fas fa-sign-out-alt m-1 me-md-2"></i>
-                                        <p class="d-none d-md-block mb-0">Sign out</p>
-                                    </button>
-                                </form>
-
-                                <a href="/Watchlist"
-                                    class="me-1 border rounded py-1 px-3 nav-link d-flex align-items-center">
-                                    <i class="fas fa-heart m-1 me-md-2"></i>
-                                    <p class="d-none d-md-block mb-0">Watchlist</p>
-                                </a>
-
-                                <a href="/Profile" class="border rounded py-1 px-3 nav-link d-flex align-items-center">
-                                    <i class="fas fa-user m-1 me-md-2"></i>
-                                    <p class="d-none d-md-block mb-0">Profile</p>
-                                </a>
-
-                                <% } else { %>
-                                    <!-- Show sign up and sign in buttons -->
-                                    <a href="/createAccount"
-                                        class="me-1 border rounded py-1 px-3 nav-link d-flex align-items-center">
-                                        <i class="fas fa-user-alt m-1 me-md-2"></i>
-                                        <p class="d-none d-md-block mb-0">Sign up</p>
-                                    </a>
-
-                                    <a href="/login"
-                                        class="me-1 border rounded py-1 px-3 nav-link d-flex align-items-center">
-                                        <i class="fas fa-user-alt m-1 me-md-2"></i>
-                                        <p class="d-none d-md-block mb-0">Sign in</p>
-                                    </a>
-                                    <% } %>
-
-                        </div>
+                    <div class="col-lg-4 col-md-12 col-sm-12 text-end">
+                        <% if (session && session.email) { %>
+                            <!-- Show watchlist and profile buttons -->
+                            <a href="/Watchlist" class="border rounded py-1 px-3 nav-link d-inline-block">
+                                <p class="d-none d-md-block mb-0">Watchlist</p>
+                            </a>
+                            <a href="/Profile" class="border rounded py-1 px-3 nav-link d-inline-block">
+                                <p class="d-none d-md-block mb-0">Profile</p>
+                            </a>
+                            <% } %>
                     </div>
-                    <!-- END Right elements -->
-
                 </div>
             </div>
         </div>
-        <!-- END Jumbotron -->
-
+        <!-- END nav bar -->
 
 
 </body>

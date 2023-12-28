@@ -5,9 +5,8 @@ var router = express.Router();
 const path = require('path');
 
 //get request - open index.ejs page
-router.get(['/', '/home', '/index', '/homepage'], function (req, res) {
+router.get(['/', '/index', '/discover', '/home'], function (req, res) {
     res.render('index', { title: 'Express', session: {email : req.cookies.sessionEmail }} );
-    
 });
 
 router.post('/signout', function (req, res) {
