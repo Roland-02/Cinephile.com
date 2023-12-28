@@ -7,7 +7,7 @@ window.onload = function () {
         event.preventDefault(); // Prevent form submission
 
         //frontend validation
-        var email = document.getElementById('username').value;
+        var email = document.getElementById('email').value;
         var password = document.getElementById('password').value;
 
         // Perform your validation logic here
