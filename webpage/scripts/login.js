@@ -35,9 +35,11 @@ function validateEmail(email) {
     return valid;
 }
 
+
 function validatePassword(password) {
     return (password && password.trim().length !== 0);
 }
+
 
 function togglePassword() {
     var passwordField = document.getElementById("password");
