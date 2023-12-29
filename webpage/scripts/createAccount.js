@@ -4,15 +4,13 @@ window.onload = function () {
 
     //event listener for form submission
     form.addEventListener('submit', function (event) {
-        event.preventDefault(); // Prevent form submission
+        event.preventDefault();
 
         //frontend validation
         var email = document.getElementById('email').value;
         var password = document.getElementById('password').value;
         var confirmPassword = document.getElementById('confPassword').value;
-
-        // Perform your validation logic here
-        /*
+        
         if (!validateEmail(email)) {
             return document.getElementById('emailError').hidden = false;
         }else{
@@ -30,9 +28,7 @@ window.onload = function () {
         }else{
             document.getElementById('confPasswordError').hidden = true;
         }
-        */
 
-        //allow form submission
         form.submit();
         
     });
@@ -76,6 +72,7 @@ function togglePassword() {
         passwordField.type = "password";
         confirmPasswordField.type = "password";
     }
+
 }
 
 
