@@ -1,6 +1,3 @@
-//application file
-
-//add HTTPS
 const express = require('express');
 const app = express();
 require("dotenv").config();
@@ -10,10 +7,11 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 
 
-// Set the view engine to ejs specify the views directory
+//set the view engine to ejs specify the views directory
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+//middleware to be used by application
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
@@ -47,8 +45,6 @@ app.use('/createAccount', createAccountRoute);
 
 var loginRoute = require('./routes/login');
 app.use('/login', loginRoute);
-
-
 
 
 //start server
