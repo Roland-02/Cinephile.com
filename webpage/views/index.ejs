@@ -10,8 +10,8 @@
 
     <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
     <script src="/bootstrap/js/mdb.min.js"></script>
+    <script src="/scripts/index.js"></script>
 
-    <script></script>
 </head>
 
 <body>
@@ -30,6 +30,7 @@
                                 <p class="d-none d-md-block mb-0">Sign out</p>
                             </button>
                         </form>
+
                         <% } else { %>
                             <!-- Show sign up and sign in buttons -->
                             <a href="/createAccount" class="border rounded py-1 px-3 nav-link d-inline-block">
@@ -50,11 +51,14 @@
                 <div class="col-lg-4 col-md-12 col-sm-12 text-end">
                     <% if (session && session.email) { %>
                         <!-- Show watchlist and profile buttons -->
+                        <a href="/Recommender" class="border rounded py-1 px-3 nav-link d-inline-block">
+                            <p class="d-none d-md-block mb-0">Recommend</p>
+                        </a>
                         <a href="/Watchlist" class="border rounded py-1 px-3 nav-link d-inline-block">
                             <p class="d-none d-md-block mb-0">Watchlist</p>
                         </a>
                         <a href="/Profile" class="border rounded py-1 px-3 nav-link d-inline-block">
-                            <p class="d-none d-md-block mb-0">Profile</p>
+                            <p class="d-none d-md-block mb-0">My films</p>
                         </a>
                         <% } %>
                 </div>
@@ -65,20 +69,21 @@
 
 
     <!-- Film carousel -->
+    <% if (films.length> 0) { %>
+        <div class="carousel" id="film-carousel">
+            <button id="prev-btn">Previous</button>
+            <div id="current-film">
+                <strong>Title:</strong>
+                <%= films[0].primaryTitle %><br>
+                    <p></p>
+                    <!-- Add more film details as needed -->
+            </div>
+            <button id="next-btn">Next</button>
+        </div>
+        <% } else { %>
+            <p>No films found.</p>
+            <% } %>
 
-    <% if (films.length > 0) { %>
-        <ul>
-          <% films.forEach((film, index) => { %>
-            <li>
-              <strong>Title:</strong> <%= film.primaryTitle %><br>
-              <p></p>
-              <!-- Add more film details as needed -->
-            </li>
-          <% }); %>
-        </ul>
-      <% } else { %>
-        <p>No films found.</p>
-      <% } %>
 
     <!-- END film carousel -->
 
