@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
     <script src="/bootstrap/js/mdb.min.js"></script>
     <script src="/scripts/index.js"></script>
-
 </head>
 
 <body>
@@ -24,7 +23,7 @@
                 <!-- Left elements -->
                 <div class="col-lg-4 col-md-6 col-sm-12">
                     <% if (session && session.email) { %>
-                        <!-- Show sign out, watchlist, cart, and profile buttons -->
+                        <!-- sign in button -->
                         <form action="/signout" method="POST">
                             <button type="submit" class="border rounded py-1 px-3 nav-link">
                                 <p class="d-none d-md-block mb-0">Sign out</p>
@@ -32,7 +31,7 @@
                         </form>
 
                         <% } else { %>
-                            <!-- Show sign up and sign in buttons -->
+                            <!-- sign up and sign in buttons -->
                             <a href="/createAccount" class="border rounded py-1 px-3 nav-link d-inline-block">
                                 <p class="d-none d-md-block mb-0">Sign up</p>
                             </a>
@@ -50,8 +49,8 @@
                 <!-- Right elements -->
                 <div class="col-lg-4 col-md-12 col-sm-12 text-end">
                     <% if (session && session.email) { %>
-                        <!-- Show watchlist and profile buttons -->
-                        <a href="/Recommender" class="border rounded py-1 px-3 nav-link d-inline-block">
+                        <!-- watchlist and profile buttons -->
+                        <a href="/Recommend" class="border rounded py-1 px-3 nav-link d-inline-block">
                             <p class="d-none d-md-block mb-0">Recommend</p>
                         </a>
                         <a href="/Watchlist" class="border rounded py-1 px-3 nav-link d-inline-block">
@@ -69,25 +68,18 @@
 
 
     <!-- Film carousel -->
-    <% if (films.length> 0) { %>
-        <div class="carousel" id="film-carousel">
-            <button id="prev-btn">Previous</button>
-            <div id="current-film">
-                <strong>Title:</strong>
-                <%= films[0].primaryTitle %><br>
-                    <p></p>
-                    <!-- Add more film details as needed -->
-            </div>
-            <button id="next-btn">Next</button>
+    <div class="carousel" id="film-carousel" data='<%- JSON.stringify(films) %>'>
+        <button id="prev-btn">Previous</button>
+        <div id="current-film">
+            <!-- films displayed here from scripts/index.js -->
         </div>
-        <% } else { %>
-            <p>No films found.</p>
-            <% } %>
-
+        <button id="next-btn">Next</button>
+    </div>
 
     <!-- END film carousel -->
-
-
+    
 </body>
+
+
 
 </html>

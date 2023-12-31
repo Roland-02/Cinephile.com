@@ -20,7 +20,8 @@ app.use(cookieParser());
 
 //allow additional files to be read
 app.use('/styles', express.static(path.join(__dirname, 'styles'), { type: 'application/css' }));
-app.use('/js', express.static(path.join(__dirname, 'js'), { type: 'application/javascript' }));
+app.use('/bootstrap/js', express.static(path.join(__dirname, 'js'), { type: 'application/javascript' }));
+app.use('/scripts', express.static(path.join(__dirname, 'scripts'), { type: 'application/javascript' }));
 
 
 //for sessions
