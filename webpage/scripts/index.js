@@ -1,6 +1,7 @@
 ///*
 window.onload = function () {
     const filmTitle = document.getElementById('film-title');
+    const filmPoster = document.getElementById('film-poster');
     const prevButton = document.getElementById('prev-btn');
     const nextButton = document.getElementById('next-btn');
 
