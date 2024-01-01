@@ -32,11 +32,11 @@
 
                         <% } else { %>
                             <!-- sign up and sign in buttons -->
-                            <a href="/createAccount" class="border rounded py-1 px-3 nav-link d-inline-block">
-                                <p class="d-none d-md-block mb-0">Sign up</p>
+                            <a href="/createAccount" class="border rounded nav-link d-inline-block">
+                                <p class="btn d-md-block mb-0">Sign up</p>
                             </a>
-                            <a href="/login" class="border rounded py-1 px-3 nav-link d-inline-block">
-                                <p class="d-none d-md-block mb-0">Sign in</p>
+                            <a href="/login" class="border rounded nav-link d-inline-block">
+                                <p class="btn d-md-block mb-0">Sign in</p>
                             </a>
                             <% } %>
                 </div>
@@ -50,14 +50,14 @@
                 <div class="col-lg-4 col-md-12 col-sm-12 text-end">
                     <% if (session && session.email) { %>
                         <!-- watchlist and profile buttons -->
-                        <a href="/Recommend" class="border rounded py-1 px-3 nav-link d-inline-block">
-                            <p class="d-none d-md-block mb-0">Recommend</p>
+                        <a href="/Recommend" class="border rounded nav-link d-inline-block">
+                            <p class="btn d-md-block mb-0">Recommend</p>
                         </a>
-                        <a href="/Watchlist" class="border rounded py-1 px-3 nav-link d-inline-block">
-                            <p class="d-none d-md-block mb-0">Watchlist</p>
+                        <a href="/Watchlist" class="border rounded nav-link d-inline-block">
+                            <p class="btn d-md-block mb-0">Watchlist</p>
                         </a>
-                        <a href="/Profile" class="border rounded py-1 px-3 nav-link d-inline-block">
-                            <p class="d-none d-md-block mb-0">My films</p>
+                        <a href="/Profile" class="border rounded nav-link d-inline-block">
+                            <p class="btn d-md-block mb-0">My films</p>
                         </a>
                         <% } %>
                 </div>
@@ -67,16 +67,50 @@
     <!-- END nav bar -->
 
 
-    <!-- Film carousel -->
-    <div class="carousel" id="film-carousel" data='<%- JSON.stringify(films) %>'>
-        <button id="prev-btn">Previous</button>
-        <div id="current-film">
-            <!-- films displayed here from scripts/index.js -->
-        </div>
-        <button id="next-btn">Next</button>
-    </div>
+    <div class="container">
+        <div class="row">
+    
+            <!-- Film carousel -->
+            <div class="col-md-6">
+                <div class="carousel px-3" id="film-carousel" data='<%- JSON.stringify(films) %>'>
+                    <div class="row align-items-center justify-content-between">
 
-    <!-- END film carousel -->
+                        <!--prev button-->
+                        <div class="col-md-4">
+                            <button id="prev-btn" class="btn btn-primary btn-md">Prev</button>
+                        </div>
+                        
+                        <!--film poster-->
+                        <div class="col-md-4">
+                            <div id="film-poster" class="border p-3">
+                                <!-- Film poster will be displayed here -->
+                            </div>
+                        </div>
+                        
+                        <!--next button-->
+                        <div class="col-md-4 text-end">
+                            <button id="next-btn" class="btn btn-primary btn-md">Next</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <!-- END film carousel -->
+    
+            <!-- Film info -->
+            <div class="col-md-6">
+                <div class="container px-3">
+                    <div class="col-md-12">
+                        <div id="film-title" class="text-center">
+                            <!-- Film data displayed here from scripts/index.js -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END film info -->
+    
+        </div>
+    </div>
     
 </body>
 

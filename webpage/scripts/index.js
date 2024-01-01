@@ -1,12 +1,10 @@
+///*
 window.onload = function () {
-    const currentFilmElement = document.getElementById('current-film');
+    const filmTitle = document.getElementById('film-title');
     const prevButton = document.getElementById('prev-btn');
     const nextButton = document.getElementById('next-btn');
 
-
     var films = JSON.parse(document.getElementById('film-carousel').getAttribute('data'));
-    console.log(films);
-    //var films = document.getElementById('film-carousel').getAttribute('data');
     var currentIndex = 0;
 
     // Initial update
@@ -14,15 +12,13 @@ window.onload = function () {
 
     // Function to update the displayed film
     function updateFilm() {
-        currentFilmElement.innerHTML = `<strong>Title:</strong> ${films[currentIndex].primaryTitle} <br><p></p>`;
+        filmTitle.innerHTML = `<strong>${films[currentIndex].primaryTitle}</strong> <br><p></p>`;
     }
 
     // Event listener for the previous button
     prevButton.addEventListener('click', function () {
         currentIndex = (currentIndex - 1);
-        if (currentIndex < 0) {
-            currentIndex = 0;
-        }
+        if (currentIndex < 0) { currentIndex = 0; }
         updateFilm();
     });
 
@@ -33,3 +29,4 @@ window.onload = function () {
     });
 
 };
+//*/
