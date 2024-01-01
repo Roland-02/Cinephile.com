@@ -19,12 +19,8 @@ function csvTojson() {
 //get request - open index.ejs page
 router.get(['/', '/index', '/discover', '/home'], function (req, res) {
 
-    // Read the file synchronously (you can also use asynchronous methods if needed)
     const file = fs.readFileSync('film_data.json', 'utf-8');
-
-    // Parse the JSON content into a JavaScript object
     const films = JSON.parse(file);
-    console.log(films);
 
     //read film data into array for frontend
     res.render('index', { title: 'Express', session: { email: req.cookies.sessionEmail }, films: films });
