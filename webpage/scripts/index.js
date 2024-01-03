@@ -10,8 +10,13 @@ function Fetch(film_id) {
         }
     };
     return fetch(url, options)
-        .then(res => res.json())
-        .catch(err => console.error('error:' + err));
+        .then(res => {
+            return res.json();
+        })
+        .catch(err => {
+            console.error('Error fetching data:', err);
+            return null;
+        });
 };
 
 
@@ -24,12 +29,7 @@ window.onload = function () {
     var films = JSON.parse(document.getElementById('film-carousel').getAttribute('data'));
     var currentIndex = 0;
 
-
-    const baseImagePath = 'https://image.tmdb.org/t/p/w500'; 
-
-  
-
-
+    const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
     // Initial update
     updateFilm();
@@ -39,11 +39,16 @@ window.onload = function () {
         filmTitle.innerHTML = `<strong>${films[currentIndex].primaryTitle}</strong> <br><p></p>`;
 
         var filmImage = await Fetch(films[currentIndex].tconst);
-        var imagePath = baseImagePath + filmImage.posters[0].file_path;
 
-        filmPoster.innerHTML = `<img src="${imagePath}" alt="Movie Poster">`;
+        if (filmImage && filmImage.posters && filmImage.posters.length > 0) {
+            var imagePath = baseImagePath + filmImage.posters[0].file_path;
+            filmPoster.innerHTML = `<img src="${imagePath}" alt="${films[currentIndex].primaryTitle}">`;
+        } else {
+            filmPoster.innerHTML = '<p>Poster not available</p>';
+        }
 
     }
+
 
     // Event listener for the previous button
     prevButton.addEventListener('click', function () {
@@ -52,10 +57,12 @@ window.onload = function () {
         updateFilm();
     });
 
+
     // Event listener for the next button
     nextButton.addEventListener('click', function () {
         currentIndex = (currentIndex + 1);
         updateFilm();
     });
+
 
 };
