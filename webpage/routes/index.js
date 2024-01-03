@@ -1,5 +1,4 @@
-//handle GET request for /home
-
+//handle GET request for /home, load film data
 var express = require('express');
 var router = express.Router();
 const fs = require('fs');
