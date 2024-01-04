@@ -71,10 +71,9 @@
         <div class="row">
 
             <!-- Film carousel -->
-            <div class="col-md-6">
-                <div class="carousel slide px-3 py-3" id="film-carousel" data='<%- JSON.stringify(films) %>'
-                    data-mdb-ride="carousel" data-mdb-carousel-init>
-                    <div class="row align-items-center justify-content-between">
+            <div class="col-md-6 py-3">
+                <div class="carousel slide" id="film-carousel" data='<%- JSON.stringify(films) %>' data-mdb-ride="carousel" data-mdb-carousel-init>
+                    <div class="d-flex align-items-center justify-content-between">
 
                         <!--film poster-->
                         <div class="carousel-inner">
@@ -84,13 +83,21 @@
                         </div>
 
                         <!-- previous button -->
-                        <button style="background-color: rgb(152, 196, 237);" id="prev-btn" class="carousel-control-prev" type="button" data-mdb-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <button style="background-color: rgba(240, 239, 239, 0.744);" id="prev-btn" class="carousel-control-prev" type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="grey"
+                                class="bi bi-caret-left-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
+                            </svg>
                         </button>
 
                         <!-- next button -->
-                        <button style="background-color: rgb(152, 196, 237);" id="next-btn" class="carousel-control-next" type="button" data-mdb-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <button style="background-color: rgba(240, 239, 239, 0.744);" id="next-btn" class="carousel-control-next" type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="grey"
+                                class="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
+                            </svg>
                         </button>
 
                     </div>
@@ -98,17 +105,19 @@
             </div>
             <!-- END film carousel -->
 
+
             <!-- Film info -->
             <div class="col-md-6">
                 <div class="container px-3">
                     <div class="col-md-12">
-                        <div id="film-title" class="text-center">
+                        <div id="film-title" class="h3 text-center">
                             <!-- Film data displayed here from scripts/index.js -->
                         </div>
                     </div>
                 </div>
             </div>
             <!-- END film info -->
+
 
         </div>
     </div>

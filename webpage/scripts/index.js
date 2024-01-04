@@ -1,6 +1,6 @@
 //theMovieDB stuff
 
-function Fetch(film_id) {
+ function Fetch(film_id) {
     const url = `https://api.themoviedb.org/3/movie/${film_id}/images`;
     const options = {
         method: 'GET',
@@ -46,7 +46,7 @@ window.onload = function () {
         } else {
             filmPoster.innerHTML = '<p>Poster not available</p>';
         }
-
+        
     }
 
 
