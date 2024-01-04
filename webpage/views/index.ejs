@@ -69,34 +69,35 @@
 
     <div class="container">
         <div class="row">
-    
+
             <!-- Film carousel -->
             <div class="col-md-6">
-                <div class="carousel px-3 py-5" id="film-carousel" data='<%- JSON.stringify(films) %>'>
+                <div class="carousel slide px-3 py-3" id="film-carousel" data='<%- JSON.stringify(films) %>'
+                    data-mdb-ride="carousel" data-mdb-carousel-init>
                     <div class="row align-items-center justify-content-between">
-                        
-                        <!--prev button-->
-                        <div class="col-md-2">
-                            <button id="prev-btn" class="btn btn-primary btn-md">Prev</button>
-                        </div>
-                        
+
                         <!--film poster-->
-                        <div class="col-md-4">
-                            <div id="film-poster">
+                        <div class="carousel-inner">
+                            <div id="film-poster" class="carousel-item active">
                                 <!-- Film poster will be displayed here -->
                             </div>
                         </div>
 
-                        <!--next button-->
-                        <div class="col-md-6 text-end">
-                            <button id="next-btn" class="btn btn-primary btn-md">Next</button>
-                        </div>
+                        <!-- previous button -->
+                        <button style="background-color: rgb(152, 196, 237);" id="prev-btn" class="carousel-control-prev" type="button" data-mdb-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        </button>
+
+                        <!-- next button -->
+                        <button style="background-color: rgb(152, 196, 237);" id="next-btn" class="carousel-control-next" type="button" data-mdb-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        </button>
 
                     </div>
                 </div>
             </div>
             <!-- END film carousel -->
-    
+
             <!-- Film info -->
             <div class="col-md-6">
                 <div class="container px-3">
@@ -108,10 +109,10 @@
                 </div>
             </div>
             <!-- END film info -->
-    
+
         </div>
     </div>
-    
+
 </body>
 
 
