@@ -17,16 +17,19 @@
  * 
  */
 
+ .text-sm-center {
+  font-size: 14px; /* Adjust the size according to your needs */
+}
+
  #film-poster {
   width: 100%;
-  height: 600px; 
-  overflow: hidden; 
+  height: 600px;
 }
 
 #film-poster img {
   width: 100%;
-  height: 100%; 
-  object-fit: contain; 
+  height: 100%;
+  object-fit:contain; 
 }
 
 .error-label {
@@ -6373,7 +6376,7 @@ fieldset:disabled .btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 10%;
+  width: 15%;
   padding: 0;
   color: #fff;
   text-align: center;
