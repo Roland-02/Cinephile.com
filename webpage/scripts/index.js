@@ -30,16 +30,21 @@ function FetchData(film_id) {
     };
     return fetch(url, options)
         .then(res => {
-            return res.json();
+            if (res.ok) {
+                return res.json().then(data => ({ success: true, data }));
+            } else {
+                return res.json().then(error => ({ success: false, error }));
+            }
         })
         .catch(err => {
             console.error('Error fetching data:', err);
             return null;
         });
 
-}
+};
 
 window.onload = function () {
+    //initialise html element
     const filmTitle = document.getElementById('film-title');
     const filmPoster = document.getElementById('film-poster');
     const prevButton = document.getElementById('prev-btn');
@@ -58,20 +63,19 @@ window.onload = function () {
     //Function to update the displayed film
     async function updateFilm() {
         var filmData = await FetchData(films[currentIndex].tconst);
-        var plot = filmData.overview;
-        var title = filmData.title;
+    
+        //display film info from api
+        if(filmData.success){
+            filmTitle.innerHTML = `<strong>${filmData.data.title}</strong> <br>`;
+            filmTitle.innerHTML += `<div class="text-sm-center"> <p> ${filmData.data.overview} </p> </div>`;
 
-        //display film title
-        filmTitle.innerHTML = `<strong>${title}</strong> <br>`;
-
-        //display film plot summary
-        if (plot) {
-            filmTitle.innerHTML += `<div class="text-sm-center"> <p> ${plot} </p> </div>`;
-        } else {
+        }else{ //api doesn't have film, display from csv
+            filmTitle.innerHTML = `<strong>${films[currentIndex].primaryTitle}</strong> <br>`;
             filmTitle.innerHTML += `<div> <p> - </p> </div>`;
+
         }
 
-
+     
         //display film poster
         var filmImage = await FetchImage(films[currentIndex].tconst);
         if (filmImage && filmImage.posters && filmImage.posters.length > 0) {
@@ -84,17 +88,17 @@ window.onload = function () {
     }
 
 
-    // Event listener for the previous button
+    //previous button
     prevButton.addEventListener('click', function () {
-        currentIndex = (currentIndex - 1);
+        currentIndex--;
         if (currentIndex < 0) { currentIndex = 0; }
         updateFilm();
     });
 
 
-    // Event listener for the next button
+    //next button
     nextButton.addEventListener('click', function () {
-        currentIndex = (currentIndex + 1);
+        currentIndex++;
         updateFilm();
     });
 
