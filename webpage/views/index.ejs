@@ -76,10 +76,10 @@
             </div>
             <!-- End filters -->
 
- 
+
             <!-- Film carousel -->
             <div class="col-md-6 py-5 carousel-container">
-                <div class="carousel slide" id="film-carousel" data='<%- JSON.stringify(films) %>'
+                <div class="carousel slide" id="film-carousel" dta='<%- JSON.stringify(films) %>'
                     data-mdb-ride="carousel" data-mdb-carousel-init>
                     <div class="d-flex align-items-center justify-content-center">
 
@@ -91,7 +91,7 @@
                         </div>
 
                         <!-- previous button -->
-                        <button style="background-color: rgba(255, 255, 255, 0.5);" id="prev-btn"
+                        <button style="background-color: rgba(255, 255, 255, 0);" id="prev-btn"
                             class="carousel-control-prev" type="button">
                             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="grey"
                                 class="bi bi-caret-left-fill" viewBox="0 0 16 16">
@@ -101,8 +101,8 @@
                         </button>
 
                         <!-- next button -->
-                        <button style="background-color: rgba(255, 255, 255, 0.5);" id="next-btn"
-                            class="carousel-control-next" type="button">
+                        <button style="background-color: rgba(255, 255, 255, 0);" id="next-btn"
+                            class="carousel-control-next col-sm-12" type="button">
                             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="grey"
                                 class="bi bi-caret-right-fill" viewBox="0 0 16 16">
                                 <path
@@ -122,6 +122,31 @@
                     <div class="col-md-12">
                         <div id="film-title" class="h3 text-center">
                             <!-- Film data displayed here from scripts/index.js -->
+
+                            <strong>Film Title</strong><br>
+
+                            <div class="text-sm-center"> 
+                                <p> film overview dskjfgbaskfbkwasbfilawbfkasbndfjklasdnfj </p> 
+                            </div>
+
+                            <!-- Bordered boxes -->
+                                <div class="row px-1 py-1 align-items-center">
+
+                                    <div class="col-md-4 border px-2">
+                                        Genre
+                                    </div>
+
+                                    <div class="col-md-4 border px-2">
+                                        Rating
+                                    </div>
+
+                                    <div class="col-md-4 border px-2">
+                                        Runtime
+                                    </div>
+
+                            </div>
+
+
                         </div>
                     </div>
                 </div>
