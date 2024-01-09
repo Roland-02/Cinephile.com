@@ -63,19 +63,19 @@ window.onload = function () {
     //Function to update the displayed film
     async function updateFilm() {
         var filmData = await FetchData(films[currentIndex].tconst);
-    
+
         //display film info from api
-        if(filmData.success){
+        if (filmData.success) {
             filmTitle.innerHTML = `<strong>${filmData.data.title}</strong> <br>`;
             filmTitle.innerHTML += `<div class="text-sm-center"> <p> ${filmData.data.overview} </p> </div>`;
 
-        }else{ //api doesn't have film, display from csv
+        } else { //api doesn't have film, display from csv
             filmTitle.innerHTML = `<strong>${films[currentIndex].primaryTitle}</strong> <br>`;
             filmTitle.innerHTML += `<div> <p> - </p> </div>`;
 
         }
 
-     
+
         //display film poster
         var filmImage = await FetchImage(films[currentIndex].tconst);
         if (filmImage && filmImage.posters && filmImage.posters.length > 0) {
