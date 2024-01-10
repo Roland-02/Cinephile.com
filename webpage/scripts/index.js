@@ -192,7 +192,7 @@ window.onload = function () {
         content += `<div class="row d-flex py-2">`
 
         //director
-        if (films[currentIndex].director.length > 0) {
+        if (films[currentIndex].director  != null) {
             content += `<div class="col-sm border border-3 mx-3">
                         <div class="h5 mb-2 border-bottom">DIRECTOR</div>
                         <div class="p medium-text text-center">${films[currentIndex].director}</div>
@@ -201,7 +201,7 @@ window.onload = function () {
         }
 
         //cinematographer
-        if (films[currentIndex].cinematographer.length > 0) {
+        if (films[currentIndex].cinematographer != null) {
             content += `<div class="col-sm border border-3 mx-3">
                         <div class="h5 mb-2 border-bottom">CINEMATOGRAPHER</div>
                         <div class="p medium-text text-center">${films[currentIndex].cinematographer}</div>
@@ -210,7 +210,7 @@ window.onload = function () {
         }
 
         //writer
-        if (films[currentIndex].writer.length > 0) {
+        if (films[currentIndex].writer != null) {
             content += `<div class="col-sm border border-3 mx-3">
                         <div class="h5 mb-2 border-bottom">WRITER</div>
                         <div class="p medium-text text-center">${films[currentIndex].writer}</div>
@@ -226,7 +226,7 @@ window.onload = function () {
         content += `<div class="row d-flex py-4">`
 
         //producer
-        if (films[currentIndex].producer.length > 0) {
+        if (films[currentIndex].producer != null) {
             content += `<div class="col-md border border-3 mx-3">
                         <div class="h5 mb-2 border-bottom">PRODUCER</div>
                         <div class="p medium-text text-center">${films[currentIndex].producer}</div>
@@ -235,7 +235,7 @@ window.onload = function () {
         }
 
         //editor
-        if (films[currentIndex].editor.length > 0) {
+        if (films[currentIndex].editor != null) {
             content += `<div class="col-md border border-3 mx-3">
                         <div class="h5 mb-2 border-bottom">EDITOR</div>
                         <div class="p medium-text text-center">${films[currentIndex].editor}</div>
@@ -244,7 +244,7 @@ window.onload = function () {
         }
 
         //composer
-        if (films[currentIndex].composer.length > 0) {
+        if (films[currentIndex].composer != null) {
             content += `<div class="col-md border border-3 mx-3">
                         <div class="h5 mb-2 border-bottom">COMPOSER</div>
                         <div class="p medium-text text-center">${films[currentIndex].composer}</div>
@@ -257,7 +257,7 @@ window.onload = function () {
 
 
         //production designer
-        if(films[currentIndex].production_designer.length > 0){
+        if(films[currentIndex].production_designer != null){
             content += `<div class="row d-flex py-2 justify-content-center align-items-center">
                         <div class="col-md-6 border border-3 mx-3">
                         <div class="h5 mb-2 border-bottom">PRODUCTION DESIGNER</div>
