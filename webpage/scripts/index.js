@@ -88,26 +88,21 @@ window.onload = function () {
         }
         //END film title and plot
 
+
         //rating, genre, runtime
         content += `<div class="row d-flex">`;
 
         //rating
         if (films[currentIndex].averageRating) {
-            content += `<div class="col-sm border border-3 mx-3">
-                        <div class="h5 mb-3 border-bottom">RATING</div> 
+            content += `<div class="col-md border border-3 mx-3">
+                        <div class="h5 mb-2 border-bottom">RATING</div> 
                         <div class="p text-center">${films[currentIndex].averageRating}</div>
-                    </div>`;
-        } else {
-            content += `<div class="col-sm border border-3 mx-3">
-                        <div class="h5 mb-3 border-bottom">RATING</div> 
-                        <div class="p text-center"> - </div>
                     </div>`;
         }
 
-
         //genre
-        content += `<div class="col-sm border border-3 mx-3">
-                        <div class="h5 mb-3 border-bottom">GENRE</div> 
+        content += `<div class="col-md border border-3 mx-3">
+                        <div class="h5 mb-2 border-bottom">GENRE</div> 
                         <div class="list-unstyled" style="font-size: 18px;">`;
 
         const genreArray = films[currentIndex].genres.split(',');
@@ -117,40 +112,42 @@ window.onload = function () {
 
         content += `</div></div>`;
 
-        //runtime or -
+        //runtime
         if (films[currentIndex].runtimeMinutes !== "\\N") {
             const hours = Math.floor(films[currentIndex].runtimeMinutes / 60);
             const minutes = films[currentIndex].runtimeMinutes % 60;
 
-            if(hours > 0 && minutes > 0){
-                content += `<div class="col-sm border border-3 mx-3"> 
-                                    <div class="h5 mb-3 border-bottom">RUNTIME</div> 
+            if (hours > 0 && minutes > 0) {
+                content += `<div class="col-md border border-3 mx-3"> 
+                                    <div class="h5 mb-2 border-bottom">RUNTIME</div> 
                                     <div class="p text-center">${hours}h ${minutes}m</div>
-                                    <p></p>`
+                                    <p></p>`;
 
-            }else if(hours > 0){
-                content += `<div class="col-sm border border-3 mx-3"> 
-                                    <div class="h5 mb-3 border-bottom">RUNTIME</div> 
+            } else if (hours > 0) {
+                content += `<div class="col-md border border-3 mx-3"> 
+                                    <div class="h5 mb-2 border-bottom">RUNTIME</div> 
                                     <div class="p text-center">${hours}h</div>
-                                    <p></p>`
-                                    
-            }else if(minutes > 0){
-                content += `<div class="col-sm border border-3 mx-3"> 
-                                    <div class="h5 mb-3 border-bottom">RUNTIME</div> 
+                                    <p></p>`;
+
+            } else if (minutes > 0) {
+                content += `<div class="col-md border border-3 mx-3"> 
+                                    <div class="h5 mb-2 border-bottom">RUNTIME</div> 
                                     <div class="p text-center">${minutes}m</div>
-                                    <p></p>`
+                                    <p></p>`;
             }
-            
-        } else {
-            content += `<div class="col-sm border border-3 mx-3"> 
-                                    <div class="h5 mb-3 border-bottom">RUNTIME</div> 
-                                    <div class="p text-center"> - </div>
-                                    <p></p>`
 
+            content += `</div>`;
         }
-        content += `</div></div>`
 
-        //END rating, genre, runtime
+        //release year
+        content += `<div class="col-sm border border-3 mx-3">
+                        <div class="h5 mb-2 border-bottom">YEAR</div> 
+                        <div class="p text-center"> ${films[currentIndex].startYear} </div>
+                    </div>`;
+
+        content += `</div></div>`;
+        //END rating, genre, runtime, year
+
 
         //cast
         //shuffle actors and actresses
@@ -174,7 +171,6 @@ window.onload = function () {
                         <div class="container px-0">
                             <div class="d-flex justify-content-center">`
 
-        console.log(cast);
         if (cast.length > 0) {
             for (const actor of cast) {
                 content += `<div class="actor d-flex align-items-center">
@@ -193,26 +189,83 @@ window.onload = function () {
 
 
         //director, cinematographer, writer
-        //director
         content += `<div class="row d-flex py-2">`
-        content += `<div class="col-sm border border-3 mx-3">
-                        <div class="h5 mb-3 border-bttom">DIRECTOR</div>
+
+        //director
+        if (films[currentIndex].director.length > 0) {
+            content += `<div class="col-sm border border-3 mx-3">
+                        <div class="h5 mb-2 border-bottom">DIRECTOR</div>
                         <div class="p medium-text text-center">${films[currentIndex].director}</div>
-                    </div>`
+                        <p></p>
+                        </div>`
+        }
 
         //cinematographer
-        content += `<div class="col-sm border border-3 mx-3">
-                        <div class="h5 mb-3 border-bttom">CINEMATOGRAPHER</div>
+        if (films[currentIndex].cinematographer.length > 0) {
+            content += `<div class="col-sm border border-3 mx-3">
+                        <div class="h5 mb-2 border-bottom">CINEMATOGRAPHER</div>
                         <div class="p medium-text text-center">${films[currentIndex].cinematographer}</div>
                         <p></p>
-                    </div>`
+                        </div>`
+        }
 
         //writer
+        if (films[currentIndex].writer.length > 0) {
+            content += `<div class="col-sm border border-3 mx-3">
+                        <div class="h5 mb-2 border-bottom">WRITER</div>
+                        <div class="p medium-text text-center">${films[currentIndex].writer}</div>
+                        <p></p>
+                        </div>`
+        }
 
-
-
+        content += `</div>`
         //END director, cinematographer, writer
 
+
+        //producer, editor, composer
+        content += `<div class="row d-flex py-4">`
+
+        //producer
+        if (films[currentIndex].producer.length > 0) {
+            content += `<div class="col-md border border-3 mx-3">
+                        <div class="h5 mb-2 border-bottom">PRODUCER</div>
+                        <div class="p medium-text text-center">${films[currentIndex].producer}</div>
+                        <p></p>
+                        </div>`
+        }
+
+        //editor
+        if (films[currentIndex].editor.length > 0) {
+            content += `<div class="col-md border border-3 mx-3">
+                        <div class="h5 mb-2 border-bottom">EDITOR</div>
+                        <div class="p medium-text text-center">${films[currentIndex].editor}</div>
+                        <p></p>
+                        </div>`
+        }
+
+        //composer
+        if (films[currentIndex].composer.length > 0) {
+            content += `<div class="col-md border border-3 mx-3">
+                        <div class="h5 mb-2 border-bottom">COMPOSER</div>
+                        <div class="p medium-text text-center">${films[currentIndex].composer}</div>
+                        <p></p>
+                        </div>`
+        }
+
+        content += `</div>`
+        //END producer, editor, composer
+
+
+        //production designer
+        if(films[currentIndex].production_designer.length > 0){
+            content += `<div class="row d-flex py-2 justify-content-center align-items-center">
+                        <div class="col-md-6 border border-3 mx-3">
+                        <div class="h5 mb-2 border-bottom">PRODUCTION DESIGNER</div>
+                        <div class="p medium-text text-center">${films[currentIndex].production_designer}</div>
+                        </div>
+                        </div>`
+        }
+        //END production designer
 
 
 
