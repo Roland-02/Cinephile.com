@@ -194,7 +194,7 @@ window.onload = function () {
         //director
         if (films[currentIndex].director  != null) {
             content += `<div class="col-sm border border-3 mx-3">
-                        <div class="h5 mb-2 border-bottom">DIRECTOR</div>
+                        <div class="h5 mb-2 border-bottom">DIRECTED</div>
                         <div class="p medium-text text-center">${films[currentIndex].director}</div>
                         <p></p>
                         </div>`
@@ -203,7 +203,7 @@ window.onload = function () {
         //cinematographer
         if (films[currentIndex].cinematographer != null) {
             content += `<div class="col-sm border border-3 mx-3">
-                        <div class="h5 mb-2 border-bottom">CINEMATOGRAPHER</div>
+                        <div class="h5 mb-2 border-bottom">FILMED</div>
                         <div class="p medium-text text-center">${films[currentIndex].cinematographer}</div>
                         <p></p>
                         </div>`
@@ -212,7 +212,7 @@ window.onload = function () {
         //writer
         if (films[currentIndex].writer != null) {
             content += `<div class="col-sm border border-3 mx-3">
-                        <div class="h5 mb-2 border-bottom">WRITER</div>
+                        <div class="h5 mb-2 border-bottom">WRITTEN</div>
                         <div class="p medium-text text-center">${films[currentIndex].writer}</div>
                         <p></p>
                         </div>`
@@ -228,7 +228,7 @@ window.onload = function () {
         //producer
         if (films[currentIndex].producer != null) {
             content += `<div class="col-md border border-3 mx-3">
-                        <div class="h5 mb-2 border-bottom">PRODUCER</div>
+                        <div class="h5 mb-2 border-bottom">PRODUCED</div>
                         <div class="p medium-text text-center">${films[currentIndex].producer}</div>
                         <p></p>
                         </div>`
@@ -237,7 +237,7 @@ window.onload = function () {
         //editor
         if (films[currentIndex].editor != null) {
             content += `<div class="col-md border border-3 mx-3">
-                        <div class="h5 mb-2 border-bottom">EDITOR</div>
+                        <div class="h5 mb-2 border-bottom">EDITED</div>
                         <div class="p medium-text text-center">${films[currentIndex].editor}</div>
                         <p></p>
                         </div>`
@@ -246,7 +246,7 @@ window.onload = function () {
         //composer
         if (films[currentIndex].composer != null) {
             content += `<div class="col-md border border-3 mx-3">
-                        <div class="h5 mb-2 border-bottom">COMPOSER</div>
+                        <div class="h5 mb-2 border-bottom">COMPOSED</div>
                         <div class="p medium-text text-center">${films[currentIndex].composer}</div>
                         <p></p>
                         </div>`
