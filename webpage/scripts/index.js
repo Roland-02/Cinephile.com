@@ -92,22 +92,12 @@ window.onload = function () {
         const filterCrewByDepartment = (department) => {
             return filmCredits.data.crew.filter(member => member.known_for_department === department);
         }
-
-        //display film poster
-        var filmImage = await FetchImage(films[currentIndex].tconst);
-        if (filmImage && filmImage.posters && filmImage.posters.length > 0) {
-            var imagePath = baseImagePath + filmImage.posters[0].file_path;
-            filmPoster.innerHTML = `<img src="${imagePath}" alt="${films[currentIndex].primaryTitle}">`;
-        } else {
-            filmPoster.innerHTML = `<img src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
-        }
-
+ 
         //get film title and plot
         var filmData = await FetchData(films[currentIndex].tconst);
 
         //get film credits, cross-referenced with film_data.json
         var filmCredits = await FetchCredits(films[currentIndex].tconst);
-        //console.log(filmCredits.data)
 
         var content = "";
 
@@ -366,12 +356,21 @@ window.onload = function () {
         content += `</div>`
         //END producer, editor, composer
 
-
-
+        //display all film data
         filmTitle.innerHTML = content;
 
-    }
+        
+        //display film poster
+        var filmImage = await FetchImage(films[currentIndex].tconst);
+        if (filmImage && filmImage.posters && filmImage.posters.length > 0) {
+            var imagePath = baseImagePath + filmImage.posters[0].file_path;
+            filmPoster.innerHTML = `<img src="${imagePath}" alt="${films[currentIndex].primaryTitle}">`;
+        } else {
+            filmPoster.innerHTML = `<img src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
+        }
 
+
+    }
 
 
     //previous button
