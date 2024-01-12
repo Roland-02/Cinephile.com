@@ -92,7 +92,7 @@ window.onload = function () {
         const filterCrewByDepartment = (department) => {
             return filmCredits.data.crew.filter(member => member.known_for_department === department);
         }
- 
+
         //get film title and plot
         var filmData = await FetchData(films[currentIndex].tconst);
 
@@ -223,7 +223,7 @@ window.onload = function () {
         //director
         var mdbDirector = null;
         var apiDirector = null;
-        if(filmCredits.success){
+        if (filmCredits.success) {
             mdbDirector = filterCrewByDepartment('Directing');
             apiDirector = mdbDirector.length > 0 ? mdbDirector[0].name : null;
         }
@@ -244,7 +244,7 @@ window.onload = function () {
         //cinematographer
         var mdbCamera = null;
         var apiCamera = null;
-        if(filmCredits.success){
+        if (filmCredits.success) {
             mdbCamera = filterCrewByDepartment('Camera');
             apiCamera = mdbCamera.length > 0 ? mdbCamera[0].name : null;
         }
@@ -265,7 +265,7 @@ window.onload = function () {
         //writer
         var mdbWriter = null;
         var apiWriter = null;
-        if(filmCredits.success){
+        if (filmCredits.success) {
             mdbWriter = filterCrewByDepartment('Writing');
             apiWriter = mdbWriter.length > 0 ? mdbWriter[0].name : null;
         }
@@ -293,7 +293,7 @@ window.onload = function () {
         //producer
         var mdbProducer = null;
         var apiProducer = null;
-        if(filmCredits.success){
+        if (filmCredits.success) {
             mdbProducer = filterCrewByDepartment('Production');
             apiProducer = mdbProducer.length > 0 ? mdbProducer[0].name : null;
         }
@@ -314,7 +314,7 @@ window.onload = function () {
         //editor
         var mdbEditor = null;
         var apiEditor = null;
-        if(filmCredits.success){
+        if (filmCredits.success) {
             mdbEditor = filterCrewByDepartment('Editing');
             apiEditor = mdbEditor.length > 0 ? mdbEditor[0].name : null;
         }
@@ -335,7 +335,7 @@ window.onload = function () {
         //composer
         var mdbComposer = null;
         var apiComposer = null;
-        if(filmCredits.success){
+        if (filmCredits.success) {
             mdbComposer = filterCrewByDepartment('Sound');
             apiComposer = mdbComposer.length > 0 ? mdbComposer[0].name : null;
         }
@@ -359,15 +359,20 @@ window.onload = function () {
         //display all film data
         filmTitle.innerHTML = content;
 
-        
+
         //display film poster
         var filmImage = await FetchImage(films[currentIndex].tconst);
         if (filmImage && filmImage.posters && filmImage.posters.length > 0) {
-            var imagePath = baseImagePath + filmImage.posters[0].file_path;
+            //get english poster or first one
+            var englishPosters = filmImage.posters.filter(poster => poster.iso_639_1 === 'en');
+            var poster = englishPosters.length > 0 ? englishPosters[0] : filmImage.posters[0];
+            var imagePath = baseImagePath + poster.file_path;
             filmPoster.innerHTML = `<img src="${imagePath}" alt="${films[currentIndex].primaryTitle}">`;
         } else {
             filmPoster.innerHTML = `<img src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
         }
+
+        console.log(filmImage)
 
 
     }
