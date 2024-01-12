@@ -19,7 +19,7 @@
 
  .d-flex {
   display: flex;
-  flex-wrap: wrap; /* Allow items to wrap to the next line */
+  flex-wrap: wrap;
 }
 
 .parent {
