@@ -198,7 +198,7 @@ window.onload = function () {
         content += `<div class="col-md-12 py-3">
                         <div class="h5 text-center">CAST</div>
                         <div class="container px-1">
-                            <div class="d-flex justify-content-center">`
+                            <div class="d-flex justify-content-center">`;
 
         if (cast.length > 0) {
             for (const actor of cast) {
@@ -206,7 +206,7 @@ window.onload = function () {
                             <span class="px-1">|</span>
                             <span class="medium-text"> ${actor} </span>
                             <span class="px-1">|</span>
-                        </div>`
+                        </div>`;
             }
         } else {
             content += `<div class="actor d-flex align-items-center">
