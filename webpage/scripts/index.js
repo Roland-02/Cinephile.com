@@ -107,7 +107,7 @@ window.onload = function () {
 
         //get film credits, cross-referenced with film_data.json
         var filmCredits = await FetchCredits(films[currentIndex].tconst);
-        console.log(filmCredits.data);
+        //console.log(filmCredits.data)
 
         var content = "";
 
@@ -231,8 +231,12 @@ window.onload = function () {
         content += `<div class="row d-flex py-2">`
 
         //director
-        var mdbDirector = filterCrewByDepartment('Writing');
-        var apiDirector = mdbDirector.length > 0 ? mdbDirector[0].name : null;
+        var mdbDirector = null;
+        var apiDirector = null;
+        if(filmCredits.success){
+            mdbDirector = filterCrewByDepartment('Directing');
+            apiDirector = mdbDirector.length > 0 ? mdbDirector[0].name : null;
+        }
         var director = films[currentIndex].director || apiDirector || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
@@ -248,8 +252,12 @@ window.onload = function () {
         content += `</div>`;
 
         //cinematographer
-        var mdbCamera = filterCrewByDepartment('Camera');
-        var apiCamera = mdbCamera.length > 0 ? mdbCamera[0].name : null;
+        var mdbCamera = null;
+        var apiCamera = null;
+        if(filmCredits.success){
+            mdbCamera = filterCrewByDepartment('Camera');
+            apiCamera = mdbCamera.length > 0 ? mdbCamera[0].name : null;
+        }
         var camera = films[currentIndex].cinematographer || apiCamera || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
@@ -265,8 +273,12 @@ window.onload = function () {
         content += `</div>`;
 
         //writer
-        var mdbWriter = filterCrewByDepartment('Writing');
-        var apiWriter = mdbWriter.length > 0 ? mdbWriter[0].name : null;
+        var mdbWriter = null;
+        var apiWriter = null;
+        if(filmCredits.success){
+            mdbWriter = filterCrewByDepartment('Writing');
+            apiWriter = mdbWriter.length > 0 ? mdbWriter[0].name : null;
+        }
         var writer = films[currentIndex].writer || apiWriter || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
@@ -289,8 +301,12 @@ window.onload = function () {
         content += `<div class="row d-flex py-4">`
 
         //producer
-        var mdbProducer = filterCrewByDepartment('Production');
-        var apiProducer = mdbProducer.length > 0 ? mdbProducer[0].name : null;
+        var mdbProducer = null;
+        var apiProducer = null;
+        if(filmCredits.success){
+            mdbProducer = filterCrewByDepartment('Production');
+            apiProducer = mdbProducer.length > 0 ? mdbProducer[0].name : null;
+        }
         var producer = films[currentIndex].producer || apiProducer || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
@@ -306,8 +322,12 @@ window.onload = function () {
         content += `</div>`;
 
         //editor
-        var mdbEditor = filterCrewByDepartment('Editing');
-        var apiEditor = mdbEditor.length > 0 ? mdbEditor[0].name : null;
+        var mdbEditor = null;
+        var apiEditor = null;
+        if(filmCredits.success){
+            mdbEditor = filterCrewByDepartment('Editing');
+            apiEditor = mdbEditor.length > 0 ? mdbEditor[0].name : null;
+        }
         var editor = films[currentIndex].editor || apiEditor || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
@@ -323,8 +343,12 @@ window.onload = function () {
         content += `</div>`;
 
         //composer
-        var mdbComposer = filterCrewByDepartment('Sound');
-        var apiComposer = mdbComposer.length > 0 ? mdbComposer[0].name : null;
+        var mdbComposer = null;
+        var apiComposer = null;
+        if(filmCredits.success){
+            mdbComposer = filterCrewByDepartment('Sound');
+            apiComposer = mdbComposer.length > 0 ? mdbComposer[0].name : null;
+        }
         var composer = films[currentIndex].composer || apiComposer || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
