@@ -104,7 +104,7 @@ window.onload = function () {
         //film title and plot
         if (filmData.success && filmData.data.title.length > 0 && filmData.data.overview.length > 0) {
             content += `<strong>${filmData.data.title}</strong> <br>`;
-            content += `<div class="small-text py-2"> <p> ${filmData.data.overview} </p> </div>`;
+            content += `<div class="small-text py-2 overflow-scroll mb-3" style="height: 70px;"> <p> ${filmData.data.overview} </p> </div>`;
 
         } else { //api doesn't have film, display from csv
             content += `<strong>${films[currentIndex].primaryTitle}</strong> <br>`;
@@ -119,12 +119,12 @@ window.onload = function () {
 
         //rating
         content += `<div class="col-md border border-3 mx-3 px-1">
-                        <div class="h5 mb-2 border-bottom">RATING</div>`
+                        <div class="h5 mb-2 border-bottom">RATING</div>`;
 
         if (films[currentIndex].averageRating) {
-            content += `<div class="p text-center">${films[currentIndex].averageRating}</div>`
+            content += `<div class="p text-center">${films[currentIndex].averageRating}</div>`;
         } else {
-            content += `<div class="p text-center">-</div>`
+            content += `<div class="p text-center">-</div>`;
         }
         content += `</div>`;
 
@@ -142,7 +142,7 @@ window.onload = function () {
 
         //runtime
         content += `<div class="col-md border border-3 mx-3 px-1"> 
-                    <div class="h5 mb-2 border-bottom">RUNTIME</div>`
+                    <div class="h5 mb-2 border-bottom">RUNTIME</div>`;
 
         if (films[currentIndex].runtimeMinutes !== "\\N") {
             const hours = Math.floor(films[currentIndex].runtimeMinutes / 60);
@@ -211,14 +211,14 @@ window.onload = function () {
         } else {
             content += `<div class="actor d-flex align-items-center">
                             <span class="medium-text"> - </span>
-                        </div>`
+                        </div>`;
         }
-        content += `</div></div></div>`
+        content += `</div></div></div>`;
         //END cast
 
 
         //director, cinematographer, writer
-        content += `<div class="row d-flex py-2">`
+        content += `<div class="row d-flex py-2">`;
 
         //director
         var mdbDirector = null;
@@ -230,14 +230,14 @@ window.onload = function () {
         var director = films[currentIndex].director || apiDirector || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
-                    <div class="h5 mb-2 border-bottom">DIRECTOR</div>`
+                    <div class="h5 mb-2 border-bottom">DIRECTOR</div>`;
 
         if (director != null) {
             content += `<div class="p medium-text text-center">${director}</div>
-                        <p></p>`
+                        <p></p>`;
         } else {
             content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`
+                        <p></p>`;
         }
         content += `</div>`;
 
@@ -251,14 +251,14 @@ window.onload = function () {
         var camera = films[currentIndex].cinematographer || apiCamera || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
-                    <div class="h5 mb-2 border-bottom">D.P</div>`
+                    <div class="h5 mb-2 border-bottom">D.P</div>`;
 
         if (camera != null) {
             content += `<div class="p medium-text text-center">${camera}</div>
-                        <p></p>`
+                        <p></p>`;
         } else {
             content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`
+                        <p></p>`;
         }
         content += `</div>`;
 
@@ -272,23 +272,23 @@ window.onload = function () {
         var writer = films[currentIndex].writer || apiWriter || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
-                    <div class="h5 mb-2 border-bottom">WRITER</div>`
+                    <div class="h5 mb-2 border-bottom">WRITER</div>`;
 
         if (writer != null) {
             content += `<div class="p medium-text text-center">${writer}</div>
-                        <p></p>`
+                        <p></p>`;
         } else {
             content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`
+                        <p></p>`;
         }
         content += `</div>`;
 
-        content += `</div>`
+        content += `</div>`;
         //END director, cinematographer, writer
 
 
         //producer, editor, composer
-        content += `<div class="row d-flex py-4">`
+        content += `<div class="row d-flex py-4">`;
 
         //producer
         var mdbProducer = null;
@@ -300,14 +300,14 @@ window.onload = function () {
         var producer = films[currentIndex].producer || apiProducer || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
-                    <div class="h5 mb-2 border-bottom">PRODUCER</div>`
+                    <div class="h5 mb-2 border-bottom">PRODUCER</div>`;
 
         if (producer != null) {
             content += `<div class="p medium-text text-center">${producer}</div>
-                        <p></p>`
+                        <p></p>`;
         } else {
             content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`
+                        <p></p>`;
         }
         content += `</div>`;
 
@@ -321,14 +321,14 @@ window.onload = function () {
         var editor = films[currentIndex].editor || apiEditor || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
-                    <div class="h5 mb-2 border-bottom">EDITOR</div>`
+                    <div class="h5 mb-2 border-bottom">EDITOR</div>`;
 
         if (editor != null) {
             content += `<div class="p medium-text text-center">${editor}</div>
-                        <p></p>`
+                        <p></p>`;
         } else {
             content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`
+                        <p></p>`;
         }
         content += `</div>`;
 
@@ -342,18 +342,18 @@ window.onload = function () {
         var composer = films[currentIndex].composer || apiComposer || null;
 
         content += `<div class="col-sm border border-3 mx-3 px-1">
-                    <div class="h5 mb-2 border-bottom">SOUNDTRACK</div>`
+                    <div class="h5 mb-2 border-bottom">SOUNDTRACK</div>`;
 
         if (composer != null) {
             content += `<div class="p medium-text text-center">${composer}</div>
-                        <p></p>`
+                        <p></p>`;
         } else {
             content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`
+                        <p></p>`;
         }
         content += `</div>`;
 
-        content += `</div>`
+        content += `</div>`;
         //END producer, editor, composer
 
 
@@ -391,3 +391,6 @@ window.onload = function () {
 
 
 };
+
+
+
