@@ -356,11 +356,10 @@ window.onload = function () {
         content += `</div>`
         //END producer, editor, composer
 
+
         //display all film data
         filmTitle.innerHTML = content;
 
-
-        //display film poster
         var filmImage = await FetchImage(films[currentIndex].tconst);
         if (filmImage && filmImage.posters && filmImage.posters.length > 0) {
             //get english poster or first one
@@ -371,8 +370,6 @@ window.onload = function () {
         } else {
             filmPoster.innerHTML = `<img src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
         }
-
-        console.log(filmImage)
 
 
     }
