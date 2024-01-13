@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
     <script src="/bootstrap/js/mdb.min.js"></script>
     <script src="/scripts/index.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+
 
 </head>
 
@@ -80,7 +82,7 @@
 
             <!-- Film carousel -->
             <div class="col-md-6 py-5 carousel-container">
-                <div class="carousel slide" id="film-carousel" dta='<%- JSON.stringify(films) %>'
+                <div class="carousel slide" id="film-carousel" data='<%- JSON.stringify(films) %>'
                     data-bs-ride="carousel">
                     <div class="d-flex align-items-center justify-content-center">
 
@@ -124,9 +126,9 @@
                 <div class="container">
                     <div class="col-md-12">
                         <div id="film-title" class="h3 text-center">
-                            <!-- <!-- Film data displayed here from scripts/index.js -->
+                            <!--  Film data displayed here from scripts/index.js -->
 
-
+                            <!--
                             <strong>Film Title</strong><br>
 
                             <div class="small-text py-2 mb-2" style="max-height: 60px; overflow-y: auto;">
@@ -265,59 +267,50 @@
                                 </div>
 
                             </div>
-
-                            <div class="row d-flex py-2">
-
-                                <div class="col-md-6 text-end">
-
-                                    <!--heart filled-->
-                                    <div class="btn" style="background: transparent;">
-                                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"
-                                        class="bi bi-heart-fill" viewBox="0 0 16 16">
-                                        <path
-                                            d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314" />
-                                    </svg>
-                                    </div>
-                                   
-
-                                    <!--heart blank-->
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" class="bi bi-heart"
-                                        viewBox="0 0 16 16">
-                                        <path
-                                            d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143q.09.083.176.171a3 3 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15" />
-                                    </svg>
-
-                                </div>
-
-                                
-                                <div class="col-md-6 text-start">
-
-                                    <!--watchlist filled-->
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"
-                                        class="bi bi-plus-square-fill" viewBox="0 0 16 16">
-                                        <path
-                                            d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0" />
-                                    </svg>
-
-                                    <!--watchlist blank-->
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"
-                                        class="bi bi-plus-square" viewBox="0 0 16 16">
-                                        <path
-                                            d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
-                                        <path
-                                            d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
-                                    </svg>
-
-                                </div>
-
-
-                            </div>
-
-
-
+                            -->
                         </div>
                     </div>
                     <!-- END film info -->
+
+
+                    <!-- add and like buttons -->
+                    <div class="row d-flex py-2">
+
+                        <div class="col-md-6 text-end">
+                            <!--heart filled-->
+                            <svg id="heart-filled" xmlns="http://www.w3.org/2000/svg" width="48" height="48"
+                                class="bi bi-heart-fill" type="button" viewBox="0 0 16 16" style="display:none;">
+                                <path
+                                    d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314" />
+                            </svg>
+                            <!--heart blank-->
+                            <svg id="heart-blank" xmlns="http://www.w3.org/2000/svg" width="48" height="48" class="bi bi-heart"
+                                type="button" viewBox="0 0 16 16">
+                                <path
+                                    d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143q.09.083.176.171a3 3 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15" />
+                            </svg>
+                        </div>
+
+                        <div class="col-md-6 text-start">
+                            <!--watchlist filled-->
+                            <svg id="watchlist-filled" xmlns="http://www.w3.org/2000/svg" width="48" height="48" 
+                                class="bi bi-plus-square-fill" type="button" viewBox="0 0 16 16" style="display:none;">
+                                <path
+                                    d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0" />
+                            </svg>
+                            <!--watchlist blank-->
+                            <svg id="watchlist-blank" xmlns="http://www.w3.org/2000/svg" width="48" height="48"
+                                class="bi bi-plus-square" type="button" viewBox="0 0 16 16">
+                                <path
+                                    d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
+                                <path
+                                    d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+                            </svg>
+                        </div>
+
+                    </div>
+                    <!-- END add and like buttons -->
+
 
 
                 </div>
@@ -326,5 +319,35 @@
 </body>
 
 
+<footer>
+
+    <!-- jqueery for add and like buttons -->
+    <script>
+         $(document).ready(function () {
+            
+        // Heart toggle
+        $("#heart-filled").click(function () {
+            $("#heart-blank").show();
+            $("#heart-filled").hide();
+        });
+
+        $("#heart-blank").click(function () {
+            $("#heart-filled").show();
+            $("#heart-blank").hide();
+        });
+
+        // Watchlist toggle
+        $("#watchlist-filled").click(function () {
+            $("#watchlist-blank").show();
+            $("#watchlist-filled").hide();
+        });
+
+        $("#watchlist-blank").click(function () {
+            $("#watchlist-filled").show();
+            $("#watchlist-blank").hide();
+        });
+    });
+    </script>
+</footer>
 
 </html>
