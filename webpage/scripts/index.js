@@ -118,7 +118,7 @@ window.onload = function () {
         content += `<div class="row d-flex">`;
 
         //rating
-        content += `<div class="col-md border border-3 mx-3 px-1">
+        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                         <div class="h5 mb-2 border-bottom">RATING</div>`;
 
         if (films[currentIndex].averageRating) {
@@ -129,7 +129,7 @@ window.onload = function () {
         content += `</div>`;
 
         //genre
-        content += `<div class="col-md border border-3 mx-3 px-1">
+        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                         <div class="h5 mb-2 border-bottom">GENRE</div> 
                         <div class="list-unstyled" style="font-size: 18px;">`;
 
@@ -141,7 +141,7 @@ window.onload = function () {
         content += `</div></div>`;
 
         //runtime
-        content += `<div class="col-md border border-3 mx-3 px-1"> 
+        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1"> 
                     <div class="h5 mb-2 border-bottom">RUNTIME</div>`;
 
         if (films[currentIndex].runtimeMinutes !== "\\N") {
@@ -169,7 +169,7 @@ window.onload = function () {
         content += `</div>`;
 
         //release year
-        content += `<div class="col-sm border border-3 mx-3 px-1">
+        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                         <div class="h5 mb-2 border-bottom">YEAR</div> 
                         <div class="p text-center"> ${films[currentIndex].startYear} </div>
                     </div>`;
@@ -195,7 +195,7 @@ window.onload = function () {
         }
         cast.sort(() => Math.random() - 0.5);
 
-        content += `<div class="col-md-12 py-3">
+        content += `<div class="col-lg col-md col-sm-12 py-3">
                         <div class="h5 text-center">CAST</div>
                         <div class="container px-1">
                             <div class="d-flex justify-content-center">`;
@@ -229,7 +229,7 @@ window.onload = function () {
         }
         var director = films[currentIndex].director || apiDirector || null;
 
-        content += `<div class="col-sm border border-3 mx-3 px-1">
+        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">DIRECTOR</div>`;
 
         if (director != null) {
@@ -250,7 +250,7 @@ window.onload = function () {
         }
         var camera = films[currentIndex].cinematographer || apiCamera || null;
 
-        content += `<div class="col-sm border border-3 mx-3 px-1">
+        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">D.P</div>`;
 
         if (camera != null) {
@@ -271,7 +271,7 @@ window.onload = function () {
         }
         var writer = films[currentIndex].writer || apiWriter || null;
 
-        content += `<div class="col-sm border border-3 mx-3 px-1">
+        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">WRITER</div>`;
 
         if (writer != null) {
@@ -299,7 +299,7 @@ window.onload = function () {
         }
         var producer = films[currentIndex].producer || apiProducer || null;
 
-        content += `<div class="col-sm border border-3 mx-3 px-1">
+        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">PRODUCER</div>`;
 
         if (producer != null) {
@@ -320,7 +320,7 @@ window.onload = function () {
         }
         var editor = films[currentIndex].editor || apiEditor || null;
 
-        content += `<div class="col-sm border border-3 mx-3 px-1">
+        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">EDITOR</div>`;
 
         if (editor != null) {
@@ -341,7 +341,7 @@ window.onload = function () {
         }
         var composer = films[currentIndex].composer || apiComposer || null;
 
-        content += `<div class="col-sm border border-3 mx-3 px-1">
+        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">SOUNDTRACK</div>`;
 
         if (composer != null) {
