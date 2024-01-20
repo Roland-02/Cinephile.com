@@ -5,14 +5,19 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const bodyParser = require('body-parser');
+const filmsRouter = require('./routes/films');
+
+
+//middleware to be used by application
+app.use(bodyParser.json());
+app.use(filmsRouter);
 
 
 //set the view engine to ejs specify the views directory
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-//middleware to be used by application
-app.use(bodyParser.json());
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 app.use(cookieParser());

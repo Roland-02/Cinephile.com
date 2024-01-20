@@ -379,13 +379,23 @@ window.onload = function () {
     prevButton.addEventListener('click', function () {
         currentIndex--;
         if (currentIndex < 0) { currentIndex = 0; }
+
+        if(currentIndex % 2 == 0){
+
+        }
+
         updateFilm();
     });
 
 
     //next button
-    nextButton.addEventListener('click', function () {
+    nextButton.addEventListener('click', async function () {
         currentIndex++;
+
+        if(currentIndex % 2 == 0){
+
+        }
+
         updateFilm();
     });
 
