@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const PAGE_SIZE = 5; //number of films loaded at a time
+const PAGE_SIZE = process.env.PAGE_SIZE; //number of films loaded at a time
 
 const allFilms = require('../film_data.json');
 

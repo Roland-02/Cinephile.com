@@ -68,16 +68,39 @@ function FetchCredits(film_id) {
 
 };
 
-window.onload = function () {
+async function getFilms(index) {
+
+    var films;
+    try {
+
+        if (index % 5 == 0) {
+            page = (index / 5) + 1;
+
+            // Make a request to the films API with the current page
+            const response = await fetch(`http://localhost:8080/films?page=${page}`);
+            if (response.ok) {
+                films = await response.json();
+            }
+        }
+
+
+    } catch (error) {
+        console.error('Error fetching films:', error);
+    }
+
+    return films
+}
+
+window.onload = async function () {
+
     //initialise html element
     const filmTitle = document.getElementById('film-title');
     const filmPoster = document.getElementById('film-poster');
     const prevButton = document.getElementById('prev-btn');
     const nextButton = document.getElementById('next-btn');
 
-    //read in film data file
-    var films = JSON.parse(document.getElementById('film-carousel').getAttribute('data'));
     var currentIndex = 0;
+    var counter = 0;
 
     //for getting film poster jpegs
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
@@ -88,10 +111,23 @@ window.onload = function () {
     //Function to update the displayed film
     async function updateFilm() {
 
-        //filter response from FetchCredits based on department
+        //function --- filter response from FetchCredits based on department
         const filterCrewByDepartment = (department) => {
             return filmCredits.data.crew.filter(member => member.known_for_department === department);
         }
+
+        //load in next batch of films
+        if ((counter % 5) == 0) {
+            films = await getFilms(counter);
+            currentIndex = currentIndex % 5;
+        }
+
+        /*
+        console.log('counter: ' + counter)
+        console.log('currentIndex: ' + currentIndex);
+        console.log('page: ' + page);
+        console.log('')
+*/
 
         //get film title and plot
         var filmData = await FetchData(films[currentIndex].tconst);
@@ -376,13 +412,22 @@ window.onload = function () {
 
 
     //previous button
-    prevButton.addEventListener('click', function () {
+    prevButton.addEventListener('click', async function () {
         currentIndex--;
+        counter--;
         if (currentIndex < 0) { currentIndex = 0; }
+        if (counter < 0) { counter = 0; }
 
-        if(currentIndex % 2 == 0){
 
+        if (currentIndex % 5 == 4) {
+            page--;
+            currentIndex = 4;
         }
+
+        console.log('counter: ' + counter)
+        console.log('currentIndex: ' + currentIndex);
+        console.log('page: ' + page);
+        console.log('')
 
         updateFilm();
     });
@@ -391,10 +436,17 @@ window.onload = function () {
     //next button
     nextButton.addEventListener('click', async function () {
         currentIndex++;
+        counter++;
 
-        if(currentIndex % 2 == 0){
-
+        // Increment the page when moving to the next batch
+        if (currentIndex % 5 == 0) {
+            page++;
         }
+
+        console.log('counter: ' + counter)
+        console.log('currentIndex: ' + currentIndex);
+        console.log('page: ' + page);
+        console.log('')
 
         updateFilm();
     });
