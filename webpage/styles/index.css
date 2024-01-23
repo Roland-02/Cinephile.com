@@ -1,0 +1,70 @@
+.d-flex {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  .parent {
+    height: 20px;
+  }
+  
+  .child {
+    line-height: 20px;
+    vertical-align: middle;
+  }
+  
+  .medium-text {
+    font-size: 18px;
+  }
+  
+  .row.display-flex {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  .row.display-flex>[class*='col-'] {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .small-text {
+    font-size: 14px;
+  }
+  
+  #film-poster {
+    width: 100%;
+    height: 600px;
+  }
+  
+  #film-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  
+  .error-label {
+    color: red;
+    font-size: 15px;
+  }
+
+
+  .film-poster {
+    position: relative;
+  }
+  
+  .loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
