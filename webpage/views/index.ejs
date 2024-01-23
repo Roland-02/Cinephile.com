@@ -9,6 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
 
+    <link rel="stylesheet" href="/styles/index.css" />
     <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
     <script src="/bootstrap/js/mdb.min.js"></script>
     <script src="/scripts/index.js"></script>
@@ -162,7 +163,7 @@
             <!-- END filters -->
 
 
-            <!-- Film carousel -->
+            <!-- Film poster carousel -->
             <div class="col-lg-6 col-md-6 col-sm-12 py-5 carousel-container">
 
                 <div class="carousel slide" id="film-carousel" data-bs-ride="carousel">
@@ -170,7 +171,10 @@
 
                         <!-- film poster -->
                         <div class="carousel-inner">
+                            <div id="spinner" class="loading-spinner" style="display: block;"></div>
+
                             <div id="film-poster" class="carousel-item active">
+
                                 <!-- Film poster will be displayed here -->
                             </div>
                         </div>
@@ -200,7 +204,7 @@
                     </div>
                 </div>
             </div>
-            <!-- END film carousel -->
+            <!-- END film poster carousel -->
 
 
             <!-- Film info -->
