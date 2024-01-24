@@ -2,7 +2,7 @@
   "name": "niche.com",
   "version": "1.0.0",
   "description": "",
-  "main": "Index.html",
+  "main": "index.ejs",
   "scripts": {
     "start": "node app.js"
   },
