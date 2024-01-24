@@ -1,6 +1,3 @@
-//spam clicking causes sync issues with count and api requests - force slow down
-
-
 //theMovieDB api call for film poster
 function FetchImage(film_id) {
     const url = `https://api.themoviedb.org/3/movie/${film_id}/images`;
@@ -90,6 +87,7 @@ async function getFilms(counter) {
 
     return films
 }
+
 
 //number of films loaded into frontend at a time - .env
 const MAX_LOAD = 100;
