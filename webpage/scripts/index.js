@@ -1,22 +1,5 @@
-//theMovieDB api call for film poster
-function FetchImage(film_id) {
-    const url = `https://api.themoviedb.org/3/movie/${film_id}/images`;
-    const options = {
-        method: 'GET',
-        headers: {
-            accept: 'application/json',
-            Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0YmYxZTkxOWFjMDBkYmI2NjhjODVlODg5ZWJjZTg1ZCIsInN1YiI6IjY1OGIwNzEyMzI1YTUxNTkyNzAxNWU4OSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.yKZIOsVYvJxzRO3GJ1yayqvSCZg3l-ryO9FjBkfHIZc'
-        }
-    };
-    return fetch(url, options)
-        .then(res => {
-            return res.json();
-        })
-        .catch(err => {
-            console.error('Error fetching data:', err);
-            return null;
-        });
-};
+//move all api calls to server side
+
 
 //theMovieDB api call for film data
 function FetchData(film_id) {
@@ -117,14 +100,8 @@ window.onload = async function () {
     //Function to update the displayed film
     async function updateFilm() {
 
-        //function --- filter response from FetchCredits based on department
-        const filterCrewByDepartment = (department) => {
-            return filmCredits.data.crew.filter(member => member.known_for_department === department);
-        }
-
         //load in next batch of films
         if ((currentIndex % MAX_LOAD) == 0) {
-            console.log('LOADING FILMS...')
             films = await getFilms(counter); //read in new load batch
 
             if (counter % MAX_LOAD == 0) {
@@ -133,29 +110,20 @@ window.onload = async function () {
             } else {
                 currentIndex = MAX_LOAD - 1; //last position in previous load batch
             }
-            console.log('')
-
         }
-        console.log('counter ' + counter);
-        console.log('currentIndex ' + currentIndex);
-        console.log('');
-
-
-        //get film title and plot
-        var filmData = await FetchData(films[currentIndex].tconst);
-
-        //get film credits, cross-referenced with film_data.json
-        var filmCredits = await FetchCredits(films[currentIndex].tconst);
+  
 
         var content = "";
 
+        console.log(films[currentIndex])
+
         //film title and plot
-        if (filmData.success && filmData.data.title.length > 0 && filmData.data.overview.length > 0) {
-            content += `<strong>${filmData.data.title}</strong> <br>`;
-            content += `<div class="small-text py-2 overflow-scroll mb-3" style="height: 70px;"> <p> ${filmData.data.overview} </p> </div>`;
+        content += `<strong>${films[currentIndex].primaryTitle}</strong> <br>`;
+
+        if (films[currentIndex].plot) {
+            content += `<div class="small-text py-2 overflow-scroll mb-3" style="height: 70px;"> <p> ${films[currentIndex].plot} </p> </div>`;
 
         } else { //api doesn't have film, display from csv
-            content += `<strong>${films[currentIndex].primaryTitle}</strong> <br>`;
             content += `<div> <p> - </p> </div>`;
 
         }
@@ -269,13 +237,7 @@ window.onload = async function () {
         content += `<div class="row d-flex py-2">`;
 
         //director
-        var mdbDirector = null;
-        var apiDirector = null;
-        if (filmCredits.success) {
-            mdbDirector = filterCrewByDepartment('Directing');
-            apiDirector = mdbDirector.length > 0 ? mdbDirector[0].name : null;
-        }
-        var director = films[currentIndex].director || apiDirector || null;
+        var director = films[currentIndex].director || null;
 
         content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">DIRECTOR</div>`;
@@ -290,16 +252,10 @@ window.onload = async function () {
         content += `</div>`;
 
         //cinematographer
-        var mdbCamera = null;
-        var apiCamera = null;
-        if (filmCredits.success) {
-            mdbCamera = filterCrewByDepartment('Camera');
-            apiCamera = mdbCamera.length > 0 ? mdbCamera[0].name : null;
-        }
-        var camera = films[currentIndex].cinematographer || apiCamera || null;
+        var camera = films[currentIndex].cinematographer || null;
 
         content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
-                    <div class="h5 mb-2 border-bottom">D.P</div>`;
+                    <div class="h5 mb-2 border-bottom">CAMERA</div>`;
 
         if (camera != null) {
             content += `<div class="p medium-text text-center">${camera}</div>
@@ -311,13 +267,7 @@ window.onload = async function () {
         content += `</div>`;
 
         //writer
-        var mdbWriter = null;
-        var apiWriter = null;
-        if (filmCredits.success) {
-            mdbWriter = filterCrewByDepartment('Writing');
-            apiWriter = mdbWriter.length > 0 ? mdbWriter[0].name : null;
-        }
-        var writer = films[currentIndex].writer || apiWriter || null;
+        var writer = films[currentIndex].writer || null;
 
         content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">WRITER</div>`;
@@ -339,13 +289,7 @@ window.onload = async function () {
         content += `<div class="row d-flex py-4">`;
 
         //producer
-        var mdbProducer = null;
-        var apiProducer = null;
-        if (filmCredits.success) {
-            mdbProducer = filterCrewByDepartment('Production');
-            apiProducer = mdbProducer.length > 0 ? mdbProducer[0].name : null;
-        }
-        var producer = films[currentIndex].producer || apiProducer || null;
+        var producer = films[currentIndex].producer || null;
 
         content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">PRODUCER</div>`;
@@ -360,13 +304,7 @@ window.onload = async function () {
         content += `</div>`;
 
         //editor
-        var mdbEditor = null;
-        var apiEditor = null;
-        if (filmCredits.success) {
-            mdbEditor = filterCrewByDepartment('Editing');
-            apiEditor = mdbEditor.length > 0 ? mdbEditor[0].name : null;
-        }
-        var editor = films[currentIndex].editor || apiEditor || null;
+        var editor = films[currentIndex].editor || null;
 
         content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">EDITOR</div>`;
@@ -381,13 +319,7 @@ window.onload = async function () {
         content += `</div>`;
 
         //composer
-        var mdbComposer = null;
-        var apiComposer = null;
-        if (filmCredits.success) {
-            mdbComposer = filterCrewByDepartment('Sound');
-            apiComposer = mdbComposer.length > 0 ? mdbComposer[0].name : null;
-        }
-        var composer = films[currentIndex].composer || apiComposer || null;
+        var composer = films[currentIndex].composer || null;
 
         content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
                     <div class="h5 mb-2 border-bottom">SOUNDTRACK</div>`;
@@ -410,18 +342,13 @@ window.onload = async function () {
 
 
         //display film poster
-        var filmImage = await FetchImage(films[currentIndex].tconst);
 
-        if (filmImage && filmImage.posters && filmImage.posters.length > 0) {
-            //get english poster or first one
-            var englishPosters = filmImage.posters.filter(poster => poster.iso_639_1 === 'en');
-            var poster = englishPosters.length > 0 ? englishPosters[0] : filmImage.posters[0];
-            var imagePath = baseImagePath + poster.file_path;
+        if (films[currentIndex].poster) {
+            var imagePath = baseImagePath + films[currentIndex].poster;
             filmPoster.innerHTML = `<img src="${imagePath}" alt="${films[currentIndex].primaryTitle}">`;
         } else {
             filmPoster.innerHTML = `<img src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
         }
-
 
 
         //prevent spam clicking
