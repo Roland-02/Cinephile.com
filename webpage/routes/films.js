@@ -3,7 +3,7 @@ const router = express.Router();
 
 const PAGE_SIZE = process.env.PAGE_SIZE; //number of films loaded at a time
 
-const allFilms = require('../film_data.json');
+const allFilms = require('../films.json');
 
 // Route to handle paginated film requests
 router.get('/films', (req, res) => {
