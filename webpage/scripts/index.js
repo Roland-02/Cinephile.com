@@ -69,7 +69,7 @@ async function getFilms(counter) {
     }
 
     return films
-}
+};
 
 
 //number of films loaded into frontend at a time - .env
