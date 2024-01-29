@@ -1,56 +1,3 @@
-//move all api calls to server side
-
-
-//theMovieDB api call for film data
-function FetchData(film_id) {
-    const url = `https://api.themoviedb.org/3/movie/${film_id}`;
-    const options = {
-        method: 'GET',
-        headers: {
-            accept: 'application/json',
-            Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0YmYxZTkxOWFjMDBkYmI2NjhjODVlODg5ZWJjZTg1ZCIsInN1YiI6IjY1OGIwNzEyMzI1YTUxNTkyNzAxNWU4OSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.yKZIOsVYvJxzRO3GJ1yayqvSCZg3l-ryO9FjBkfHIZc'
-        }
-    };
-    return fetch(url, options)
-        .then(res => {
-            if (res.ok) {
-                return res.json().then(data => ({ success: true, data }));
-            } else {
-                return res.json().then(error => ({ success: false, error }));
-            }
-        })
-        .catch(err => {
-            console.error('Error fetching data:', err);
-            return null;
-        });
-
-};
-
-//theMovieDB api call for film credits
-function FetchCredits(film_id) {
-    const url = `https://api.themoviedb.org/3/movie/${film_id}/credits?language=en-US`
-    const options = {
-        method: 'GET',
-        headers: {
-            accept: 'application/json',
-            Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0YmYxZTkxOWFjMDBkYmI2NjhjODVlODg5ZWJjZTg1ZCIsInN1YiI6IjY1OGIwNzEyMzI1YTUxNTkyNzAxNWU4OSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.yKZIOsVYvJxzRO3GJ1yayqvSCZg3l-ryO9FjBkfHIZc'
-        }
-    };
-    return fetch(url, options)
-        .then(res => {
-            if (res.ok) {
-                return res.json().then(data => ({ success: true, data }));
-            } else {
-                return res.json().then(error => ({ success: false, error }));
-            }
-        })
-        .catch(err => {
-            console.error('Error fetching data:', err);
-            return null;
-        });
-
-};
-
 async function getFilms(counter) {
     //load batch of films from file
 
@@ -96,7 +43,6 @@ window.onload = async function () {
     //initial update
     updateFilm();
 
-
     //Function to update the displayed film
     async function updateFilm() {
 
@@ -115,17 +61,14 @@ window.onload = async function () {
 
         var content = "";
 
-        console.log(films[currentIndex])
-
         //film title and plot
         content += `<strong>${films[currentIndex].primaryTitle}</strong> <br>`;
 
         if (films[currentIndex].plot) {
             content += `<div class="small-text py-2 overflow-scroll mb-3" style="height: 70px;"> <p> ${films[currentIndex].plot} </p> </div>`;
 
-        } else { //api doesn't have film, display from csv
+        } else {
             content += `<div> <p> - </p> </div>`;
-
         }
         //END film title and plot
 
@@ -160,6 +103,7 @@ window.onload = async function () {
         content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1"> 
                     <div class="h5 mb-2 border-bottom">RUNTIME</div>`;
 
+        //display time in hr/min
         if (films[currentIndex].runtimeMinutes !== "\\N") {
             const hours = Math.floor(films[currentIndex].runtimeMinutes / 60);
             const minutes = films[currentIndex].runtimeMinutes % 60;
@@ -342,7 +286,6 @@ window.onload = async function () {
 
 
         //display film poster
-
         if (films[currentIndex].poster) {
             var imagePath = baseImagePath + films[currentIndex].poster;
             filmPoster.innerHTML = `<img src="${imagePath}" alt="${films[currentIndex].primaryTitle}">`;
