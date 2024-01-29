@@ -10,10 +10,16 @@ window.onload = function () {
         var email = document.getElementById('email').value;
         var password = document.getElementById('password').value;
 
-        // Perform your validation logic here
-        if (!validateEmail(email) || !validatePassword(password)) {
-            window.alert('Credentials invalid');
-            return;
+        if (!validateEmail(email)) {
+            return document.getElementById('emailError').hidden = false;
+        }else{
+            document.getElementById('emailError').hidden = true;
+        }
+
+        if (!validatePassword(password)) {
+            return document.getElementById('passwordError').hidden = false;
+        }else{
+            document.getElementById('passwordError').hidden = true;
         }
 
         //allow form submission
@@ -49,4 +55,5 @@ function togglePassword() {
     } else {
         passwordField.type = "password";
     }
+    
 }
