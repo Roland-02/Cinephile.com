@@ -61,7 +61,7 @@ router.post('/', async (req, res) => {
                         //credentials incorrect
                         connection.release()
                         console.log("--------> Credentials incorrect")
-                        return res.redirect('login')
+                        return res.render('login', { title: 'Express', session: req.session, message: 'Credentials incorrect' });
 
                     }
 
