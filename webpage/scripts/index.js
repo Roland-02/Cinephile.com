@@ -57,7 +57,7 @@ window.onload = async function () {
                 currentIndex = MAX_LOAD - 1; //last position in previous load batch
             }
         }
-  
+
 
         var content = "";
 
@@ -299,10 +299,25 @@ window.onload = async function () {
 
     }
 
+    //handle next film action
+    const handleNextAction = async () => {
+        if (!isClickLocked) {
+            isClickLocked = true;
 
-    //previous button
-    prevButton.addEventListener('click', async function () {
+            currentIndex++;
+            counter++;
 
+            // Clicking forwards to next load
+            if (currentIndex % MAX_LOAD == 0) {
+                page++;
+            }
+
+            updateFilm();
+        }
+    };
+
+    //handle previous film action
+    const handlePrevAction = async () => {
         if (!isClickLocked) {
             isClickLocked = true;
 
@@ -322,29 +337,31 @@ window.onload = async function () {
 
             updateFilm();
         }
-
-    });
-
+    }
 
     //next button
-    nextButton.addEventListener('click', async function () {
+    nextButton.addEventListener('click', handleNextAction)
+    //prev button
+    prevButton.addEventListener('click', handlePrevAction)
+    //carousel navigation with keys
+    document.addEventListener('keydown', function (event) {
 
-        if (!isClickLocked) {
-            isClickLocked = true;
-
-            currentIndex++;
-            counter++;
-
-            //clicking forwards to next load
-            if (currentIndex % MAX_LOAD == 0) {
-                page++;
-            }
-
-            updateFilm();
+        switch (event.key) {
+            case 'ArrowRight':
+                handleNextAction();
+                break;
+            case 'ArrowUp':
+                handleNextAction();
+                break;
+            case 'ArrowLeft':
+                handlePrevAction();
+                break;
+            case 'ArrowDown':
+                handlePrevAction();
+                break;
         }
-
+   
     });
-
 
 };
 
