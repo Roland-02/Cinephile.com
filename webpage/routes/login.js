@@ -30,8 +30,6 @@ router.post('/', async (req, res) => {
         const sqlSearch = "SELECT * FROM user_login WHERE email = ?";
         const search_query = mysql.format(sqlSearch, [email]);
 
-        console.log('before connection');
-
         await connection.query(search_query, async (err, result) => {
 
             if (err) throw (err);
