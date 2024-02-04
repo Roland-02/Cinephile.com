@@ -5,12 +5,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const bodyParser = require('body-parser');
-const filmsRouter = require('./routes/films');
 
-
-//middleware to be used by application
-app.use(bodyParser.json());
-app.use(filmsRouter);
 
 
 //set the view engine to ejs specify the views directory
@@ -18,6 +13,8 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 
+//middleware to be used by application
+app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 app.use(cookieParser());
@@ -52,11 +49,15 @@ app.use('/createAccount', createAccountRoute);
 var loginRoute = require('./routes/login');
 app.use('/login', loginRoute);
 
+var filmsRouter = require('./routes/films');
+app.use(filmsRouter);
+
 
 //start server
 const port = process.env.PORT
-app.listen(port,
-  () => console.log(`Server Started on port ${port}...`))
+app.listen(port, () => console.log(`Server Started on port ${port}...`));
+
+
 
 
 
