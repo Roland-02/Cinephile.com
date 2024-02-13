@@ -1,13 +1,16 @@
 //handle GET request for /home, load film data
 var express = require('express');
 var router = express.Router();
-const fs = require('fs');
 const axios = require('axios');
 const filmsRouter = require('../routes/films');
+
+const mysql = require('mysql');
+var { getConnection } = require('../database');
+
 router.use('/routes', filmsRouter);
 
 
-//get request - open index.ejs page
+//open index page, load in films
 router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
 
     try {
@@ -27,6 +30,9 @@ router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
     }
 
 });
+
+
+
 
 
 router.post('/signout', function (req, res) {
