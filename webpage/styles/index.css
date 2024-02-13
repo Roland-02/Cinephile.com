@@ -1,3 +1,12 @@
+
+.likeable {
+  cursor: pointer;
+}
+
+.liked {
+  background-color: yellow;
+}
+
 .d-flex {
     display: flex;
     flex-wrap: wrap;
@@ -68,3 +77,4 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+

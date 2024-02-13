@@ -1,3 +1,4 @@
+
 async function getFilms(counter) {
     //load batch of films from file
 
@@ -18,17 +19,22 @@ async function getFilms(counter) {
     return films
 };
 
-
 //number of films loaded into frontend at a time - .env
 const MAX_LOAD = 100;
 
 window.onload = async function () {
 
-    //initialise html element
+    //initialise html elements
     const filmTitle = document.getElementById('film-title');
     const filmPoster = document.getElementById('film-poster');
     const prevButton = document.getElementById('prev-btn');
     const nextButton = document.getElementById('next-btn');
+
+    const likeButton = document.getElementById('heart-blank');
+    const unlikeButton = document.getElementById('heart-filled');
+
+  
+
 
     //track position in current load
     var currentIndex = 0;
@@ -43,6 +49,8 @@ window.onload = async function () {
     //initial update
     updateFilm();
 
+    
+
     //Function to update the displayed film
     async function updateFilm() {
 
@@ -56,16 +64,17 @@ window.onload = async function () {
             } else {
                 currentIndex = MAX_LOAD - 1; //last position in previous load batch
             }
+
         }
 
 
         var content = "";
 
         //film title and plot
-        content += `<strong>${films[currentIndex].primaryTitle}</strong> <br>`;
+        content += `<div id="_filmTitle" class="likeable"><strong>${films[currentIndex].primaryTitle}</strong></div>`;
 
         if (films[currentIndex].plot) {
-            content += `<div class="small-text py-2 overflow-scroll mb-3" style="height: 70px;"> <p> ${films[currentIndex].plot} </p> </div>`;
+            content += `<div id="_filmPlot" class="small-text py-2 overflow-scroll mb-3 likeable" style="height: 70px; cursor: pointer;"> <p> ${films[currentIndex].plot} </p> </div>`;
 
         } else {
             content += `<div> <p> - </p> </div>`;
@@ -77,7 +86,7 @@ window.onload = async function () {
         content += `<div class="row d-flex">`;
 
         //rating
-        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
+        content += `<div id="_filmRating" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
                         <div class="h5 mb-2 border-bottom">RATING</div>`;
 
         if (films[currentIndex].averageRating) {
@@ -88,7 +97,7 @@ window.onload = async function () {
         content += `</div>`;
 
         //genre
-        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
+        content += `<div id="_filmGenre" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
                         <div class="h5 mb-2 border-bottom">GENRE</div> 
                         <div class="list-unstyled" style="font-size: 18px;">`;
 
@@ -100,7 +109,7 @@ window.onload = async function () {
         content += `</div></div>`;
 
         //runtime
-        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1"> 
+        content += `<div id="_filmRuntime" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable"> 
                     <div class="h5 mb-2 border-bottom">RUNTIME</div>`;
 
         //display time in hr/min
@@ -129,7 +138,7 @@ window.onload = async function () {
         content += `</div>`;
 
         //release year
-        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
+        content += `<div id="_filmYear" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
                         <div class="h5 mb-2 border-bottom">YEAR</div> 
                         <div class="p text-center"> ${films[currentIndex].startYear} </div>
                     </div>`;
@@ -162,7 +171,7 @@ window.onload = async function () {
 
         if (cast.length > 0) {
             for (const actor of cast) {
-                content += `<div class="actor d-flex align-items-center">
+                content += `<div class="actor d-flex align-items-center likeable">
                             <span class="px-1">|</span>
                             <span class="medium-text"> ${actor} </span>
                             <span class="px-1">|</span>
@@ -183,7 +192,7 @@ window.onload = async function () {
         //director
         var director = films[currentIndex].director || null;
 
-        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
+        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
                     <div class="h5 mb-2 border-bottom">DIRECTOR</div>`;
 
         if (director != null) {
@@ -198,7 +207,7 @@ window.onload = async function () {
         //cinematographer
         var camera = films[currentIndex].cinematographer || null;
 
-        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
+        content += `<div id="_filmCamera" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
                     <div class="h5 mb-2 border-bottom">CAMERA</div>`;
 
         if (camera != null) {
@@ -213,7 +222,7 @@ window.onload = async function () {
         //writer
         var writer = films[currentIndex].writer || null;
 
-        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
+        content += `<div id="_filmWriter" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
                     <div class="h5 mb-2 border-bottom">WRITER</div>`;
 
         if (writer != null) {
@@ -235,7 +244,7 @@ window.onload = async function () {
         //producer
         var producer = films[currentIndex].producer || null;
 
-        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
+        content += `<div id="_filmProducer" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
                     <div class="h5 mb-2 border-bottom">PRODUCER</div>`;
 
         if (producer != null) {
@@ -250,7 +259,7 @@ window.onload = async function () {
         //editor
         var editor = films[currentIndex].editor || null;
 
-        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
+        content += `<div id="_filmEditor" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
                     <div class="h5 mb-2 border-bottom">EDITOR</div>`;
 
         if (editor != null) {
@@ -265,7 +274,7 @@ window.onload = async function () {
         //composer
         var composer = films[currentIndex].composer || null;
 
-        content += `<div class="col-lg col-md col-sm border border-3 mx-3 px-1">
+        content += `<div id="_filmComposer" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
                     <div class="h5 mb-2 border-bottom">SOUNDTRACK</div>`;
 
         if (composer != null) {
@@ -293,12 +302,22 @@ window.onload = async function () {
             filmPoster.innerHTML = `<img src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
         }
 
+        //highlight liked attributes
+
 
         //prevent spam clicking
         isClickLocked = false;
 
     }
 
+    likeButton.addEventListener('click', function (event) {
+        //add film to liked
+    })
+
+    unlikeButton.addEventListener('click', function (event) {
+        //remove film from liked
+    })
+    
     //handle next film action
     const handleNextAction = async () => {
         if (!isClickLocked) {
@@ -341,8 +360,10 @@ window.onload = async function () {
 
     //next button
     nextButton.addEventListener('click', handleNextAction)
+
     //prev button
     prevButton.addEventListener('click', handlePrevAction)
+
     //carousel navigation with keys
     document.addEventListener('keydown', function (event) {
 
@@ -364,6 +385,9 @@ window.onload = async function () {
     });
 
 };
+
+
+
 
 
 

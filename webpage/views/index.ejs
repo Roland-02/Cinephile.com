@@ -95,10 +95,11 @@
                         d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16M3.5 5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1 0-1M5 8.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m2 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5" />
                 </svg>
 
-                <div  class="d-flex align-items-center justify-content-center">
-                    
+                <div class="d-flex align-items-center justify-content-center">
 
-                    <div id="filterOptions" class="container border border-2 rounded-5 m-2 p-3" style="display: none; background-color: white;">
+
+                    <div id="filterOptions" class="container border border-2 rounded-5 m-2 p-3"
+                        style="display: none; background-color: white;">
                         <form>
                             <div class="mb-2">
                                 <label for="filterYear" class="form-label">Year</label>
@@ -411,6 +412,7 @@
 
     <!-- jqueery for add and like buttons -->
     <script>
+
         $(document).ready(function () {
 
             // Heart toggle
@@ -448,10 +450,39 @@
                 $("#filterOptions").show();
                 $("#filterOptions").css("z-index", "7");
             });
-            
-
 
         });
+
+        $(document).on('click', '.likeable', function () {
+
+            // Toggle the "liked" state of the clicked element
+            $(this).toggleClass("liked");
+
+
+            // Collect information about the liked elements
+            var likedElements = [];
+            $(".likeable.liked").each(function () {
+                // Get the ID or other identifying information of the liked element
+                var elementId = $(this).attr("id"); // Example: "plot", "cast", "director", etc.
+                likedElements.push(elementId);
+                console.log(elementId)
+            });
+
+            // // Send information about the liked elements to index.js using AJAX
+            // $.ajax({
+            //     type: "POST",
+            //     url: "/saveLikedElements", // Route in index.js to handle saving liked elements
+            //     data: { likedElements: likedElements }, // Send the array of liked elements
+            //     success: function (response) {
+            //         console.log(response);
+            //     },
+            //     error: function (err) {
+            //         console.error(err);
+            //     }
+            // });
+
+        })
+
     </script>
 
 </footer>
