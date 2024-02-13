@@ -1,4 +1,6 @@
+//HANDLE FILM INFO RENDERING ON FRONTEND, CAROUSEL NAVIGATION
 
+//load next batch of films
 async function getFilms(counter) {
     //load batch of films from file
 
@@ -30,12 +32,6 @@ window.onload = async function () {
     const prevButton = document.getElementById('prev-btn');
     const nextButton = document.getElementById('next-btn');
 
-    const likeButton = document.getElementById('heart-blank');
-    const unlikeButton = document.getElementById('heart-filled');
-
-  
-
-
     //track position in current load
     var currentIndex = 0;
     //track position in whole db
@@ -48,8 +44,6 @@ window.onload = async function () {
 
     //initial update
     updateFilm();
-
-    
 
     //Function to update the displayed film
     async function updateFilm() {
@@ -171,7 +165,7 @@ window.onload = async function () {
 
         if (cast.length > 0) {
             for (const actor of cast) {
-                content += `<div class="actor d-flex align-items-center likeable">
+                content += `<div id="_filmCast" class="actor d-flex align-items-center likeable">
                             <span class="px-1">|</span>
                             <span class="medium-text"> ${actor} </span>
                             <span class="px-1">|</span>
@@ -302,22 +296,12 @@ window.onload = async function () {
             filmPoster.innerHTML = `<img src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
         }
 
-        //highlight liked attributes
-
 
         //prevent spam clicking
         isClickLocked = false;
 
-    }
+    };
 
-    likeButton.addEventListener('click', function (event) {
-        //add film to liked
-    })
-
-    unlikeButton.addEventListener('click', function (event) {
-        //remove film from liked
-    })
-    
     //handle next film action
     const handleNextAction = async () => {
         if (!isClickLocked) {
@@ -356,13 +340,13 @@ window.onload = async function () {
 
             updateFilm();
         }
-    }
+    };
 
     //next button
-    nextButton.addEventListener('click', handleNextAction)
+    nextButton.addEventListener('click', handleNextAction);
 
     //prev button
-    prevButton.addEventListener('click', handlePrevAction)
+    prevButton.addEventListener('click', handlePrevAction);
 
     //carousel navigation with keys
     document.addEventListener('keydown', function (event) {
