@@ -3,6 +3,7 @@ var express = require('express');
 var router = express.Router();
 const axios = require('axios');
 const filmsRouter = require('../routes/films');
+const bodyParser = require('body-parser');
 
 const mysql = require('mysql');
 var { getConnection } = require('../database');
@@ -30,6 +31,33 @@ router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
     }
 
 });
+
+
+
+
+// POST route to handle saving liked elements
+router.post('/saveLiked', (req, res) => {
+    const likedElements = req.body.likedElements;
+
+
+    //parse likeElements into 0,1 representation
+
+
+
+    //store in db
+
+
+    res.send('Liked elements saved successfully'); // Send response
+});
+
+
+
+
+
+
+
+
+
 
 
 
