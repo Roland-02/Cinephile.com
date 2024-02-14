@@ -53,7 +53,7 @@ router.post('/', async (req, res) => {
                     connection.release()
                     if (err) throw (err)
                     console.log("--------> Created new User");
-                    res.cookie('sessionEmail', req.session.email); // Store email in a cookie
+                    res.cookie('sessionEmail', email); // Store email in a cookie
                     return res.redirect('index');
                 });                
             }
