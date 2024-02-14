@@ -211,149 +211,8 @@
             <!-- Film info -->
             <div class="col-lg-6 col-md-6 col-sm-12 py-2">
                 <div class="container">
-                    <div id="film-info" class="h3 text-center">
+                    <div id="film-info" class="h3 text-center" data-tconst="">
                         <!--  Film data displayed here from scripts/index.js -->
-
-                        <!--
-                        <strong>Film Title</strong><br>
-
-                        <div class="small-text py-2 mb-2" style="max-height: 60px; overflow-y: auto;">
-                            <p>aakhdakjdjkansdjansd</p>
-                        </div>
-
-
-                        <div class="row d-flex">
-
-                            <div class="col-md border border-3 mx-3">
-                                <div class="h5 mb-3 border-bottom">RATING</div>
-                                <div class="p text-center">7.5</div>
-                            </div>
-
-                            <div class="col-md border border-3 mx-3">
-                                <div class="h5 mb-1 border-bottom">GENRE</div>
-                                <div class="list-unstyled" style="font-size: 18px;">
-                                    <li>drama</li>
-                                    <li>action</li>
-                                    <li>comedy</li>
-                                </div>
-                            </div>
-
-                            <div class="col-md border border-3 mx-3">
-                                <div class="h5 mb-3 border-bottom">RUNTIME</div>
-                                <div class="p text-center">2h 34m</div>
-                                <p></p>
-                            </div>
-
-                            <div class="col-md border border-3 mx-3">
-                                <div class="h5 mb-3 border-bottom">RELEASE</div>
-                                <div class="p text-center">2012</div>
-                                <p></p>
-                            </div>
-
-                        </div>
-
-
-                        <div class="col-md-12 py-3">
-                            <div class="h5 text-center">CAST</div>
-                            <div class="container px-0">
-                                <div class="d-flex justify-content-center">
-
-                                    <div class="actor d-flex align-items-center">
-                                        <span class="px-1">|</span>
-                                        <span class="medium-text"> Anne Hathaway </span>
-                                        <span class="px-1">|</span>
-                                    </div>
-
-                                    <div class="actor d-flex align-items-center">
-                                        <span class="px-1">|</span>
-                                        <span class="medium-text"> Christian Bale </span>
-                                        <span class="px-1">|</span>
-                                    </div>
-
-                                    <div class="actor d-flex align-items-center">
-                                        <span class="px-1">|</span>
-                                        <span class="medium-text"> Tom Hardy </span>
-                                        <span class="px-1">|</span>
-                                    </div>
-
-                                    <div class="actor d-flex align-items-center">
-                                        <span class="px-1">|</span>
-                                        <span class="medium-text"> Michael Caine </span>
-                                        <span class="px-1">|</span>
-                                    </div>
-
-                                    <div class="actor d-flex align-items-center">
-                                        <span class="px-1">|</span>
-                                        <span class="medium-text"> Gary Oldman </span>
-                                        <span class="px-1">|</span>
-                                    </div>
-
-                                    <div class="actor d-flex align-items-center">
-                                        <span class="px-1">|</span>
-                                        <span class="medium-text"> Morgan Freeman </span>
-                                        <span class="px-1">|</span>
-                                    </div>
-
-                                    <div class="actor d-flex align-items-center">
-                                        <span class="px-1">|</span>
-                                        <span class="medium-text"> Joseph Gordon-Levitt </span>
-                                        <span class="px-1">|</span>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <div class="row d-flex py-2">
-
-                            <div class="col-sm border border-3 mx-3">
-                                <div class="h5 mb-3 border-bottom">DIRECTOR</div>
-                                <div class="p medium-text text-center">Christopher Nolan</div>
-                            </div>
-
-                            <div class="col-sm border border-3 px-3">
-                                <div class="h5 mb-3 border-bottom">CINEMATOGRAPHER</div>
-                                <div class="p medium-text text-center">Wally Pfister</div>
-                                <p></p>
-                            </div>
-
-                            <div class="col-sm border border-3 mx-3">
-                                <div class="h5 mb-1 border-bottom">WRITER</div>
-                                <div class="list-unstyled" style="font-size: 16px;">
-                                    <li>Jonathan Nolan</li>
-                                    <li>Christopher Nolan</li>
-                                    <li>David S. Goyer</li>
-                                </div>
-                            </div>
-
-                        </div>
-
-
-                        <div class="row d-flex py-4">
-
-                            <div class="col-sm border border-3 mx-3">
-                                <div class="h5 mb-3 border-bottom">PRODUCER</div>
-                                <div class="p medium-text text-center">Christopher Nolan</div>
-                            </div>
-
-                            <div class="col-sm border border-3 px-3">
-                                <div class="h5 mb-3 border-bottom">EDITOR</div>
-                                <div class="p medium-text text-center">Wally Pfister</div>
-                                <p></p>
-                            </div>
-
-                            <div class="col-sm border border-3 mx-3">
-                                <div class="h5 mb-1 border-bottom">COMPOSER</div>
-                                <div class="list-unstyled" style="font-size: 16px;">
-                                    <li>Jonathan Nolan</li>
-                                    <li>Christopher Nolan</li>
-                                    <li>David S. Goyer</li>
-                                </div>
-                            </div>
-
-                        </div>
-                        -->
                     </div>
                     <!-- END film info -->
 
@@ -413,7 +272,7 @@
     <!-- jqueery for add and like buttons -->
     <script>
 
-        $(document).ready(function () {
+        $(document).ready( function () {
 
             // Heart toggle
             $("#heart-filled").click(function () {
@@ -451,32 +310,37 @@
                 $("#filterOptions").css("z-index", "7");
             });
 
-        });
 
-        $(document).on('click', '.likeable', function () {
 
-            // Toggle the "liked" state of the clicked element
-            $(this).toggleClass("liked");
+            $('#film-info').on('click', '.likeable', function (event) {
 
-            // Collect information about the liked elements
-            var likedElements = [];
-            $(".likeable.liked").each(function () {
-                var elementId = $(this).attr("id");
-                likedElements.push(elementId);
-            });
+                // Toggle the "liked" state of the clicked element
+                $(this).toggleClass("liked");
 
-            var tconst = $('#film-info').data('tconst');
-
-            // Send information about the liked elements to index.js using Axios
-            axios.post('/saveLiked', { liked: likedElements, filmid: tconst, user: `<%= session.email %>`})
-                .then(function (response) {
-                    //console.log(response);
-                })
-                .catch(function (error) {
-                    console.error(error);
+                // Collect information about the liked elements
+                var likedElements = [];
+                $(".likeable.liked").each(function () {
+                    var elementId = $(this).attr("id");
+                    likedElements.push(elementId);
                 });
 
+                var tconst = event.delegateTarget.dataset.tconst;  //$("#film-info").data("tconst");
+
+                // Send information about the liked elements to index.js using Axios
+                axios.post('/saveLiked', { liked: likedElements, film_id: tconst, user: `<%= session.email %>` })
+                    .then(function (response) {
+                        //console.log(response);
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                    });
+
+            });
+
         });
+
+
+      
 
     </script>
 
