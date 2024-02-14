@@ -62,7 +62,9 @@ window.onload = async function () {
         }
 
         filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
+        filmPoster.setAttribute('data-temp', currentIndex)
         var content = "";
+        //console.log(filmInfo.getAttribute('data-tconst'))
 
         //film title and plot
         content += `<div id="_filmTitle" class="likeable"><strong>${films[currentIndex].primaryTitle}</strong></div>`;

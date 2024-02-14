@@ -34,8 +34,10 @@ router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
 router.post('/saveLiked', (req, res) => {
 
     const likedElements = req.body.liked;
-    const tconst = req.body.filmid;
+    const tconst = req.body.film_id;
     const userEmail = req.body.user
+
+    //console.log(tconst)
 
     const attributeValues = {
         Title: 0,
@@ -74,29 +76,60 @@ router.post('/saveLiked', (req, res) => {
 
             const userid = userResult[0].user_id;
 
-            const insertQuery = `INSERT INTO user_films (user_id, tconst, title, plot, rating, genre, runtime, year, cast, director, camera, writer, producer, editor, composer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                ON DUPLICATE KEY UPDATE 
-                                title = VALUES(title), 
-                                plot = VALUES(plot), 
-                                rating = VALUES(rating), 
-                                genre = VALUES(genre), 
-                                runtime = VALUES(runtime), 
-                                year = VALUES(year), 
-                                cast = VALUES(cast), 
-                                director = VALUES(director), 
-                                camera = VALUES(camera), 
-                                writer = VALUES(writer), 
-                                producer = VALUES(producer), 
-                                editor = VALUES(editor), 
-                                composer = VALUES(composer)`;
+            const searchFilmQuery = 'SELECT * FROM user_films WHERE tconst = ? AND user_id = ?';
 
-            await connection.query(insertQuery, [userid, tconst, ...Object.values(attributeValues)], (err, result) => {
+            await connection.query(searchFilmQuery, [tconst, userid], async (err, filmResult) => {
 
-                if (err) throw (err)
 
-                connection.release()
-                console.log("--------> Saved likes");
-            });
+                console.log(filmResult)
+
+                if (filmResult.length == 0) {
+                    //save film
+                    const insertQuery = `INSERT INTO user_films (user_id, tconst, title, plot, rating, genre, runtime, year, cast, director, camera, writer, producer, editor, composer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+                    await connection.query(insertQuery, [userid, tconst, ...Object.values(attributeValues)], (err, result) => {
+                        if (err) throw (err)
+
+                        connection.release()
+                        console.log("--------> Saved likes");
+                    });
+
+                } else {
+                    //update film
+
+                    const updateQuery = `UPDATE user_films SET 
+                                title = ?, 
+                                plot = ?, 
+                                rating = ?, 
+                                genre = ?, 
+                                runtime = ?, 
+                                year = ?, 
+                                cast = ?, 
+                                director = ?, 
+                                camera = ?, 
+                                writer = ?, 
+                                producer = ?, 
+                                editor = ?, 
+                                composer = ?
+                                WHERE user_id = ? AND tconst = ?`;
+
+                    await connection.query(updateQuery, [...Object.values(attributeValues), userid, tconst,], (err, result) => {
+                        if (err) throw (err)
+
+                        connection.release()
+                        console.log("--------> Updated film");
+                    });
+
+
+                }
+
+
+            })
+
+
+
+
+
 
         });
 
