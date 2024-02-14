@@ -52,7 +52,7 @@ router.post('/', async (req, res) => {
                         //successful login
                         connection.release()
                         console.log('user logged in')
-                        res.cookie('sessionEmail', req.session.email); // Store email in a cookie
+                        res.cookie('sessionEmail', email); // Store email in a cookie
                         return res.redirect('index');
                     }
                     else {
@@ -69,6 +69,7 @@ router.post('/', async (req, res) => {
         });
     });
     //end of getConnection
+
 });
 //end of post request
 

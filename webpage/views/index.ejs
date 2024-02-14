@@ -16,8 +16,6 @@
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
-
-
 </head>
 
 <body>
@@ -213,7 +211,7 @@
             <!-- Film info -->
             <div class="col-lg-6 col-md-6 col-sm-12 py-2">
                 <div class="container">
-                    <div id="film-title" class="h3 text-center">
+                    <div id="film-info" class="h3 text-center">
                         <!--  Film data displayed here from scripts/index.js -->
 
                         <!--
@@ -463,21 +461,22 @@
             // Collect information about the liked elements
             var likedElements = [];
             $(".likeable.liked").each(function () {
-                // Get the ID or other identifying information of the liked element
-                var elementId = $(this).attr("id"); // Example: "plot", "cast", "director", etc.
+                var elementId = $(this).attr("id");
                 likedElements.push(elementId);
             });
 
+            var tconst = $('#film-info').data('tconst');
+
             // Send information about the liked elements to index.js using Axios
-            axios.post('/saveLiked', { liked: likedElements })
+            axios.post('/saveLiked', { liked: likedElements, filmid: tconst, user: `<%= session.email %>`})
                 .then(function (response) {
-                    console.log(response);
+                    //console.log(response);
                 })
                 .catch(function (error) {
                     console.error(error);
                 });
 
-        })
+        });
 
     </script>
 

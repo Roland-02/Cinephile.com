@@ -27,7 +27,7 @@ const MAX_LOAD = 100;
 window.onload = async function () {
 
     //initialise html elements
-    const filmTitle = document.getElementById('film-title');
+    const filmInfo = document.getElementById('film-info');
     const filmPoster = document.getElementById('film-poster');
     const prevButton = document.getElementById('prev-btn');
     const nextButton = document.getElementById('next-btn');
@@ -61,7 +61,7 @@ window.onload = async function () {
 
         }
 
-
+        filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
         var content = "";
 
         //film title and plot
@@ -185,8 +185,9 @@ window.onload = async function () {
 
         //director
         var director = films[currentIndex].director || null;
+        var likeableClass = director != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
+        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
                     <div class="h5 mb-2 border-bottom">DIRECTOR</div>`;
 
         if (director != null) {
@@ -200,8 +201,9 @@ window.onload = async function () {
 
         //cinematographer
         var camera = films[currentIndex].cinematographer || null;
+        var likeableClass = camera != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmCamera" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
+        content += `<div id="_filmCamera" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
                     <div class="h5 mb-2 border-bottom">CAMERA</div>`;
 
         if (camera != null) {
@@ -215,8 +217,9 @@ window.onload = async function () {
 
         //writer
         var writer = films[currentIndex].writer || null;
+        var likeableClass = writer != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmWriter" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
+        content += `<div id="_filmWriter" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
                     <div class="h5 mb-2 border-bottom">WRITER</div>`;
 
         if (writer != null) {
@@ -237,8 +240,10 @@ window.onload = async function () {
 
         //producer
         var producer = films[currentIndex].producer || null;
+        var likeableClass = producer != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmProducer" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
+
+        content += `<div id="_filmProducer" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
                     <div class="h5 mb-2 border-bottom">PRODUCER</div>`;
 
         if (producer != null) {
@@ -252,8 +257,9 @@ window.onload = async function () {
 
         //editor
         var editor = films[currentIndex].editor || null;
+        var likeableClass = editor != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmEditor" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
+        content += `<div id="_filmEditor" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
                     <div class="h5 mb-2 border-bottom">EDITOR</div>`;
 
         if (editor != null) {
@@ -267,8 +273,9 @@ window.onload = async function () {
 
         //composer
         var composer = films[currentIndex].composer || null;
+        var likeableClass = composer != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmComposer" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
+        content += `<div id="_filmComposer" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
                     <div class="h5 mb-2 border-bottom">SOUNDTRACK</div>`;
 
         if (composer != null) {
@@ -285,7 +292,7 @@ window.onload = async function () {
 
 
         //display all film data
-        filmTitle.innerHTML = content;
+        filmInfo.innerHTML = content;
 
 
         //display film poster
