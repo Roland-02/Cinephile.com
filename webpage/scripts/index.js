@@ -42,6 +42,8 @@ window.onload = async function () {
     //for getting film poster jpegs
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
+    
+
     //initial update
     updateFilm();
 
@@ -61,11 +63,14 @@ window.onload = async function () {
 
         }
 
-        filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
-        filmPoster.setAttribute('data-temp', currentIndex)
-        var content = "";
-        //console.log(filmInfo.getAttribute('data-tconst'))
+        tconst = films[currentIndex].tconst;
+        const event = new CustomEvent('newFilm', { detail: tconst });
+        document.dispatchEvent(event);
 
+        filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
+        var content = "";
+
+    
         //film title and plot
         content += `<div id="_filmTitle" class="likeable"><strong>${films[currentIndex].primaryTitle}</strong></div>`;
 
@@ -374,7 +379,7 @@ window.onload = async function () {
                 handlePrevAction();
                 break;
         }
-   
+
     });
 
 };
