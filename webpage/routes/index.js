@@ -4,7 +4,6 @@ var router = express.Router();
 const axios = require('axios');
 const filmsRouter = require('../routes/films');
 const { getConnection } = require('../database');
-
 router.use('/routes', filmsRouter);
 
 
@@ -36,8 +35,6 @@ router.post('/saveLiked', (req, res) => {
     const likedElements = req.body.liked;
     const tconst = req.body.film_id;
     const userEmail = req.body.user
-
-    //console.log(tconst)
 
     const attributeValues = {
         Title: 0,
@@ -80,12 +77,9 @@ router.post('/saveLiked', (req, res) => {
 
             await connection.query(searchFilmQuery, [tconst, userid], async (err, filmResult) => {
 
-
-                console.log(filmResult)
-
                 if (filmResult.length == 0) {
                     //save film
-                    const insertQuery = `INSERT INTO user_films (user_id, tconst, title, plot, rating, genre, runtime, year, cast, director, camera, writer, producer, editor, composer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                    const insertQuery = `INSERT INTO user_films (user_id, tconst, Title, Plot, Rating, Genre, Runtime, Year, Cast, Director, Camera, Writer, Producer, Editor, Composer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
                     await connection.query(insertQuery, [userid, tconst, ...Object.values(attributeValues)], (err, result) => {
                         if (err) throw (err)
@@ -95,41 +89,33 @@ router.post('/saveLiked', (req, res) => {
                     });
 
                 } else {
-                    //update film
-
+                    // //update film
                     const updateQuery = `UPDATE user_films SET 
-                                title = ?, 
-                                plot = ?, 
-                                rating = ?, 
-                                genre = ?, 
-                                runtime = ?, 
-                                year = ?, 
-                                cast = ?, 
-                                director = ?, 
-                                camera = ?, 
-                                writer = ?, 
-                                producer = ?, 
-                                editor = ?, 
-                                composer = ?
+                                Title = ?, 
+                                Plot = ?, 
+                                Rating = ?, 
+                                Genre = ?, 
+                                Runtime = ?, 
+                                Year = ?, 
+                                Cast = ?, 
+                                Director = ?, 
+                                Camera = ?, 
+                                Writer = ?, 
+                                Producer = ?, 
+                                Editor = ?, 
+                                Composer = ?
                                 WHERE user_id = ? AND tconst = ?`;
 
                     await connection.query(updateQuery, [...Object.values(attributeValues), userid, tconst,], (err, result) => {
                         if (err) throw (err)
 
                         connection.release()
-                        console.log("--------> Updated film");
+                        console.log("--------> Updated likes");
                     });
 
+                };
 
-                }
-
-
-            })
-
-
-
-
-
+            });
 
         });
 
@@ -140,11 +126,58 @@ router.post('/saveLiked', (req, res) => {
 });
 
 
+router.get('/getLiked', function (req, res) {
+    const film_id = req.query.film_id;
+    const email = req.query.user_id;
+
+    // Query database to retrieve liked elements for the specified film
+    getConnection(async (err, connection) => {
+
+        if (err) throw (err)
+
+        const searchUserQuery = `SELECT user_id FROM user_login WHERE email = '${email}'`;
+
+        await connection.query(searchUserQuery, async (err, userResult) => {
+
+            if (err) throw (err)
+
+            const userid = userResult[0].user_id;
+
+            const findFilmQuery = `SELECT Title, Plot, Rating, Genre, Runtime, Year, Cast, Director, Camera, Writer, Producer, Editor, Composer FROM user_films WHERE tconst = ? AND user_id = ?`;
+
+            await connection.query(findFilmQuery, [film_id, userid], function (err, results) {
+                if (err) {
+                    console.error(err);
+                    res.status(500).send("Error retrieving liked data.");
+
+                } else {
+                    const likedElements = [];
+                    results.forEach(result => {
+                        Object.keys(result).forEach(key => {
+                            if (result[key] === 1) {
+                                likedElements.push(key);
+                            }
+                        });
+                    });
+                    res.send(likedElements);
+                }
+
+            });
+
+        });
+
+    });
+
+});
+
+
+
 router.post('/signout', function (req, res) {
     res.clearCookie('sessionEmail')
     req.session.destroy();
+    console.log("--------> User signed out")
     res.redirect('index');
-});
 
+});
 
 module.exports = router;

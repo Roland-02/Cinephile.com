@@ -211,7 +211,7 @@
             <!-- Film info -->
             <div class="col-lg-6 col-md-6 col-sm-12 py-2">
                 <div class="container">
-                    <div id="film-info" class="h3 text-center" data-tconst="">
+                    <div id="film-info" class="h3 text-center">
                         <!--  Film data displayed here from scripts/index.js -->
                     </div>
                     <!-- END film info -->
@@ -272,44 +272,36 @@
     <!-- jqueery for add and like buttons -->
     <script>
 
-        $(document).ready( function () {
+        var tconst;
 
-            // Heart toggle
-            $("#heart-filled").click(function () {
-                $(this).hide();
-                $("#heart-blank").show();
+        $(document).ready(async function () {
+
+            document.addEventListener('newFilm', function (event) {
+                tconst = event.detail;
+
+                // Axios request to fetch liked attributes
+                axios.get(`/getLiked?film_id=${tconst}&user_id=<%= session.email %>`)
+                    .then(function (response) {
+                        // Handle the response here
+                        var liked = response.data
+
+
+                        // Iterate through liked attributes
+                        liked.forEach(function (attribute) {
+                            // Append '_film' to the attribute name
+                            //var divId = '_film' + attribute;
+                            // Find the div element by ID and add 'highlighted' class to its classList
+                            document.getElementById('_film' + attribute).classList.add('liked');
+                         
+
+                        });
+
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                    });
+
             });
-
-            $("#heart-blank").click(function () {
-                $(this).hide();
-                $("#heart-filled").show();
-            });
-
-            // Watchlist toggle
-            $("#watchlist-filled").click(function () {
-                $(this).hide();
-                $("#watchlist-blank").show();
-            });
-
-            $("#watchlist-blank").click(function () {
-                $(this).hide();
-                $("#watchlist-filled").show();
-            });
-
-            // Filter toggle
-            $("#filter-filled").click(function () {
-                $(this).hide();
-                $("#filter-blank").show();
-                $("#filterOptions").hide();
-            });
-
-            $("#filter-blank").click(function () {
-                $(this).hide();
-                $("#filter-filled").show();
-                $("#filterOptions").show();
-                $("#filterOptions").css("z-index", "7");
-            });
-
 
 
             $('#film-info').on('click', '.likeable', function (event) {
@@ -324,12 +316,9 @@
                     likedElements.push(elementId);
                 });
 
-                var tconst = event.delegateTarget.dataset.tconst;  //$("#film-info").data("tconst");
-
                 // Send information about the liked elements to index.js using Axios
                 axios.post('/saveLiked', { liked: likedElements, film_id: tconst, user: `<%= session.email %>` })
                     .then(function (response) {
-                        //console.log(response);
                     })
                     .catch(function (error) {
                         console.error(error);
@@ -337,10 +326,49 @@
 
             });
 
+
+
+            // Heart toggle
+            $("#heart-filled").click(function () {
+                $(this).hide();
+                $("#heart-blank").show();
+            });
+            $("#heart-blank").click(function () {
+                $(this).hide();
+                $("#heart-filled").show();
+            });
+
+            // Watchlist toggle
+            $("#watchlist-filled").click(function () {
+                $(this).hide();
+                $("#watchlist-blank").show();
+            });
+            $("#watchlist-blank").click(function () {
+                $(this).hide();
+                $("#watchlist-filled").show();
+            });
+
+            // Filter toggle
+            $("#filter-filled").click(function () {
+                $(this).hide();
+                $("#filter-blank").show();
+                $("#filterOptions").hide();
+            });
+            $("#filter-blank").click(function () {
+                $(this).hide();
+                $("#filter-filled").show();
+                $("#filterOptions").show();
+                $("#filterOptions").css("z-index", "7");
+            });
+
+
+
+
+
         });
 
 
-      
+
 
     </script>
 
