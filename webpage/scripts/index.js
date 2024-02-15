@@ -42,13 +42,17 @@ window.onload = async function () {
     //for getting film poster jpegs
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
-    
+    var loggedIn = document.getElementById('film-info').getAttribute('data-email')
+    console.log()
+
 
     //initial update
     updateFilm();
 
     //Function to update the displayed film
     async function updateFilm() {
+        
+        var content = "";
 
         //load in next batch of films
         if ((currentIndex % MAX_LOAD) == 0) {
@@ -63,19 +67,18 @@ window.onload = async function () {
 
         }
 
-        tconst = films[currentIndex].tconst;
-        const event = new CustomEvent('newFilm', { detail: tconst });
+        const event = new CustomEvent('newFilm', { detail: films[currentIndex].tconst });
         document.dispatchEvent(event);
 
         filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
-        var content = "";
 
-    
+        var likeable = loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
+            
         //film title and plot
-        content += `<div id="_filmTitle" class="likeable"><strong>${films[currentIndex].primaryTitle}</strong></div>`;
+        content += `<div id="_filmTitle" class="${likeable}"><strong>${films[currentIndex].primaryTitle}</strong></div>`;
 
         if (films[currentIndex].plot) {
-            content += `<div id="_filmPlot" class="small-text py-2 overflow-scroll mb-3 likeable" style="height: 70px; cursor: pointer;"> <p> ${films[currentIndex].plot} </p> </div>`;
+            content += `<div id="_filmPlot" class="small-text py-2 overflow-scroll mb-3 ${likeable}" style="height: 70px; cursor: pointer;"> <p> ${films[currentIndex].plot} </p> </div>`;
 
         } else {
             content += `<div> <p> - </p> </div>`;
@@ -87,7 +90,7 @@ window.onload = async function () {
         content += `<div class="row d-flex">`;
 
         //rating
-        content += `<div id="_filmRating" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
+        content += `<div id="_filmRating" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                         <div class="h5 mb-2 border-bottom">RATING</div>`;
 
         if (films[currentIndex].averageRating) {
@@ -98,7 +101,7 @@ window.onload = async function () {
         content += `</div>`;
 
         //genre
-        content += `<div id="_filmGenre" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
+        content += `<div id="_filmGenre" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                         <div class="h5 mb-2 border-bottom">GENRE</div> 
                         <div class="list-unstyled" style="font-size: 18px;">`;
 
@@ -110,7 +113,7 @@ window.onload = async function () {
         content += `</div></div>`;
 
         //runtime
-        content += `<div id="_filmRuntime" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable"> 
+        content += `<div id="_filmRuntime" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}"> 
                     <div class="h5 mb-2 border-bottom">RUNTIME</div>`;
 
         //display time in hr/min
@@ -139,7 +142,7 @@ window.onload = async function () {
         content += `</div>`;
 
         //release year
-        content += `<div id="_filmYear" class="col-lg col-md col-sm border border-3 mx-3 px-1 likeable">
+        content += `<div id="_filmYear" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                         <div class="h5 mb-2 border-bottom">YEAR</div> 
                         <div class="p text-center"> ${films[currentIndex].startYear} </div>
                     </div>`;
@@ -172,7 +175,7 @@ window.onload = async function () {
 
         if (cast.length > 0) {
             for (const actor of cast) {
-                content += `<div id="_filmCast" class="actor d-flex align-items-center likeable">
+                content += `<div id="_filmCast" class="actor d-flex align-items-center ${likeable}">
                             <span class="px-1">|</span>
                             <span class="medium-text"> ${actor} </span>
                             <span class="px-1">|</span>
@@ -192,9 +195,9 @@ window.onload = async function () {
 
         //director
         var director = films[currentIndex].director || null;
-        var likeableClass = director != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = director != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
+        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">DIRECTOR</div>`;
 
         if (director != null) {
@@ -208,9 +211,9 @@ window.onload = async function () {
 
         //cinematographer
         var camera = films[currentIndex].cinematographer || null;
-        var likeableClass = camera != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = camera != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmCamera" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
+        content += `<div id="_filmCamera" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">CAMERA</div>`;
 
         if (camera != null) {
@@ -224,9 +227,9 @@ window.onload = async function () {
 
         //writer
         var writer = films[currentIndex].writer || null;
-        var likeableClass = writer != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = writer != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmWriter" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
+        content += `<div id="_filmWriter" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">WRITER</div>`;
 
         if (writer != null) {
@@ -247,10 +250,10 @@ window.onload = async function () {
 
         //producer
         var producer = films[currentIndex].producer || null;
-        var likeableClass = producer != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = producer != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
 
 
-        content += `<div id="_filmProducer" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
+        content += `<div id="_filmProducer" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">PRODUCER</div>`;
 
         if (producer != null) {
@@ -264,9 +267,9 @@ window.onload = async function () {
 
         //editor
         var editor = films[currentIndex].editor || null;
-        var likeableClass = editor != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = editor != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmEditor" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
+        content += `<div id="_filmEditor" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">EDITOR</div>`;
 
         if (editor != null) {
@@ -280,9 +283,9 @@ window.onload = async function () {
 
         //composer
         var composer = films[currentIndex].composer || null;
-        var likeableClass = composer != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = composer != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
 
-        content += `<div id="_filmComposer" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeableClass}">
+        content += `<div id="_filmComposer" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">SOUNDTRACK</div>`;
 
         if (composer != null) {
