@@ -8,7 +8,7 @@ var bcrypt = require('bcrypt');
 
 //get request - open createAccount.ejs page
 router.get(['/','/createAccount'], function (req, res, next) {
-    res.render('createAccount', { title: 'Express', session: req.session, message: null, email: null });
+    res.render('createAccount', { title: 'Express', session: req.session, message: null, email: null, id: null });
 });
 
 //post request - user wants to create again
@@ -37,9 +37,6 @@ router.post('/', async (req, res) => {
 
             if (err) throw (err)
 
-            console.log("------> Search Results")
-            console.log(result.length)
-
             if (result.length != 0) {
                 //user already exists: error
                 connection.release();
@@ -50,10 +47,14 @@ router.post('/', async (req, res) => {
             else {
                 //create new user
                 await connection.query(insert_query, (err, result) => {
-                    connection.release()
+                
                     if (err) throw (err)
-                    console.log("--------> Created new User");
+
+                    connection.release()
+                    let user_id = result[0].user_id
+                    res.cookie('sessionID', user_id);
                     res.cookie('sessionEmail', email); // Store email in a cookie
+                    console.log("--------> Created new User");
                     return res.redirect('index');
                 });                
             }
