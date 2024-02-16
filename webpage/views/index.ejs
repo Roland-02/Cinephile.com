@@ -214,7 +214,7 @@
                     <% if (session && session.email) { %>
                         <div id="film-info" class="h3 text-center" data-email="<%= session.email %>">
                             <% } else { %>
-                                <div id="film-info" class="h3 text-center" >
+                                <div id="film-info" class="h3 text-center">
                                     <% } %>
                                         <!--  Film data displayed here from scripts/index.js -->
                                 </div>
@@ -283,24 +283,39 @@
 
         $(document).ready(async function () {
 
+            try {
+                var myFilmsResponse = await axios.get(`/getMyFilms?user_id=<%= session.id %>`);
+                var mytconsts = myFilmsResponse.data;
+            } catch (error) {
+                console.error('Error fetching myFilms:', error);
+            }
+
             document.addEventListener('newFilm', function (event) {
                 tconst = event.detail;
 
+                //console.log(tconst)
+                console.log(mytconsts)
+
                 //axios request to fetch liked attributes
-                if (`<%= session.email %>`) {
-                    axios.get(`/getLiked?film_id=${tconst}&user_id=<%= session.email %>`)
-                        .then(function (response) {
-                            var liked = response.data
+                if (`<%= session.id %>`) {
 
-                            // Iterate through liked attributes
-                            liked.forEach(function (attribute) {
-                                document.getElementById('_film' + attribute).classList.add('liked');
+                    if (mytconsts.some(film => film.tconst === tconst)) {
+
+                        axios.get(`/getLikedElements?film_id=${tconst}&user_id=<%= session.id %>`)
+                            .then(function (response) {
+                                var liked = response.data
+
+                                // Iterate through liked attributes
+                                liked.forEach(function (attribute) {
+                                    document.getElementById('_film' + attribute).classList.add('liked');
+                                });
+
+                            })
+                            .catch(function (error) {
+                                console.error(error);
                             });
+                    }
 
-                        })
-                        .catch(function (error) {
-                            console.error(error);
-                        });
                 };
 
             });
@@ -319,7 +334,7 @@
                 });
 
                 // Send information about the liked elements to index.js using Axios
-                axios.post('/saveLiked', { liked: likedElements, film_id: tconst, user: `<%= session.email %>` })
+                axios.post('/saveLikedElements', { liked: likedElements, film_id: tconst, user_id: `<%= session.id %>` })
                     .then(function (response) {
                     })
                     .catch(function (error) {
@@ -327,7 +342,6 @@
                     });
 
             });
-
 
 
             // Heart toggle
@@ -362,6 +376,7 @@
                 $("#filterOptions").show();
                 $("#filterOptions").css("z-index", "7");
             });
+
 
         });
 

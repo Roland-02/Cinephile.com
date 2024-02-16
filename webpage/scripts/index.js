@@ -43,7 +43,6 @@ window.onload = async function () {
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
     var loggedIn = document.getElementById('film-info').getAttribute('data-email')
-    console.log()
 
 
     //initial update
@@ -51,6 +50,9 @@ window.onload = async function () {
 
     //Function to update the displayed film
     async function updateFilm() {
+
+        //disable prev button if counter is 0
+        prevButton.disabled = counter === 0;
         
         var content = "";
 
@@ -67,11 +69,12 @@ window.onload = async function () {
 
         }
 
+        //send current tconst to .ejs page
+        filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
         const event = new CustomEvent('newFilm', { detail: films[currentIndex].tconst });
         document.dispatchEvent(event);
 
-        filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
-
+        //only allow page interaction if user is signed in
         var likeable = loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
             
         //film title and plot
@@ -313,7 +316,6 @@ window.onload = async function () {
             filmPoster.innerHTML = `<img src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
         }
 
-
         //prevent spam clicking
         isClickLocked = false;
 
@@ -338,7 +340,7 @@ window.onload = async function () {
 
     //handle previous film action
     const handlePrevAction = async () => {
-        if (!isClickLocked) {
+        if (!isClickLocked && !prevButton.disabled) {
             isClickLocked = true;
 
             if (currentIndex == 0 && counter != 0) {

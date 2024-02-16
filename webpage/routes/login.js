@@ -5,12 +5,11 @@ var router = express.Router();
 const mysql = require('mysql');
 var { getConnection } = require('../database');
 var bcrypt = require('bcrypt');
-const session = require('express-session');
 
 
 //get request - open login.ejs page
 router.get(['/','/login', '/signin'], function (req, res) {
-    res.render('login', { title: 'Express', session: req.session, message: null, email: null });
+    res.render('login', { title: 'Express', session: req.session, message: null, email: null, id: null});
 });
 
 //post request - user wants to login
@@ -21,7 +20,7 @@ router.post('/', async (req, res) => {
 
     if (!email || !password) {
         //empty fields
-        return res.render('login', { title: 'Express', session: req.session, message: null, email: null });
+        return res.render('login', { title: 'Express', session: req.session, message: null, email: null, id: null});
     }
 
     getConnection(async (err, connection) => {
@@ -34,15 +33,11 @@ router.post('/', async (req, res) => {
 
             if (err) throw (err);
 
-            console.log("------> Search Results");
-            console.log(result.length);
-
             if (result.length == 0) {
                 connection.release();
-                console.log("------> User not found");
+                console.log('--------> User not found');
                 return res.render('login', { title: 'Express', session: req.session, message: 'User not found' });
 
-            
             } else {
                 let dbPassword = result[0].password;
                 bcrypt.compare(password, dbPassword, (err, isMatch) => {
@@ -50,15 +45,16 @@ router.post('/', async (req, res) => {
 
                     if (isMatch) {
                         //successful login
+                        let user_id = result[0].user_id
                         connection.release()
-                        console.log('user logged in')
+                        console.log('--------> User login')
                         res.cookie('sessionEmail', email); // Store email in a cookie
+                        res.cookie('sessionID', user_id);
                         return res.redirect('index');
                     }
                     else {
                         //credentials incorrect
                         connection.release()
-                        console.log("--------> Credentials incorrect")
                         return res.render('login', { title: 'Express', session: req.session, message: 'Credentials incorrect' });
 
                     }
