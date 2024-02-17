@@ -43,14 +43,13 @@ window.onload = async function () {
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
     var loggedIn = document.getElementById('film-info').getAttribute('data-email')
-
-
+  
     //initial update
     updateFilm();
 
     //Function to update the displayed film
     async function updateFilm() {
-
+        
         //disable prev button if counter is 0
         prevButton.disabled = counter === 0;
         

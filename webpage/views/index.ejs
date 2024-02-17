@@ -276,25 +276,23 @@
 
 <footer>
 
-    <!-- jqueery for add and like buttons -->
+    <!-- jquery for add and like buttons -->
     <script>
 
         var tconst;
 
         $(document).ready(async function () {
 
-            try {
-                var myFilmsResponse = await axios.get(`/getMyFilms?user_id=<%= session.id %>`);
-                var mytconsts = myFilmsResponse.data;
-            } catch (error) {
-                console.error('Error fetching myFilms:', error);
-            }
+            $(document).on("newFilm", async function (event) {
 
-            document.addEventListener('newFilm', function (event) {
+                try {
+                    var myFilmsResponse = await axios.get(`/getMyFilms?user_id=<%= session.id %>`);
+                    var mytconsts = myFilmsResponse.data;
+                } catch (error) {
+                    console.error('Error fetching myFilms:', error);
+                }
+
                 tconst = event.detail;
-
-                //console.log(tconst)
-                console.log(mytconsts)
 
                 //axios request to fetch liked attributes
                 if (`<%= session.id %>`) {

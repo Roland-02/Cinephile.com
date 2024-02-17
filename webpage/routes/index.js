@@ -44,12 +44,11 @@ router.get('/getMyFilms', (req, res) => {
         await connection.query(filmsQuery, [userid], async function (err, results) {
             if (err) throw (err)
             myFilms = results;
+            res.send(myFilms);
         });
+
         connection.release();
-
     });
-
-    res.send(myFilms)
 
 });
 
@@ -101,9 +100,8 @@ router.post('/saveLikedElements', (req, res) => {
                 await connection.query(insertQuery, [userid, tconst, ...Object.values(attributeValues)], (err, result) => {
                     if (err) throw (err)
 
-                    connection.release()
                     myFilms.push(tconst)
-                    console.log("--------> Saved likes");
+                    //console.log("--------> Saved likes");
                 });
 
             } else {
@@ -124,18 +122,37 @@ router.post('/saveLikedElements', (req, res) => {
                                 Composer = ?
                                 WHERE user_id = ? AND tconst = ?`;
 
-                await connection.query(updateQuery, [...Object.values(attributeValues), userid, tconst,], (err, result) => {
-                    if (err) throw (err)
+                //if every element has been unliked remove from db adn myFilms
+                if (Object.values(attributeValues).every(value => value === 0)) {
 
-                    connection.release()
-                    console.log("--------> Updated likes");
-                });
+                    const deleteQuery = `DELETE FROM user_films WHERE user_id = ? AND tconst = ?`;
+                    await connection.query(deleteQuery, [userid, tconst], (err, result) => {
+                        if (err) throw (err)
 
+                        const indexToRemove = myFilms.findIndex(film => film.tconst === tconst);
+                        if (indexToRemove !== -1) {
+                            myFilms.splice(indexToRemove, 1);
+                        }
+
+                        //console.log("--------> myFilm deleted");
+                    });
+
+                } else {
+                    await connection.query(updateQuery, [...Object.values(attributeValues), userid, tconst,], (err, result) => {
+                        if (err) throw (err)
+
+                        //console.log("--------> Updated likes");
+                    });
+                }
             };
 
         });
 
+        connection.release()
+
     });
+
+    //console.log(myFilms)
 
     res.send('Data saved successfully'); //send response
 
@@ -169,7 +186,7 @@ router.get('/getLikedElements', function (req, res) {
                         }
                     });
                 });
-                console.log('--------> Loaded likes')
+                //console.log('--------> Loaded likes');
                 res.send(likedElements);
             }
 
@@ -184,6 +201,7 @@ router.get('/getLikedElements', function (req, res) {
 router.post('/signout', function (req, res) {
     res.clearCookie('sessionEmail');
     res.clearCookie('sessionID');
+    myFilms = [];
     req.session.destroy();
     console.log("--------> User signed out");
     res.redirect('index');
