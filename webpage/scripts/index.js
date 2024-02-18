@@ -24,6 +24,14 @@ async function getFilms(counter) {
 //number of films loaded into frontend at a time - .env
 const MAX_LOAD = 100;
 
+
+// window.onbeforeunload = function() {
+   
+//     localStorage.setItem('counter', counter);
+//     localStorage.setItem('currentIndex', currentIndex);
+// };
+
+
 window.onload = async function () {
 
     //initialise html elements
@@ -39,6 +47,17 @@ window.onload = async function () {
     //stop processes overlapping
     var isClickLocked = false;
 
+
+    //initialize counter and currentIndex with saved values
+    var savedCounter = localStorage.getItem('counter');
+    var savedIndex = localStorage.getItem('currentIndex');
+    if (savedCounter && savedIndex) {
+        counter = parseInt(savedCounter);
+        currentIndex = parseInt(savedIndex);
+    }
+
+    var films  = await getFilms(counter); //read in new load batch
+
     //for getting film poster jpegs
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
@@ -49,7 +68,10 @@ window.onload = async function () {
 
     //Function to update the displayed film
     async function updateFilm() {
-        
+
+        localStorage.setItem('counter', counter);
+        localStorage.setItem('currentIndex', currentIndex);
+
         //disable prev button if counter is 0
         prevButton.disabled = counter === 0;
         
@@ -57,6 +79,7 @@ window.onload = async function () {
 
         //load in next batch of films
         if ((currentIndex % MAX_LOAD) == 0) {
+            console.log('called')
             films = await getFilms(counter); //read in new load batch
 
             if (counter % MAX_LOAD == 0) {
@@ -68,9 +91,9 @@ window.onload = async function () {
 
         }
 
-        //send current tconst to .ejs page
+        //trigger event in index.ejs jquery
         filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
-        const event = new CustomEvent('newFilm', { detail: films[currentIndex].tconst });
+        const event = new CustomEvent('updateFilm', { detail: films[currentIndex].tconst });
         document.dispatchEvent(event);
 
         //only allow page interaction if user is signed in
