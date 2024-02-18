@@ -268,7 +268,9 @@
 
             </div>
         </div>
-        <!-- END page content -->
+        
+    </div>
+    <!-- END page content -->
 
 
 </body>
@@ -283,8 +285,11 @@
 
         $(document).ready(async function () {
 
-            $(document).on("newFilm", async function (event) {
+            //load liked attributes for myFilms on updateFilm()
+            $(document).on("updateFilm", async function (event) {
 
+
+                //get myFilms from server
                 try {
                     var myFilmsResponse = await axios.get(`/getMyFilms?user_id=<%= session.id %>`);
                     var mytconsts = myFilmsResponse.data;
@@ -317,7 +322,6 @@
                 };
 
             });
-
 
             $('#film-info').on('click', '.likeable', function (event) {
 
@@ -375,11 +379,7 @@
                 $("#filterOptions").css("z-index", "7");
             });
 
-
         });
-
-
-
 
     </script>
 
