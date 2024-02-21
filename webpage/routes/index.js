@@ -29,7 +29,7 @@ router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
 
 });
 
-
+//return liked films
 router.get('/getMyFilms', (req, res) => {
 
     const userid = req.query.user_id;
@@ -53,7 +53,7 @@ router.get('/getMyFilms', (req, res) => {
 });
 
 
-//route to handle saving liked elements
+//handle saving liked elements
 router.post('/saveLikedElements', (req, res) => {
 
     const likedElements = req.body.liked;
@@ -194,6 +194,81 @@ router.get('/getLikedElements', function (req, res) {
 
         connection.release();
     });
+
+});
+
+
+router.post('/addWatchList', function (req, res) {
+
+    const filmID = req.body.film_id;
+    const userID = req.body.user_id;
+
+    getConnection(async (err, connection) => {
+
+        if (err) throw (err)
+
+        const saveQuery = `INSERT INTO user_watchlist (user_id, tconst) VALUES (?,?)`
+
+        await connection.query(saveQuery, [userID, filmID], async (err, result) => {
+
+            if (err) throw (err)
+
+            res.send('Saved succesfully')
+
+        });
+
+        connection.release()
+    });
+
+
+});
+
+
+router.get('/getWatchlist', function (req, res) {
+
+    const userID = req.query.user_id;
+
+    getConnection(async (err, connection) => {
+
+        if (err) throw (err)
+
+        const getQuery = `SELECT tconst FROM user_watchlist WHERE user_id = ?`
+
+        await connection.query(getQuery, [userID], async (err, result) => {
+
+            if (err) throw (err)
+
+            res.send(result);
+
+        });
+
+        connection.release()
+    });
+
+});
+
+
+router.post('/deleteWatchList', function (req, res) {
+
+    const userID = req.body.user_id;
+    const filmID = req.body.film_id;
+
+    getConnection(async (err, connection) => {
+
+        if (err) throw (err)
+
+        const deleteQuery = `DELETE FROM user_watchlist WHERE user_id = ? AND tconst = ?`
+
+        await connection.query(deleteQuery, [userID, filmID], async (err, result) => {
+
+            if (err) throw (err)
+
+        });
+
+        connection.release()
+    });
+
+    res.send('Removed succesfully')
 
 });
 

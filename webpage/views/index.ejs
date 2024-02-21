@@ -221,7 +221,7 @@
                                 <!-- END film info -->
 
 
-                                <!-- add and like buttons -->
+                                <!-- watchlist and like buttons -->
                                 <div class="row d-flex py-2">
 
                                     <div class="col-lg-6 col-md-6 col-sm-6 text-end">
@@ -250,7 +250,8 @@
                                         </svg>
                                         <!--watchlist blank-->
                                         <svg id="watchlist-blank" xmlns="http://www.w3.org/2000/svg" width="48"
-                                            height="48" class="bi bi-plus-square" type="button" viewBox="0 0 16 16">
+                                            height="48" class="bi bi-plus-square" type="button" viewBox="0 0 16 16"
+                                            style="display:none;">
                                             <path
                                                 d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
                                             <path
@@ -268,7 +269,7 @@
 
             </div>
         </div>
-        
+
     </div>
     <!-- END page content -->
 
@@ -282,33 +283,43 @@
     <script>
 
         var tconst;
+        var watchList = [];
 
         $(document).ready(async function () {
 
-            //load liked attributes for myFilms on updateFilm()
-            $(document).on("updateFilm", async function (event) {
+            if (`<%= session.id %>`) {
+
+                //get watchlist
+                axios.get(`/getWatchlist?film_id=${tconst}&user_id=<%= session.id %>`)
+                    .then(function (response) {
+                        watchList = response.data
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                    });
 
 
-                //get myFilms from server
-                try {
-                    var myFilmsResponse = await axios.get(`/getMyFilms?user_id=<%= session.id %>`);
-                    var mytconsts = myFilmsResponse.data;
-                } catch (error) {
-                    console.error('Error fetching myFilms:', error);
-                }
+                //load liked attributes for myFilms on updateFilm()
+                $(document).on("updateFilm", async function (event) {
 
-                tconst = event.detail;
+                    tconst = event.detail;
 
-                //axios request to fetch liked attributes
-                if (`<%= session.id %>`) {
+                    //get myFilms from server
+                    try {
+                        var myFilmsResponse = await axios.get(`/getMyFilms?user_id=<%= session.id %>`);
+                        var mytconsts = myFilmsResponse.data;
+                    } catch (error) {
+                        console.error('Error fetching myFilms:', error);
+                    }
 
+                    //fetch liked attributes
                     if (mytconsts.some(film => film.tconst === tconst)) {
 
                         axios.get(`/getLikedElements?film_id=${tconst}&user_id=<%= session.id %>`)
                             .then(function (response) {
                                 var liked = response.data
 
-                                // Iterate through liked attributes
+                                //iterate through liked attributes
                                 liked.forEach(function (attribute) {
                                     document.getElementById('_film' + attribute).classList.add('liked');
                                 });
@@ -319,67 +330,118 @@
                             });
                     }
 
-                };
+                    if (watchList.some(obj => obj.tconst === tconst)) {
+                        //watched = true;
+                        $('#watchlist-filled').show();
+                        $('#watchlist-blank').hide();
+                    } else {
+                        //watched = false;
+                        $('#watchlist-blank').show();
+                        $('#watchlist-filled').hide();
+                    }
 
-            });
-
-            $('#film-info').on('click', '.likeable', function (event) {
-
-                // Toggle the "liked" state of the clicked element
-                $(this).toggleClass("liked");
-
-                // Collect information about the liked elements
-                var likedElements = [];
-                $(".likeable.liked").each(function () {
-                    var elementId = $(this).attr("id");
-                    likedElements.push(elementId);
-                });
-
-                // Send information about the liked elements to index.js using Axios
-                axios.post('/saveLikedElements', { liked: likedElements, film_id: tconst, user_id: `<%= session.id %>` })
-                    .then(function (response) {
-                    })
-                    .catch(function (error) {
-                        console.error(error);
-                    });
-
-            });
-
-
-            // Heart toggle
-            $("#heart-filled").click(function () {
-                $(this).hide();
-                $("#heart-blank").show();
-            });
-            $("#heart-blank").click(function () {
-                $(this).hide();
-                $("#heart-filled").show();
-            });
-
-            // Watchlist toggle
-            $("#watchlist-filled").click(function () {
-                $(this).hide();
-                $("#watchlist-blank").show();
-            });
-            $("#watchlist-blank").click(function () {
-                $(this).hide();
-                $("#watchlist-filled").show();
-            });
-
-            // Filter toggle
-            $("#filter-filled").click(function () {
-                $(this).hide();
-                $("#filter-blank").show();
-                $("#filterOptions").hide();
-            });
-            $("#filter-blank").click(function () {
-                $(this).hide();
-                $("#filter-filled").show();
-                $("#filterOptions").show();
-                $("#filterOptions").css("z-index", "7");
-            });
+                })
+            }
 
         });
+
+
+        // Watchlist toggle
+        $("#watchlist-filled").click(async function () {
+
+            await axios.post(`/deleteWatchlist`, { film_id: tconst, user_id: `<%= session.id %>` })
+                .then(function (response) {
+
+                    //remove from watchlist by index
+                    const index = watchList.indexOf(tconst);
+                    if (index > -1) {
+                        watchList.splice(index, 1);
+                    }
+
+                    console.log(response)
+                })
+                .catch(function (error) {
+                    console.error(error);
+                });
+
+            $(this).hide();
+            $("#watchlist-blank").show();
+
+        });
+
+        //add to watchlist
+        $("#watchlist-blank").click(async function () {
+
+            await axios.post(`/addWatchlist`, { film_id: tconst, user_id: `<%= session.id %>` })
+                .then(function (response) {
+
+                    //watched = true;
+                    watchList.push(tconst)
+                    console.log(response)
+
+                })
+                .catch(function (error) {
+                    console.error(error);
+                })
+
+            $(this).hide();
+            $("#watchlist-filled").show();
+
+        });
+
+
+
+
+        //save liked element
+        $('#film-info').on('click', '.likeable', function (event) {
+
+            // Toggle the "liked" state of the clicked element
+            $(this).toggleClass("liked");
+
+            // Collect information about the liked elements
+            var likedElements = [];
+            $(".likeable.liked").each(function () {
+                var elementId = $(this).attr("id");
+                likedElements.push(elementId);
+            });
+
+            // Send information about the liked elements to index.js using Axios
+            axios.post('/saveLikedElements', { liked: likedElements, film_id: tconst, user_id: `<%= session.id %>` })
+                .then(function (response) {
+                })
+                .catch(function (error) {
+                    console.error(error);
+                });
+
+        });
+
+
+        // Heart toggle
+        $("#heart-filled").click(function () {
+            $(this).hide();
+            $("#heart-blank").show();
+        });
+        $("#heart-blank").click(function () {
+            $(this).hide();
+            $("#heart-filled").show();
+        });
+
+
+
+        // Filter toggle
+        $("#filter-filled").click(function () {
+            $(this).hide();
+            $("#filter-blank").show();
+            $("#filterOptions").hide();
+        });
+        $("#filter-blank").click(function () {
+            $(this).hide();
+            $("#filter-filled").show();
+            $("#filterOptions").show();
+            $("#filterOptions").css("z-index", "7");
+        });
+
+
 
     </script>
 

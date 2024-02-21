@@ -24,14 +24,6 @@ async function getFilms(counter) {
 //number of films loaded into frontend at a time - .env
 const MAX_LOAD = 100;
 
-
-// window.onbeforeunload = function() {
-   
-//     localStorage.setItem('counter', counter);
-//     localStorage.setItem('currentIndex', currentIndex);
-// };
-
-
 window.onload = async function () {
 
     //initialise html elements
@@ -69,6 +61,7 @@ window.onload = async function () {
     //Function to update the displayed film
     async function updateFilm() {
 
+        //save current position to cache
         localStorage.setItem('counter', counter);
         localStorage.setItem('currentIndex', currentIndex);
 
@@ -79,7 +72,6 @@ window.onload = async function () {
 
         //load in next batch of films
         if ((currentIndex % MAX_LOAD) == 0) {
-            console.log('called')
             films = await getFilms(counter); //read in new load batch
 
             if (counter % MAX_LOAD == 0) {
