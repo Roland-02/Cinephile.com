@@ -284,36 +284,64 @@
 
         var tconst;
         var watchList = [];
+        var myloved = [];
+        var myLiked = [];
+
+
+        // async function getWatchlist() {
+        //     //get watchlist
+        //     await axios.get(`/getWatchlist?user_id=<%= session.id %>`)
+        //         .then(function (response) {
+        //             //console.log(response.data)
+        //             return response.data;
+        //         })
+        //         .catch(function (error) {
+        //             console.error(error);
+        //             return;
+        //         });
+        // }
+
+
 
         $(document).ready(async function () {
 
             if (`<%= session.id %>`) {
 
-                //get watchlist
-                axios.get(`/getWatchlist?film_id=${tconst}&user_id=<%= session.id %>`)
-                    .then(function (response) {
-                        watchList = response.data
-                    })
-                    .catch(function (error) {
-                        console.error(error);
-                    });
-
-
                 //load liked attributes for myFilms on updateFilm()
                 $(document).on("updateFilm", async function (event) {
 
+                    //current film_id
                     tconst = event.detail;
 
-                    //get myFilms from server
-                    try {
-                        var myFilmsResponse = await axios.get(`/getMyFilms?user_id=<%= session.id %>`);
-                        var mytconsts = myFilmsResponse.data;
-                    } catch (error) {
-                        console.error('Error fetching myFilms:', error);
-                    }
+                    //get watchlist
+                    await axios.get(`/getWatchlist?user_id=<%= session.id %>`)
+                        .then(function (response) {
+                            watchList = response.data
+                        })
+                        .catch(function (error) {
+                            console.error(error);
+                        });
+
+                    //get liked attributes
+                    await axios.get(`/getLikedFilms?user_id=<%= session.id %>`)
+                        .then(function (response) {
+                            myliked = response.data;
+                        })
+                        .catch(function (error) {
+                            console.error(error);
+                        });
+
+                    //get loved films
+                    await axios.get(`/getLovedFilms?user_id=<%= session.id %>`)
+                        .then(function (response) {
+                            myloved = response.data;
+                        })
+                        .catch(function (error) {
+                            console.error(error);
+                        });
 
                     //fetch liked attributes
-                    if (mytconsts.some(film => film.tconst === tconst)) {
+                    if (myliked.some(film => film.tconst === tconst)) {
 
                         axios.get(`/getLikedElements?film_id=${tconst}&user_id=<%= session.id %>`)
                             .then(function (response) {
@@ -328,25 +356,93 @@
                             .catch(function (error) {
                                 console.error(error);
                             });
+
                     }
 
+                    //is current film in watchlist?
                     if (watchList.some(obj => obj.tconst === tconst)) {
-                        //watched = true;
                         $('#watchlist-filled').show();
                         $('#watchlist-blank').hide();
                     } else {
-                        //watched = false;
                         $('#watchlist-blank').show();
                         $('#watchlist-filled').hide();
                     }
 
-                })
-            }
+                    //is current film loved?
+                    if (myloved.some(film => film.tconst === tconst)) {
+                        likeAllElements()
+                        $('#heart-filled').show();
+                        $('#heart-blank').hide();
+                    } else {
+                        $('#heart-blank').show();
+                        $('#heart-filled').hide();
+                    }
+
+
+                });
+            };
 
         });
 
 
-        // Watchlist toggle
+
+        //click on likeable element - save
+        $('#film-info').on('click', '.likeable', function (event) {
+
+            //toggle 'liked' state of clicked element
+            $(this).toggleClass("liked");
+
+            var totalLikeables = $('.likeable').length;
+            var likedCount = $('.likeable.liked').length;
+
+
+            //if all elements are liked love the film, if not save elements
+            if (likedCount == totalLikeables) {
+                Router_loveFilm();
+                $("#heart-blank").hide();
+                $("#heart-filled").show();
+            }
+            //not hitting?
+            else if (myloved.some(film => film.tconst === tconst)) {
+                console.log('film removed?')
+                Router_unloveFilm();
+                $("#heart-filled").hide();
+                $("#heart-blank").show();
+                saveElements();
+            }
+            else{
+                saveElements();
+            }
+
+        });
+
+        //unlove film
+        $("#heart-filled").click(async function () {
+
+            $('.likeable.liked').each(function () {
+                $(this).removeClass('liked');
+            });
+            Router_unloveFilm()
+
+            //toggle between buttons
+            $(this).hide();
+            $("#heart-blank").show();
+        });
+
+        //love film
+        $("#heart-blank").click(async function () {
+
+            likeAllElements()
+
+            Router_loveFilm()
+
+            //toggle between buttons
+            $(this).hide();
+            $("#heart-filled").show();
+
+        });
+
+        //remove from watchlist
         $("#watchlist-filled").click(async function () {
 
             await axios.post(`/deleteWatchlist`, { film_id: tconst, user_id: `<%= session.id %>` })
@@ -358,7 +454,6 @@
                         watchList.splice(index, 1);
                     }
 
-                    console.log(response)
                 })
                 .catch(function (error) {
                     console.error(error);
@@ -374,11 +469,7 @@
 
             await axios.post(`/addWatchlist`, { film_id: tconst, user_id: `<%= session.id %>` })
                 .then(function (response) {
-
-                    //watched = true;
                     watchList.push(tconst)
-                    console.log(response)
-
                 })
                 .catch(function (error) {
                     console.error(error);
@@ -389,14 +480,44 @@
 
         });
 
+        //toggle filter box
+        $("#filter-filled").click(function () {
+            $(this).hide();
+            $("#filter-blank").show();
+            $("#filterOptions").hide();
+        });
+        $("#filter-blank").click(function () {
+            $(this).hide();
+            $("#filter-filled").show();
+            $("#filterOptions").show();
+            $("#filterOptions").css("z-index", "7");
+        });
 
+        //remove loved film from db - POST
+        async function Router_unloveFilm() {
+            await axios.post(`/unloveFilm`, { film_id: tconst, user_id: `<%= session.id %>` })
+                .then(function (response) {
+                    console.log('removed film')
+                })
+                .catch(function (error) {
+                    console.error(error);
+                });
+        }
 
+        //add loved film to db - POST
+        async function Router_loveFilm() {
+            await axios.post(`/loveFilm`, { film_id: tconst, user_id: `<%= session.id %>` })
+                .then(function (response) {
+                    console.log('film saved')
+                })
+                .catch(function (error) {
+                    console.error(error);
+                })
+        }
 
-        //save liked element
-        $('#film-info').on('click', '.likeable', function (event) {
-
+        //save liked elements to db - POST
+        function saveElements() {
             // Toggle the "liked" state of the clicked element
-            $(this).toggleClass("liked");
 
             // Collect information about the liked elements
             var likedElements = [];
@@ -413,34 +534,28 @@
                     console.error(error);
                 });
 
-        });
+        }
 
+        //like all likeable elements
+        function likeAllElements() {
+            $('.likeable').each(function () {
+                $(this).addClass('liked');
+            });
 
-        // Heart toggle
-        $("#heart-filled").click(function () {
-            $(this).hide();
-            $("#heart-blank").show();
-        });
-        $("#heart-blank").click(function () {
-            $(this).hide();
-            $("#heart-filled").show();
-        });
+        }
 
-
-
-        // Filter toggle
-        $("#filter-filled").click(function () {
-            $(this).hide();
-            $("#filter-blank").show();
-            $("#filterOptions").hide();
-        });
-        $("#filter-blank").click(function () {
-            $(this).hide();
-            $("#filter-filled").show();
-            $("#filterOptions").show();
-            $("#filterOptions").css("z-index", "7");
-        });
-
+        // async function getWatchlist(){
+        //     //get watchlist
+        //     await axios.get(`/getWatchlist?user_id=<%= session.id %>`)
+        //             .then(function (response) {
+        //                 console.log(response.data)
+        //                 return response.data;
+        //             })
+        //             .catch(function (error) {
+        //                 console.error(error);
+        //                 return;
+        //             });
+        // }
 
 
     </script>
