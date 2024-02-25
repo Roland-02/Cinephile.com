@@ -286,22 +286,7 @@
         var watchList = [];
         var myloved = [];
         var myLiked = [];
-
-
-        // async function getWatchlist() {
-        //     //get watchlist
-        //     await axios.get(`/getWatchlist?user_id=<%= session.id %>`)
-        //         .then(function (response) {
-        //             //console.log(response.data)
-        //             return response.data;
-        //         })
-        //         .catch(function (error) {
-        //             console.error(error);
-        //             return;
-        //         });
-        // }
-
-
+        var myCast = [];
 
         $(document).ready(async function () {
 
@@ -343,14 +328,19 @@
                     //fetch liked attributes
                     if (myliked.some(film => film.tconst === tconst)) {
 
-                        axios.get(`/getLikedElements?film_id=${tconst}&user_id=<%= session.id %>`)
+                        axios.get(`/getLikedElements?user_id=<%= session.id %>&film_id=${tconst}`)
                             .then(function (response) {
-                                var liked = response.data
+                                //console.log(response)
 
-                                //iterate through liked attributes
-                                liked.forEach(function (attribute) {
+                                var likedElements = response.data.likedElements;
+                                likedElements.forEach(function (attribute) {
                                     document.getElementById('_film' + attribute).classList.add('liked');
                                 });
+
+                                var likedCast = response.data.likedCast;
+                                likedCast.forEach(function(name) {
+                                    document.getElementById(name).classList.add('liked')
+                                })
 
                             })
                             .catch(function (error) {
@@ -395,16 +385,14 @@
             var totalLikeables = $('.likeable').length;
             var likedCount = $('.likeable.liked').length;
 
-
             //if all elements are liked love the film, if not save elements
             if (likedCount == totalLikeables) {
                 Router_loveFilm();
                 $("#heart-blank").hide();
                 $("#heart-filled").show();
             }
-            //not hitting?
             else if (myloved.some(film => film.tconst === tconst)) {
-                console.log('film removed?')
+                //console.log('film removed?')
                 Router_unloveFilm();
                 $("#heart-filled").hide();
                 $("#heart-blank").show();
@@ -497,7 +485,7 @@
         async function Router_unloveFilm() {
             await axios.post(`/unloveFilm`, { film_id: tconst, user_id: `<%= session.id %>` })
                 .then(function (response) {
-                    console.log('removed film')
+                   // console.log('removed film')
                 })
                 .catch(function (error) {
                     console.error(error);
@@ -508,7 +496,7 @@
         async function Router_loveFilm() {
             await axios.post(`/loveFilm`, { film_id: tconst, user_id: `<%= session.id %>` })
                 .then(function (response) {
-                    console.log('film saved')
+                   // console.log('film saved')
                 })
                 .catch(function (error) {
                     console.error(error);
@@ -521,14 +509,20 @@
 
             // Collect information about the liked elements
             var likedElements = [];
+            var likedCast = [];
             $(".likeable.liked").each(function () {
                 var elementId = $(this).attr("id");
-                likedElements.push(elementId);
+                if($(this).hasClass('cast')){
+                    likedCast.push(elementId)
+                }else{
+                    likedElements.push(elementId)
+                }
             });
 
             // Send information about the liked elements to index.js using Axios
-            axios.post('/saveLikedElements', { liked: likedElements, film_id: tconst, user_id: `<%= session.id %>` })
+            axios.post('/saveLikedElements', {user_id: `<%= session.id %>`, film_id: tconst, elements: likedElements, cast: likedCast })
                 .then(function (response) {
+                    console.log('Preferences saved')
                 })
                 .catch(function (error) {
                     console.error(error);
