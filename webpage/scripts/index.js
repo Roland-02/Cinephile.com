@@ -192,7 +192,7 @@ window.onload = async function () {
 
         if (cast.length > 0) {
             for (const actor of cast) {
-                content += `<div id="_filmCast" class="actor d-flex align-items-center ${likeable}">
+                content += `<div id="${actor}" class="actor d-flex align-items-center ${likeable} cast">
                             <span class="px-1">|</span>
                             <span class="medium-text"> ${actor} </span>
                             <span class="px-1">|</span>
