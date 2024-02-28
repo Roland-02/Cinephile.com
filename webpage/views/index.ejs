@@ -234,7 +234,7 @@
                                         </svg>
                                         <!--heart blank-->
                                         <svg id="heart-blank" xmlns="http://www.w3.org/2000/svg" width="48" height="48"
-                                            class="bi bi-heart" type="button" viewBox="0 0 16 16">
+                                            class="bi bi-heart" type="button" viewBox="0 0 16 16" style="display:none;">
                                             <path
                                                 d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143q.09.083.176.171a3 3 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15" />
                                         </svg>
@@ -284,9 +284,8 @@
 
         var tconst;
         var watchList = [];
-        var myloved = [];
+        var myLoved = [];
         var myLiked = [];
-        var myCast = [];
 
         $(document).ready(async function () {
 
@@ -298,35 +297,16 @@
                     //current film_id
                     tconst = event.detail;
 
-                    //get watchlist
-                    await axios.get(`/getWatchlist?user_id=<%= session.id %>`)
-                        .then(function (response) {
-                            watchList = response.data
-                        })
-                        .catch(function (error) {
-                            console.error(error);
-                        });
+                    try {
+                        watchList = await fetchWatchList();
+                        myLiked = await fetchLikedFilms();
+                        myLoved = await fetchLovedFilms();
+                    } catch (error) {
+                        console.error(error);
+                    }
 
-                    //get liked attributes
-                    await axios.get(`/getLikedFilms?user_id=<%= session.id %>`)
-                        .then(function (response) {
-                            myliked = response.data;
-                        })
-                        .catch(function (error) {
-                            console.error(error);
-                        });
-
-                    //get loved films
-                    await axios.get(`/getLovedFilms?user_id=<%= session.id %>`)
-                        .then(function (response) {
-                            myloved = response.data;
-                        })
-                        .catch(function (error) {
-                            console.error(error);
-                        });
-
-                    //fetch liked attributes
-                    if (myliked.some(film => film.tconst === tconst)) {
+                    //fetch liked attributes for films in myLiked
+                    if (myLiked.some(film => film.tconst === tconst)) {
 
                         axios.get(`/getLikedElements?user_id=<%= session.id %>&film_id=${tconst}`)
                             .then(function (response) {
@@ -338,7 +318,7 @@
                                 });
 
                                 var likedCast = response.data.likedCast;
-                                likedCast.forEach(function(name) {
+                                likedCast.forEach(function (name) {
                                     document.getElementById(name).classList.add('liked')
                                 })
 
@@ -349,8 +329,10 @@
 
                     }
 
+                    console.log(myLoved)
+
                     //is current film in watchlist?
-                    if (watchList.some(obj => obj.tconst === tconst)) {
+                    if (watchList.some(film => film.tconst === tconst)) {
                         $('#watchlist-filled').show();
                         $('#watchlist-blank').hide();
                     } else {
@@ -359,7 +341,7 @@
                     }
 
                     //is current film loved?
-                    if (myloved.some(film => film.tconst === tconst)) {
+                    if (myLoved.some(film => film.tconst === tconst)) {
                         likeAllElements()
                         $('#heart-filled').show();
                         $('#heart-blank').hide();
@@ -377,28 +359,32 @@
 
 
         //click on likeable element - save
-        $('#film-info').on('click', '.likeable', function (event) {
+        $('#film-info').on('click', '.likeable', async function (event) {
 
             //toggle 'liked' state of clicked element
             $(this).toggleClass("liked");
 
+            //count liked elements
             var totalLikeables = $('.likeable').length;
             var likedCount = $('.likeable.liked').length;
 
-            //if all elements are liked love the film, if not save elements
+            //if all elements are liked, love the film
             if (likedCount == totalLikeables) {
                 Router_loveFilm();
+                myLoved = await fetchLovedFilms();
                 $("#heart-blank").hide();
                 $("#heart-filled").show();
             }
-            else if (myloved.some(film => film.tconst === tconst)) {
-                //console.log('film removed?')
+            //if film is already loved and an element is clicked, film is unloved
+            else if (myLoved.some(film => film.tconst === tconst)) {
                 Router_unloveFilm();
+                myLoved = await fetchLovedFilms();
                 $("#heart-filled").hide();
                 $("#heart-blank").show();
                 saveElements();
             }
-            else{
+            //if none of the above just save the elements
+            else {
                 saveElements();
             }
 
@@ -407,45 +393,47 @@
         //unlove film
         $("#heart-filled").click(async function () {
 
+            Router_unloveFilm()
+            myLoved = await fetchLovedFilms();
+
+            //remove like from every liked element
             $('.likeable.liked').each(function () {
                 $(this).removeClass('liked');
             });
-            Router_unloveFilm()
 
             //toggle between buttons
             $(this).hide();
             $("#heart-blank").show();
+
+            console.log(myLoved)
+
         });
 
         //love film
         $("#heart-blank").click(async function () {
 
+            //myLoved.push(tconst)
             likeAllElements()
-
             Router_loveFilm()
+            myLoved = await fetchLovedFilms();
 
             //toggle between buttons
             $(this).hide();
             $("#heart-filled").show();
+
+            console.log(myLoved)
 
         });
 
         //remove from watchlist
         $("#watchlist-filled").click(async function () {
 
-            await axios.post(`/deleteWatchlist`, { film_id: tconst, user_id: `<%= session.id %>` })
-                .then(function (response) {
-
-                    //remove from watchlist by index
-                    const index = watchList.indexOf(tconst);
-                    if (index > -1) {
-                        watchList.splice(index, 1);
-                    }
-
-                })
-                .catch(function (error) {
-                    console.error(error);
-                });
+            try {
+                await axios.post(`/deleteWatchlist`, { film_id: tconst, user_id: `<%= session.id %>` });
+                watchList = await fetchWatchList();
+            } catch (error) {
+                console.error(error);
+            }
 
             $(this).hide();
             $("#watchlist-blank").show();
@@ -454,14 +442,13 @@
 
         //add to watchlist
         $("#watchlist-blank").click(async function () {
+            try {
+                await axios.post(`/addWatchlist`, { film_id: tconst, user_id: `<%= session.id %>` });
+                watchList = await fetchWatchList();
+            } catch (error) {
+                console.error(error);
+            }
 
-            await axios.post(`/addWatchlist`, { film_id: tconst, user_id: `<%= session.id %>` })
-                .then(function (response) {
-                    watchList.push(tconst)
-                })
-                .catch(function (error) {
-                    console.error(error);
-                })
 
             $(this).hide();
             $("#watchlist-filled").show();
@@ -483,51 +470,79 @@
 
         //remove loved film from db - POST
         async function Router_unloveFilm() {
-            await axios.post(`/unloveFilm`, { film_id: tconst, user_id: `<%= session.id %>` })
-                .then(function (response) {
-                   // console.log('removed film')
-                })
-                .catch(function (error) {
-                    console.error(error);
-                });
+            try {
+                await axios.post(`/unloveFilm`, { film_id: tconst, user_id: `<%= session.id %>` });
+            } catch (error) {
+                console.error(error);
+            }
         }
+
 
         //add loved film to db - POST
         async function Router_loveFilm() {
-            await axios.post(`/loveFilm`, { film_id: tconst, user_id: `<%= session.id %>` })
-                .then(function (response) {
-                   // console.log('film saved')
-                })
-                .catch(function (error) {
-                    console.error(error);
-                })
+            try {
+                await axios.post(`/loveFilm`, { film_id: tconst, user_id: `<%= session.id %>` });
+            } catch (error) {
+                console.error(error);
+            }
         }
 
-        //save liked elements to db - POST
-        function saveElements() {
-            // Toggle the "liked" state of the clicked element
 
-            // Collect information about the liked elements
+        //save liked elements to db - POST
+        async function saveElements() {
+            //toggle the "liked" state of the clicked element
+
+            //collect information about the liked elements
             var likedElements = [];
             var likedCast = [];
             $(".likeable.liked").each(function () {
                 var elementId = $(this).attr("id");
-                if($(this).hasClass('cast')){
+                if ($(this).hasClass('cast')) {
                     likedCast.push(elementId)
-                }else{
+                } else {
                     likedElements.push(elementId)
                 }
             });
 
-            // Send information about the liked elements to index.js using Axios
-            axios.post('/saveLikedElements', {user_id: `<%= session.id %>`, film_id: tconst, elements: likedElements, cast: likedCast })
-                .then(function (response) {
-                    console.log('Preferences saved')
-                })
-                .catch(function (error) {
-                    console.error(error);
-                });
+            //send information about the liked elements to index.js using Axios
+            try {
+                const response = await axios.post('/saveLikedElements', { user_id: `<%= session.id %>`, film_id: tconst, elements: likedElements, cast: likedCast });
+                myLiked = await fetchLikedFilms();
+            } catch (error) {
+                console.error(error);
+            }
 
+
+        }
+
+        async function fetchLovedFilms() {
+            try {
+                const response = await axios.get(`/getLovedFilms?user_id=<%= session.id %>`);
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                throw error;
+            }
+        }
+
+        async function fetchLikedFilms() {
+            try {
+                const response = await axios.get(`/getLikedFilms?user_id=<%= session.id %>`);
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                throw error;
+            }
+        }
+
+        async function fetchWatchList() {
+            try {
+                const response = await axios.get(`/getWatchlist?user_id=<%= session.id %>`);
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                throw error;
+            }
         }
 
         //like all likeable elements
@@ -537,19 +552,6 @@
             });
 
         }
-
-        // async function getWatchlist(){
-        //     //get watchlist
-        //     await axios.get(`/getWatchlist?user_id=<%= session.id %>`)
-        //             .then(function (response) {
-        //                 console.log(response.data)
-        //                 return response.data;
-        //             })
-        //             .catch(function (error) {
-        //                 console.error(error);
-        //                 return;
-        //             });
-        // }
 
 
     </script>
