@@ -5,6 +5,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const bodyParser = require('body-parser');
+const { spawn } = require('child_process');
 
 
 //set the view engine to ejs specify the views directory
@@ -48,6 +49,9 @@ app.use('/createAccount', createAccountRoute);
 var loginRoute = require('./routes/login');
 app.use('/login', loginRoute);
 
+var recommendRoute = require('./routes/recommend');
+app.use('/recommend', recommendRoute);
+
 var filmsRouter = require('./routes/films');
 app.use(filmsRouter);
 
@@ -55,9 +59,4 @@ app.use(filmsRouter);
 //start server
 const port = process.env.PORT
 app.listen(port, () => console.log(`Server Started on port ${port}...`));
-
-
-
-
-
 

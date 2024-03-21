@@ -1,0 +1,155 @@
+<!--for styling, change file type to html, run live server, make changes, then change back to ejs-->
+<!-- make page background react to colours in poster -->
+
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset=utf-8>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommend</title>
+
+    <link rel="stylesheet" href="/styles/index.css" />
+    <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
+    <script src="/scripts/recommend.js"></script>
+    <script src="/bootstrap/js/mdb.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+
+<body>
+
+    <!-- Nav bar -->
+    <div class="py-1 text-center bg-white border-bottom">
+        <div class="container">
+            <div class="row align-items-center justify-content-between">
+
+                <!-- Left elements -->
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <% if (session && session.email) { %>
+                        <!-- sign in button -->
+                        <form action="/signout" method="POST">
+                            <button type="submit" class="border rounded nav-link d-inline-block">
+                                <p class="btn mb-0">Sign out</p>
+                            </button>
+                        </form>
+
+                        <% } else { %>
+                            <!-- sign up and sign in buttons -->
+                            <a href="/createAccount" class="border rounded nav-link d-inline-block">
+                                <p class="btn d-md-block mb-0">Sign up</p>
+                            </a>
+                            <a href="/login" class="border rounded nav-link d-inline-block">
+                                <p class="btn d-md-block mb-0">Sign in</p>
+                            </a>
+                            <% } %>
+                </div>
+
+                <!-- Centered title -->
+                <div class="col-lg-4 col-md-6 col-sm-12" id="page_title" style="cursor: pointer;">
+                    <h1>Film Recommender</h1>
+                </div>
+
+                <!-- Right elements -->
+                <div class="col-lg-4 col-md-12 col-sm-12 text-end">
+                    <% if (session && session.email) { %>
+                        <!-- watchlist and profile buttons -->
+                        <a href="/recommend" class="border rounded nav-link d-inline-block">
+                            <p class="btn d-md-block mb-0">Recommend</p>
+                        </a>
+                        <a href="/Watchlist" class="border rounded nav-link d-inline-block">
+                            <p class="btn d-md-block mb-0">Watchlist</p>
+                        </a>
+                        <a href="/Profile" class="border rounded nav-link d-inline-block">
+                            <p class="btn d-md-block mb-0">My films</p>
+                        </a>
+                        <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END nav bar -->
+
+
+
+
+    <!-- page content -->
+    <div class="container m-1">
+        <div class="row">
+            <!-- Film poster carousel -->
+            <div class="col-lg-6 col-md-6 col-sm-12 py-5 carousel-container">
+
+                <div class="carousel slide" id="film-carousel" data-bs-ride="carousel">
+                    <div class="d-flex align-items-center justify-content-center">
+
+                        <!-- film poster -->
+                        <div class="carousel-inner">
+                            <div id="spinner" class="loading-spinner" style="display: block;"></div>
+
+                            <div id="film-poster" class="carousel-item active">
+
+                                <!-- Film poster will be displayed here -->
+                            </div>
+                        </div>
+
+                        <!-- previous button -->
+                        <button style="background-color: rgba(255, 255, 255, 0);" id="prev-btn"
+                            class="carousel-control-prev" type="button" data-bs-target="#film-carousel"
+                            data-bs-slide="prev">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="grey"
+                                class="bi bi-caret-left-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
+                            </svg>
+                        </button>
+
+                        <!-- next button -->
+                        <button style="background-color: rgba(255, 255, 255, 0);" id="next-btn"
+                            class="carousel-control-next" type="button" data-bs-target="#film-carousel"
+                            data-bs-slide="next">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="grey"
+                                class="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
+                            </svg>
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+            <!-- END film poster carousel -->
+
+            <!-- Film info -->
+            <div class="col-lg-6 col-md-6 col-sm-12 py-2">
+                <div class="container">
+                    <div id="film-info" class="h3 text-center" data-email="<%= session.email %>" data-id="<%= session.id %>">
+                        <div id="film-info" class="h3 text-center">
+                            <!--  Film data displayed here from scripts/index.js -->
+                        </div>
+                        <!-- END film info -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END film info -->
+    </div>
+    </div>
+    <!-- END page content -->
+
+
+
+
+
+
+
+</body>
+
+
+<footer>
+
+
+</footer>
+
+</html>
