@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recommend</title>
 
-    <link rel="stylesheet" href="/styles/index.css" />
+    <link rel="stylesheet" href="/styles/recommend.css" />
     <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
     <script src="/scripts/recommend.js"></script>
     <script src="/bootstrap/js/mdb.min.js"></script>
@@ -77,61 +77,42 @@
     <!-- page content -->
     <div class="container m-1">
         <div class="row">
-            <!-- Film poster carousel -->
-            <div class="col-lg-6 col-md-6 col-sm-12 py-5 carousel-container">
 
-                <div class="carousel slide" id="film-carousel" data-bs-ride="carousel">
-                    <div class="d-flex align-items-center justify-content-center">
-
-                        <!-- film poster -->
-                        <div class="carousel-inner">
-                            <div id="spinner" class="loading-spinner" style="display: block;"></div>
-
-                            <div id="film-poster" class="carousel-item active">
-
-                                <!-- Film poster will be displayed here -->
-                            </div>
-                        </div>
-
-                        <!-- previous button -->
-                        <button style="background-color: rgba(255, 255, 255, 0);" id="prev-btn"
-                            class="carousel-control-prev" type="button" data-bs-target="#film-carousel"
-                            data-bs-slide="prev">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="grey"
-                                class="bi bi-caret-left-fill" viewBox="0 0 16 16">
-                                <path
-                                    d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
-                            </svg>
-                        </button>
-
-                        <!-- next button -->
-                        <button style="background-color: rgba(255, 255, 255, 0);" id="next-btn"
-                            class="carousel-control-next" type="button" data-bs-target="#film-carousel"
-                            data-bs-slide="next">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="grey"
-                                class="bi bi-caret-right-fill" viewBox="0 0 16 16">
-                                <path
-                                    d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
-                            </svg>
-                        </button>
-
-                    </div>
-                </div>
-            </div>
-            <!-- END film poster carousel -->
-
-            <!-- Film info -->
+            <!-- MIXED RECOMMENDED FILM CARDS REEL -->
             <div class="col-lg-6 col-md-6 col-sm-12 py-2">
                 <div class="container">
-                    <div id="film-info" class="h3 text-center" data-email="<%= session.email %>" data-id="<%= session.id %>">
-                        <div id="film-info" class="h3 text-center">
-                            <!--  Film data displayed here from scripts/index.js -->
-                        </div>
-                        <!-- END film info -->
+
+                    <div class="scrollable-box" id="film-scrollbox" data-id="<%= session.id %>">
+
+                        <!-- FILM CARD -->
+
+                        <!-- <div class="film-card">
+                            <img src="https://image.tmdb.org/t/p/w500/eW4z9K2w7cZripBDQzdf2EAg07R.jpg"class="film-poster">
+                            <div class="film-details">
+                                <h3 class="film-title">Film Title</h3>
+                                <p class="film-plot">sjbfaksdbfkab adfbaskdfbs asdlbfksalbfd sd flbaslk fbdasdf kaslbdf kslafbdkasdbf klsajbf sadfkbsakfbsdlbfksalbfd sd flbaslk fbdasdf kaslbdf kslafbdkasdbf klsajbf sadfkbsakfbdf kslafbdkasdbf klsajbf sadfkbsakfb sdfsfsdf</p>
+                                <div class="film-metadata">
+                                    <span class="film-year">2014</span>
+                                    <span class="film-runtime">2h 30m</span>
+                                    <span class="film-rating">8.2/10</span>
+                                </div>
+                                <p class="film-genre">Genre</p>
+                            </div>
+                        </div> -->
+
+              
+
                     </div>
+                    <!-- Add more film cards as needed -->
+
                 </div>
             </div>
+
+
         </div>
+        <!-- END CARDS REEL -->
+
+    </div>
     </div>
     <!-- END film info -->
     </div>
