@@ -1,15 +1,15 @@
 //HANDLE FILM INFO RENDERING ON FRONTEND, CAROUSEL NAVIGATION
 
 //load next batch of films
-async function getFilms(counter) {
+async function getRecommendedFilms(user_id) {
     //load batch of films from file
 
-    var films = '';
+    let films = '';
     try {
-        page = Math.floor((counter / MAX_LOAD)) + 1;
 
-        //request to the films API with the current page
-        const response = await fetch(`http://localhost:8080/films?page=${page}`);
+        // Fetch films data from the API
+        const response = await fetch(`http://localhost:8080/recommendedFilms?user_id=${user_id}`);
+        // films = response.data.films;
         if (response.ok) {
             films = await response.json();
         }
@@ -21,8 +21,7 @@ async function getFilms(counter) {
     return films
 };
 
-//number of films loaded into frontend at a time - .env
-const MAX_LOAD = 100;
+
 
 window.onload = async function () {
 
@@ -31,29 +30,23 @@ window.onload = async function () {
     const filmPoster = document.getElementById('film-poster');
     const prevButton = document.getElementById('prev-btn');
     const nextButton = document.getElementById('next-btn');
+    var loggedIn = document.getElementById('film-info').getAttribute('data-email');
+    var user_id = document.getElementById('film-info').getAttribute('data-id');
+    console.log(user_id)
 
-    //track position in current load
+    //track position
     var currentIndex = 0;
-    //track position in whole db
-    var counter = 0;
     //stop processes overlapping
     var isClickLocked = false;
 
+    var films = await getRecommendedFilms(user_id)
 
-    //initialize counter and currentIndex with saved values
-    var savedCounter = localStorage.getItem('counter');
-    var savedIndex = localStorage.getItem('currentIndex');
-    if (savedCounter && savedIndex) {
-        counter = parseInt(savedCounter);
-        currentIndex = parseInt(savedIndex);
-    }
+    var maxIndex = films.length - 1
 
-    var films = await getFilms(counter); //read in new load batch
 
     //for getting film poster jpegs
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
-    var loggedIn = document.getElementById('film-info').getAttribute('data-email')
 
     //initial update
     updateFilm();
@@ -61,35 +54,35 @@ window.onload = async function () {
     //Function to update the displayed film
     async function updateFilm() {
 
-        //save current position to cache
-        localStorage.setItem('counter', counter);
-        localStorage.setItem('currentIndex', currentIndex);
+        // //save current position to cache
+        // localStorage.setItem('counter', counter);
+        // localStorage.setItem('currentIndex', currentIndex);
 
         //disable prev button if counter is 0
-        prevButton.disabled = counter === 0;
+        prevButton.disabled = currentIndex === 0;
 
         var content = "";
 
-        //load in next batch of films
-        if ((currentIndex % MAX_LOAD) == 0) {
-            films = await getFilms(counter); //read in new load batch
+        // //load in next batch of films
+        // if ((currentIndex % MAX_LOAD) == 0) {
+        //     films = await getFilms(counter); //read in new load batch
 
-            if (counter % MAX_LOAD == 0) {
-                currentIndex = 0; //first position in new load batch
+        //     if (counter % MAX_LOAD == 0) {
+        //         currentIndex = 0; //first position in new load batch
 
-            } else {
-                currentIndex = MAX_LOAD - 1; //last position in previous load batch
-            }
+        //     } else {
+        //         currentIndex = MAX_LOAD - 1; //last position in previous load batch
+        //     }
 
-        }
+        // }
 
         //trigger event in index.ejs jquery
         filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
         const event = new CustomEvent('updateFilm', { detail: films[currentIndex].tconst });
-        document.dispatchEvent(event);
+        // document.dispatchEvent(event);
 
         //only allow page interaction if user is signed in
-        var likeable = loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
+        var likeable = null; //add the class only if writer is not null
 
         //film title and plot
         content += `<div id="_filmTitle" class="${likeable}"><strong>${films[currentIndex].primaryTitle}</strong></div>`;
@@ -323,12 +316,8 @@ window.onload = async function () {
         if (!isClickLocked) {
             isClickLocked = true;
 
-            currentIndex++;
-            counter++;
-
-            // Clicking forwards to next load
-            if (currentIndex % MAX_LOAD == 0) {
-                page++;
+            if (currentIndex < maxIndex) {
+                currentIndex++;
             }
 
             updateFilm();
@@ -340,19 +329,10 @@ window.onload = async function () {
         if (!isClickLocked && !prevButton.disabled) {
             isClickLocked = true;
 
-            if (currentIndex == 0 && counter != 0) {
-                currentIndex = MAX_LOAD;
-                page--;
-
-            } else { //clicking backwards normally
-                currentIndex--;
-            }
-
-            counter--;
+            currentIndex--;
 
             //prevent counters becoming negative
             if (currentIndex < 0) { currentIndex = 0; }
-            if (counter < 0) { counter = 0; }
 
             updateFilm();
         }
@@ -384,10 +364,17 @@ window.onload = async function () {
 
     });
 
+
+
+
     document.getElementById('page_title').addEventListener('click', function () {
         // Redirect to the index page
         window.location.href = '/index';
     });
+
+
+
+
 
 };
 

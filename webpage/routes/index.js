@@ -1,7 +1,6 @@
 //handle GET request for /home, load film data
 var express = require('express');
 var router = express.Router();
-const axios = require('axios');
 const filmsRouter = require('../routes/films');
 const { getConnection } = require('../database');
 router.use('/routes', filmsRouter);
@@ -10,14 +9,8 @@ router.use('/routes', filmsRouter);
 router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
 
     try {
-        const page = req.query.page || 1;
 
-        // Make a request to the films API with the current page
-        const response = await axios.get(`http://localhost:8080/films?page=${page}`);
-        const tempFilms = JSON.stringify(response.data)
-        const films = JSON.parse(tempFilms);
-
-        res.render('index', { title: 'Express', session: { email: req.cookies.sessionEmail, id: req.cookies.sessionID }, films: films });
+        res.render('index', { title: 'Express', session: { email: req.cookies.sessionEmail, id: req.cookies.sessionID } });
 
 
     } catch (error) {
@@ -27,26 +20,37 @@ router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
 
 });
 
-//return liked attribute for specified  film
+// Return liked attributes for specified film
 router.get('/getLikedFilms', (req, res) => {
-
     const userid = req.query.user_id;
 
     // Query database to retrieve liked elements for the specified film
     getConnection(async (err, connection) => {
+        if (err) {
+            throw err;
+        }
 
-        if (err) throw (err)
+        try {
+            const filmsQuery = `
+                (SELECT tconst FROM user_liked_attributes WHERE user_id = ?)
+                UNION
+                (SELECT tconst FROM user_liked_cast WHERE user_id = ?)
+            `;
 
-        const filmsQuery = `SELECT tconst FROM user_liked_attributes WHERE user_id = ?`;
-
-        await connection.query(filmsQuery, [userid], async function (err, results) {
-            if (err) throw (err)
-            res.send(results);
-        });
-
-        connection.release();
+            connection.query(filmsQuery, [userid, userid], (err, results) => {
+                if (err) {
+                    throw err;
+                }
+                res.send(results);
+            });
+        } catch (error) {
+            console.error('Error retrieving liked films:', error);
+            res.status(500).send('Error retrieving liked films.');
+        } finally {
+            // Release the database connection
+            connection.release();
+        }
     });
-
 });
 
 //return all loved films
@@ -90,9 +94,6 @@ router.post('/loveFilm', (req, res) => {
                 const deleteQuery = `DELETE FROM user_liked_attributes WHERE user_id = ? AND tconst = ?`;
                 await connection.query(deleteQuery, [userid, tconst], (err, result) => {
                     if (err) throw (err)
-
-                    console.log('deleted from liked')
-
                 });
 
             }
@@ -103,14 +104,11 @@ router.post('/loveFilm', (req, res) => {
         await connection.query(searchCastQuery, [userid, tconst], async (err, castResult) => {
             if (err) throw (err)
 
-            if (castResult.length > 0){
+            if (castResult.length > 0) {
                 const deleteCastQuery = `DELETE FROM user_liked_cast WHERE user_id = ? AND tconst = ?`;
 
                 await connection.query(deleteCastQuery, [userid, tconst], (err, result) => {
                     if (err) throw (err)
-
-                    console.log('deleted cast from liked')
-
                 });
 
             }
@@ -162,7 +160,7 @@ router.post('/unloveFilm', function (req, res) {
 
 });
 
-//save or remove liked elements to db
+//save liked elements AND cast members
 router.post('/saveLikedElements', (req, res) => {
 
     const userid = req.body.user_id;
@@ -198,15 +196,12 @@ router.post('/saveLikedElements', (req, res) => {
 
         if (err) throw (err)
 
-        //check if film already exists for user
-        const searchFilmQuery = 'SELECT * FROM user_liked_attributes WHERE tconst = ? AND user_id = ?';
+        var deleteQuery = `DELETE FROM user_liked_attributes WHERE user_id = ? AND tconst = ?`;
+        await connection.query(deleteQuery, [userid, tconst], async (err, deleteResult) => {
+            if (err) throw (err);
 
-        await connection.query(searchFilmQuery, [tconst, userid], async (err, filmResult) => {
-
-            if (filmResult.length == 0) {
-                //save film
+            if (likedElements.length > 0) {
                 const insertQuery = `INSERT INTO user_liked_attributes (user_id, tconst, Title, Plot, Rating, Genre, Runtime, Year, Director, Camera, Writer, Producer, Editor, Composer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
                 await connection.query(insertQuery, [userid, tconst, ...Object.values(attributeValues)], (err, result) => {
                     if (err) throw (err)
 
@@ -214,73 +209,32 @@ router.post('/saveLikedElements', (req, res) => {
 
                 });
 
-            } else {
-                // //update film
-                const updateQuery = `UPDATE user_liked_attributes SET 
-                                Title = ?, 
-                                Plot = ?, 
-                                Rating = ?, 
-                                Genre = ?, 
-                                Runtime = ?, 
-                                Year = ?, 
-                                Director = ?, 
-                                Camera = ?, 
-                                Writer = ?, 
-                                Producer = ?, 
-                                Editor = ?, 
-                                Composer = ?
-                                WHERE user_id = ? AND tconst = ?`;
+            }
+        });
 
-                //if every element has been unliked remove from db
-                if (Object.values(attributeValues).every(value => value === 0)) {
-
-                    const deleteQuery = `DELETE FROM user_liked_attributes WHERE user_id = ? AND tconst = ?`;
-                    await connection.query(deleteQuery, [userid, tconst], (err, result) => {
-                        if (err) throw (err)
-                    });
-
-                } else {
-                    await connection.query(updateQuery, [...Object.values(attributeValues), userid, tconst,], (err, result) => {
-                        if (err) throw (err)
-
-                        console.log('Saved elements')
-
-                    });
-
-                }
-            };
+        var deleteQuery = `DELETE FROM user_liked_cast WHERE user_id = ? AND tconst = ?`;
+        await connection.query(deleteQuery, [userid, tconst], (err, deleteResult) => {
+            if (err) throw (err);
 
             if (likedCast.length > 0) {
-                const deleteQuery = `DELETE FROM user_liked_cast WHERE user_id = ? AND tconst = ?`;
-            
-                // Delete existing entries for the current film and user
-                await connection.query(deleteQuery, [userid, tconst], (err, deleteResult) => {
+                const castQuery = `INSERT INTO user_liked_cast (user_id, tconst, name) VALUES ?`;
+                const tableValues = likedCast.map(castMember => [userid, tconst, castMember]);
+                connection.query(castQuery, [tableValues], (err, insertResult) => {
                     if (err) throw (err);
-            
-                    // Now insert the selected actors
-                    const castQuery = `INSERT INTO user_liked_cast (user_id, tconst, name) VALUES ?`;
-                    const tableValues = likedCast.map(castMember => [userid, tconst, castMember]);
-            
-                    connection.query(castQuery, [tableValues], (err, insertResult) => {
-                        if (err) throw (err);
-            
-                        console.log('Saved cast');
-                    });
+                    console.log('Saved cast');
                 });
             }
-            
 
         });
 
         connection.release()
-
     });
 
     res.send('Data saved successfully'); //send response
 
 });
 
-//return liked and elements AND loved films
+//return liked elements AND cast members
 router.get('/getLikedElements', function (req, res) {
 
     const userid = req.query.user_id;
@@ -293,50 +247,39 @@ router.get('/getLikedElements', function (req, res) {
         try {
             // Perform the first database query to retrieve liked attributes
             const findFilmQuery = `SELECT Title, Plot, Rating, Genre, Runtime, Year, Director, Camera, Writer, Producer, Editor, Composer FROM user_liked_attributes WHERE user_id = ? AND tconst = ?`;
+            await connection.query(findFilmQuery, [userid, film_id], async (err, filmResults) => {
+                if (err) throw (err)
 
-            // // Process the results of the first query
-            await connection.query(findFilmQuery, [userid, film_id], async (err, results) => {
-
-                const likedElements = [];
-
-                if (results.length > 0) {
-                    results.forEach(result => {
+                const elements = [];
+                if (filmResults.length > 0) {
+                    filmResults.forEach(result => {
                         Object.keys(result).forEach(key => {
                             if (result[key] === 1) {
-                                likedElements.push(key);
+                                elements.push(key);
                             }
                         });
                     });
                 }
 
 
+
+
                 const findCastQuery = `SELECT name FROM user_liked_cast WHERE user_id = ? AND tconst = ?`;
                 await connection.query(findCastQuery, [userid, film_id], async (err, castResults) => {
-                const likedCast = [];
+                    if (err) throw (err)
 
-                    // Process the results of the second query
+                    const cast = [];
                     if (castResults.length > 0) {
                         castResults.forEach(row => {
-                            likedCast.push(row.name);
+                            cast.push(row.name);
                         });
                     }
 
-                                    res.send({ likedElements: likedElements, likedCast: likedCast });
+                    res.send({ likedElements: elements, likedCast: cast })
 
                 });
 
-
-
             });
-
-
-            // console.log(likedElements)
-
-            // Perform the second database query to retrieve liked cast members
-
-            // console.log(likedCast)
-
-
 
         } catch (error) {
             console.error(error);
@@ -427,6 +370,8 @@ router.get('/getWatchlist', function (req, res) {
 
 //user logs out
 router.post('/signout', function (req, res) {
+
+    //clear session
     res.clearCookie('sessionEmail');
     res.clearCookie('sessionID');
     req.session.destroy();
