@@ -7,7 +7,7 @@
 <head>
     <meta charset=utf-8>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
+    <title>Discover</title>
 
     <link rel="stylesheet" href="/styles/index.css" />
     <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
@@ -47,7 +47,7 @@
                 </div>
 
                 <!-- Centered title -->
-                <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="col-lg-4 col-md-6 col-sm-12" id="page_title" style="cursor: pointer;">
                     <h1>Film Recommender</h1>
                 </div>
 
@@ -55,13 +55,13 @@
                 <div class="col-lg-4 col-md-12 col-sm-12 text-end">
                     <% if (session && session.email) { %>
                         <!-- watchlist and profile buttons -->
-                        <a href="/Recommend" class="border rounded nav-link d-inline-block">
+                        <a href="/recommend" class="border rounded nav-link d-inline-block">
                             <p class="btn d-md-block mb-0">Recommend</p>
                         </a>
-                        <a href="/Watchlist" class="border rounded nav-link d-inline-block">
+                        <a href="/watchlist" class="border rounded nav-link d-inline-block">
                             <p class="btn d-md-block mb-0">Watchlist</p>
                         </a>
-                        <a href="/Profile" class="border rounded nav-link d-inline-block">
+                        <a href="/profile" class="border rounded nav-link d-inline-block">
                             <p class="btn d-md-block mb-0">My films</p>
                         </a>
                         <% } %>
@@ -266,20 +266,19 @@
                 </div>
 
             </div>
-            <!-- END film poster carousel -->
+            <!-- END film info -->
 
         </div>
 
     </div>
     <!-- END page content -->
 
-
 </body>
 
 
 <footer>
 
-    <!-- jquery for add and like buttons -->
+    <!-- jquery liking functionality -->
     <script>
 
         $(document).ready(async function () {
@@ -315,13 +314,14 @@
                                 var likedCast = response.data.likedCast;
                                 likedCast.forEach(function (name) {
                                     document.getElementById(name).classList.add('liked')
-                                })
+                                });
+
 
                             })
                             .catch(function (error) {
                                 console.error(error);
                             });
-                    }
+                    };
 
                     //is current film in watchlist?
                     if (watchList.some(film => film.tconst === tconst)) {
@@ -467,28 +467,9 @@
 
         //like all likeable elements on page
         function likeAllElements() {
-            console.log('hello')
             $('.likeable').each(function () {
                 $(this).addClass('liked');
             });
-        }
-
-        //POST - remove loved film
-        async function Router_unloveFilm() {
-            try {
-                await axios.post(`/unloveFilm`, { film_id: tconst, user_id: `<%= session.id %>` });
-            } catch (error) {
-                console.error(error);
-            }
-        }
-
-        //POST - add loved film
-        async function Router_loveFilm() {
-            try {
-                await axios.post(`/loveFilm`, { film_id: tconst, user_id: `<%= session.id %>` });
-            } catch (error) {
-                console.error(error);
-            }
         }
 
         //POST - save liked elements
@@ -514,7 +495,24 @@
                 console.error(error);
             }
 
+        }
 
+        //POST - remove loved film
+        async function Router_unloveFilm() {
+            try {
+                await axios.post(`/unloveFilm`, { film_id: tconst, user_id: `<%= session.id %>` });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        //POST - add loved film
+        async function Router_loveFilm() {
+            try {
+                await axios.post(`/loveFilm`, { film_id: tconst, user_id: `<%= session.id %>` });
+            } catch (error) {
+                console.error(error);
+            }
         }
 
         //FETCH - get user's loved films
