@@ -5,13 +5,15 @@ import os
 import requests as req
 import time
 
+MAX_REQUESTS_PER_SECOND = 50
+
 #theMovieDB api call for film plot summary and poster
 def fetchDetails(film_id):
     url = f'https://api.themoviedb.org/3/movie/{film_id}'
     
     headers = { 
         "accept": "application/json",
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0YmYxZTkxOWFjMDBkYmI2NjhjODVlODg5ZWJjZTg1ZCIsInN1YiI6IjY1OGIwNzEyMzI1YTUxNTkyNzAxNWU4OSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.yKZIOsVYvJxzRO3GJ1yayqvSCZg3l-ryO9FjBkfHIZc"
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiOWYwMzQzOWM2Y2E3NzI2MjNlNjM1OTc2OWJiMzc5NyIsInN1YiI6IjY1OGIwNzEyMzI1YTUxNTkyNzAxNWU4OSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.HMMknSAYrH4qBqjoBguVv8O1T7cmBEtbuJbxHy22AEA"
     }
 
     response = req.get(url, headers=headers)
@@ -20,6 +22,7 @@ def fetchDetails(film_id):
 
 #call api
 def doFetch(film_id):
+    time.sleep(1 / MAX_REQUESTS_PER_SECOND)  # Introduce delay to respect rate limits
     return fetchDetails(film_id)
 
 #get film psoster and plot for given batch of films
@@ -47,14 +50,14 @@ def doBatch(shared_data):
                             film_data.loc[index, 'poster'] = details['poster_path']
 
                     else:
-                         time.sleep(5)
+                        time.sleep(1 / MAX_REQUESTS_PER_SECOND)  # Introduce delay if rate limit is exceeded
 
                     
             shared_data.film_data = film_data
 
         except Exception as e:
                 print(f"Error in ThreadPoolExecutor: {e}")
-                time.sleep(5)
+                time.sleep(1 / MAX_REQUESTS_PER_SECOND)  # Introduce delay if rate limit is exceeded
 
 
 
