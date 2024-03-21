@@ -223,8 +223,7 @@ def collate_liked_groups(user_profile):
     # Iterate over the dictionary and create group dataframes
     for group_name, columns in group_columns.items():
         group_df = user_profile[columns].copy()
-        # Drop rows with all NaN values in specified columns
-        group_df = group_df.dropna(subset=columns[:-1], how='all')
+        # group_df = group_df.dropna(subset=columns[:-1], how='all')
         group_dataframes.append(group_df)
 
     return group_dataframes
@@ -255,12 +254,12 @@ def create_euclidean_vector(row, column):
     return euclidean_matrix
 
 # get top N films similar to user profile based on input vector (NOT CURRENTLY IN USE)
-# def get_similar_films(vector, N):
-#     filtered_vector = vector[~data['tconst'].isin(lovedFilms['tconst'])] #don't recommend film the user has already loved
-#     mean_similarity = np.mean(filtered_vector, axis=1)
-#     sorted_indices = np.argsort(mean_similarity)[::-1]
-#     top_N = sorted_indices[:N]
-#     return data.iloc[top_N]
+def get_similar_films(vector, N):
+    filtered_vector = vector[~data['tconst'].isin(lovedFilms['tconst'])] #don't recommend film the user has already loved
+    mean_similarity = np.mean(filtered_vector, axis=1)
+    sorted_indices = np.argsort(mean_similarity)[::-1]
+    top_N = sorted_indices[:N]
+    return data.iloc[top_N]
 
 # function to calculate unified recommendations
 def get_unified_recommendations(user_profile_groups, similarity_vectors, exclude_films , N):
@@ -294,7 +293,6 @@ def get_unified_recommendations(user_profile_groups, similarity_vectors, exclude
     filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(exclude_films['tconst'])]
 
     return filtered_recommendations
-
 
 
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
@@ -366,7 +364,6 @@ def bulk_recommend():
 
         if(not user_profile_df.empty):
 
-
             # get groups of liked attributes
             grouped_likes = collate_liked_groups(user_profile_df)
             liked_plot = grouped_likes[0]
@@ -397,7 +394,7 @@ def bulk_recommend():
             }
 
             lovedFilms = get_loved_films(user_id)
-            recommended = get_unified_recommendations(user_profile_groups, similarity_vectors, lovedFilms, 10)
+            recommended = get_unified_recommendations(user_profile_groups, similarity_vectors, lovedFilms, 50)
             recommended_dict = recommended.to_dict(orient='records')
            
             return jsonify({"films": recommended_dict})
