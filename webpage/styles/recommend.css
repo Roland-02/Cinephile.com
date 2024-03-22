@@ -1,45 +1,53 @@
-.scrollable-box {
+/* mixed recommendations */
+.bulk-scrollbox {
     width: 100%;
     height: 80vh;
-    border: black 3px;
     overflow-y: scroll;
+    padding: 3px;
+    margin: 3px;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
 .film-card {
     display: flex;
     flex-direction: row;
-    align-items: center;
+    height: 32%;
 
     background-color: rgba(255, 180, 153, 0.594);
     border: 2px solid #000000;
     border-radius: 5px;
-    margin: 5px;
-    padding: 2px;
+    margin: 10px;
+    padding: 4px;
 }
 
 .film-poster {
     width: 25%;
     height: auto;
     display: block;
+    border-radius: 5px;
     margin: 4px;
     margin-right: 5px;
 
 }
 
-.film-details {
-    flex-grow: 1;
+.film-title {
+    margin: 3px;
+    font-size: 24px;
+    font-weight: bolder;
 }
 
-.film-title {
-    margin-top: 2px;
-    font-size: 24px;
-    font-weight: bold;
+.small-title {
+    font-size: 20px;
 }
 
 .film-plot {
     font-size: 12px;
-    height: 20%; /* Adjust the height as needed */
+    height: 25%;
+    /* Adjust the height as needed */
     overflow-y: auto;
+    padding: 0px;
+    margin-bottom: 3px;
+
 }
 
 .film-metadata {
@@ -48,16 +56,86 @@
     align-items: center;
 }
 
-
 .film-year,
 .film-runtime,
 .film-rating {
     font-size: 18px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .film-genre {
-    margin-top: 5px;
-    font-style: italic;
+    margin: 0px;
+    font-weight: 500;
     font-size: 18px;
+}
+
+.film-cast {
+    margin: 4px;
+    font-size: 14px;
+    font-weight: lighter;
+    font-style: italic;
+
+}
+
+/* END mixed recommendations */
+
+.group-scrollbox {
+    width: 100%;
+    border: 2px solid black;
+    padding: 10px;
+    margin: 5px;
+    height: 35vh;
+    overflow-y: auto;
+}
+
+.small-film-card {
+    display: flex;
+    flex-direction: row;
+    height: 25%;
+
+    background-color: rgba(255, 180, 153, 0.594);
+    border: 2px solid #000000;
+    border-radius: 5px;
+    margin: 10px;
+    padding: 4px;
+}
+
+
+
+.small-film-title {
+    margin: 1px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+
+
+/* .small-film-plot {
+    font-size: 10px;
+    overflow-y: hidden;
+    text-overflow: ellipsis;
+
+} */
+
+.small-film-plot {
+    font-size: 10px;
+    height: 70%; /* Adjust the height as needed */
+    overflow: hidden;
+}
+
+
+.small-film-genres {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.small-film-cast {
+    font-size: 11px;
+    font-style: italic;
+
+}
+
+.small-film-crew {
+    font-size: 11px;
+    font-style: italic;
 }
