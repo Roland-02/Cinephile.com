@@ -273,9 +273,9 @@ def get_unified_recommendations(user_profile_groups, similarity_vectors, exclude
         weighted_similarity = similarity_vector * likeage_array
 
         # meta columns have higher similarity since its numerical so adjust for this
-        if group == 'meta':
-            scaling_factor = 1 - weighted_similarity
-            weighted_similarity *= scaling_factor
+        # if group == 'meta':
+        #     scaling_factor = 1 - weighted_similarity
+        #     weighted_similarity *= scaling_factor
 
         # dictionary of groups and weighted similarity vectors 
         weighted_scores[group] = weighted_similarity

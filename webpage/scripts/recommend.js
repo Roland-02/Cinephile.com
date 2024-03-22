@@ -57,7 +57,14 @@ window.onload = async function () {
             content += `<div class="film-card">`
             content += `<img src="https://image.tmdb.org/t/p/w500/${film.poster}" class="film-poster">`
             content += `<div class="film-details">`
-            content += `<h3 class="film-title">${film.primaryTitle}</h3>`
+
+            // Check if the film title is too long
+            if (film.primaryTitle.length > 40) { // Adjust the threshold as needed
+                content += `<h3 class="film-title small-title">${film.primaryTitle}</h3>`; // Use a smaller font size class
+            } else {
+                content += `<h3 class="film-title">${film.primaryTitle}</h3>`;
+            }
+
             content += `<p class="film-plot">${film.plot}</p>`
             content += `<div class="film-metadata">`
             content += `<span class="film-year">${film.startYear}</span>`
@@ -65,8 +72,10 @@ window.onload = async function () {
             content += `<span class="film-rating">${film.averageRating}/10</span>`
             content += `</div>`
             content += `<p class="film-genre">${film.genres}</p>`
+            content += `<span class="film-cast">${film.cast}</span>`
             content += `</div>`
             content += `</div>`
+            
         });
 
         filmScroll.innerHTML = content;

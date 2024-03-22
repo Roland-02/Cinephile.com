@@ -79,51 +79,105 @@
         <div class="row">
 
             <!-- MIXED RECOMMENDED FILM CARDS REEL -->
-            <div class="col-lg-6 col-md-6 col-sm-12 py-2">
+            <div class="col-lg-6 col-md-6 col-sm-12">
                 <div class="container">
+                    <div class="h2">based on your profile:</div>
 
-                    <div class="scrollable-box" id="film-scrollbox" data-id="<%= session.id %>">
-
-                        <!-- FILM CARD -->
-
-                        <!-- <div class="film-card">
-                            <img src="https://image.tmdb.org/t/p/w500/eW4z9K2w7cZripBDQzdf2EAg07R.jpg"class="film-poster">
-                            <div class="film-details">
-                                <h3 class="film-title">Film Title</h3>
-                                <p class="film-plot">sjbfaksdbfkab adfbaskdfbs asdlbfksalbfd sd flbaslk fbdasdf kaslbdf kslafbdkasdbf klsajbf sadfkbsakfbsdlbfksalbfd sd flbaslk fbdasdf kaslbdf kslafbdkasdbf klsajbf sadfkbsakfbdf kslafbdkasdbf klsajbf sadfkbsakfb sdfsfsdf</p>
-                                <div class="film-metadata">
-                                    <span class="film-year">2014</span>
-                                    <span class="film-runtime">2h 30m</span>
-                                    <span class="film-rating">8.2/10</span>
-                                </div>
-                                <p class="film-genre">Genre</p>
-                            </div>
-                        </div> -->
-
-              
+                    <div class="bulk-scrollbox" id="film-scrollbox" data-id="<%= session.id %>">
+                        <!-- FILM CARDS SPAWNED HERE -->
 
                     </div>
-                    <!-- Add more film cards as needed -->
 
                 </div>
             </div>
+            <!-- END MIXED FILMS CARDS REEL -->
 
+            <!-- REC FILMS CATEGORIES -->
+            <div class="col-lg-6 col-md-6 col-sm-12 py-2">
+
+                <!-- plot and cast category boxes row -->
+                <div class="row d-flex justify-content-center m-1">
+
+                    <div class="col">
+                        <!-- plot cateogry scroll box -->
+                        <div class="h2">plot</div>
+                        <div class="group-scrollbox">
+                            <!-- plot film card -->
+                            <div class="small-film-card">
+                                <div class="small-film-details">
+                                    <h3 class="small-film-title">Title</h3>
+                                    <p class="small-film-plot">some madness happens; crazy arcs brazy plot tiwst just sit and watch man shut up nah what you what mate you want som emate you'll get smoke bro you better back away from me come then </p>
+                                </div>
+                            </div>
+                            <!-- END plot film card -->
+                        </div>
+                        <!-- END plot cateogry scroll box -->
+                    </div>
+
+                    <div class="col">
+                        <!-- cast category scroll box -->
+                        <div class="h2">cast</div>
+                        <div class="group-scrollbox">
+                            <!-- cast film card -->
+                            <div class="small-film-card">
+                                <div class="small-film-details">
+                                    <h3 class="small-film-title">Title</h3>
+                                    <p class="small-film-cast">Chris Hemsworth, Chris Pine, Chris Pratt</p>
+                                </div>
+                            </div>
+                            <!-- END cast film card -->
+                        </div>
+                        <!-- END cast category scroll box -->
+                    </div>
+
+                </div>
+
+
+                <!-- genres and crew category boxes row -->
+                <div class="row d-flex justify-content-center m-1">
+
+                    <div class="col">
+                        <!-- genres cateogry scroll box -->
+                        <div class="h2">genres</div>
+                        <div class="group-scrollbox">
+                            <!-- genre film card -->
+                            <div class="small-film-card">
+                                <div class="small-film-details">
+                                    <h3 class="small-film-title">Title</h3>
+                                    <p class="small-film-genres"> Action, Comedy, Romance </p>
+                                </div>
+                            </div>
+                            <!-- END genres film card -->
+                        </div>
+                        <!-- END genres category scroll box -->
+
+                    </div>
+
+                    <!-- cast category scroll box -->
+                    <div class="col">
+                        <div class="h2">crew</div>
+                        <div class="group-scrollbox">
+                            <!-- crew film card -->
+                            <div class="small-film-card">
+                                <div class="small-film-details">
+                                    <h3 class="small-film-title">Title</h3>
+                                    <p class="small-film-crew">Christoper Nolan, Hans Zimmer, Roger Deakins</p>
+                                </div>
+                            </div>
+                            <!-- END crew film card -->
+                        </div>
+                    </div>
+                    <!-- END crew category scroll box -->
+                </div>
+                <!-- END genres and crew category boxes row -->
+
+            </div>
 
         </div>
-        <!-- END CARDS REEL -->
 
     </div>
-    </div>
-    <!-- END film info -->
-    </div>
-    </div>
+
     <!-- END page content -->
-
-
-
-
-
-
 
 </body>
 
