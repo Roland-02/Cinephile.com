@@ -12,12 +12,13 @@
     display: flex;
     flex-direction: row;
     height: 32%;
+    overflow-y: auto;
 
     background-color: rgba(255, 180, 153, 0.594);
     border: 2px solid #000000;
     border-radius: 5px;
     margin: 10px;
-    padding: 4px;
+    padding: 1px;
 }
 
 .film-poster {
@@ -31,9 +32,10 @@
 }
 
 .film-title {
+    text-align: center;
     margin: 3px;
-    font-size: 24px;
-    font-weight: bolder;
+    font-size: 20px;
+    font-weight: bold;
 }
 
 .small-title {
@@ -43,9 +45,7 @@
 .film-plot {
     font-size: 12px;
     height: 25%;
-    /* Adjust the height as needed */
-    overflow-y: auto;
-    padding: 0px;
+    overflow-y:scroll;
     margin-bottom: 3px;
 
 }
@@ -53,7 +53,6 @@
 .film-metadata {
     display: flex;
     justify-content: space-around;
-    align-items: center;
 }
 
 .film-year,
@@ -64,69 +63,64 @@
 }
 
 .film-genre {
-    margin: 0px;
-    font-weight: 500;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin:3px;
+    /* font-weight: 500; */
     font-size: 18px;
 }
 
+
 .film-cast {
-    margin: 4px;
-    font-size: 14px;
+    margin: 3px;
+    font-size: 12px;
     font-weight: lighter;
     font-style: italic;
 
 }
 
-/* END mixed recommendations */
+/* END combined recommendations */
+
+/* grouped recommendations */
 
 .group-scrollbox {
     width: 100%;
-    border: 2px solid black;
-    padding: 10px;
-    margin: 5px;
     height: 35vh;
+    border: 2px solid black;
+    border-radius: 5px;
+    padding: 2px;
     overflow-y: auto;
 }
 
 .small-film-card {
     display: flex;
     flex-direction: row;
+    overflow-y: auto;
     height: 25%;
-
     background-color: rgba(255, 180, 153, 0.594);
     border: 2px solid #000000;
     border-radius: 5px;
-    margin: 10px;
-    padding: 4px;
+    margin: 5px;
+    padding: 5px;
 }
-
-
 
 .small-film-title {
     margin: 1px;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
 }
-
-
-
-/* .small-film-plot {
-    font-size: 10px;
-    overflow-y: hidden;
-    text-overflow: ellipsis;
-
-} */
 
 .small-film-plot {
     font-size: 10px;
     height: 70%; /* Adjust the height as needed */
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-
-.small-film-genres {
+.small-film-genre {
     font-weight: 500;
-    font-size: 14px;
+    font-size: 12px;
 }
 
 .small-film-cast {

@@ -26,10 +26,6 @@ router.get(['/', '/recommend', '/Recommend'], async function (req, res) {
         // update profile when page is loaded - stagger later
         await updateProfileAndVectors(userId);
 
-        // // Fetch films data from the API
-        // const response = await axios.get(`http://127.0.0.1:5000/get_bulk_recommend?user_id=${userId}`);
-        // const films = response.data.films;
-
         res.render('recommend', {
             title: 'Express',
             session: { email: req.cookies.sessionEmail, id: req.cookies.sessionID }
