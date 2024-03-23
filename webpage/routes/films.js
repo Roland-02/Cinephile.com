@@ -33,10 +33,22 @@ router.get('/recommendedFilms', async (req, res) => {
     const userId = req.query.user_id;
 
     // Fetch films data from the API
-    const response = await axios.get(`http://127.0.0.1:5000/get_bulk_recommend?user_id=${userId}`);
-    const films = response.data.films;
+    const response = await axios.get(`http://127.0.0.1:5000/get_recommend_pack?user_id=${userId}`);
+    const combined_films = response.data.combined_films;
+    const plot_films = response.data.plot_films;
+    const cast_films = response.data.cast_films;
+    const genre_films = response.data.genre_films;
+    const crew_films = response.data.crew_films;
+
+    const recommendations = {
+      combined_films: combined_films,
+      plot_films: plot_films,
+      cast_films: cast_films,
+      genre_films: genre_films,
+      crew_films: crew_films
+    };
     
-    res.json(films);
+    res.json(recommendations);
 
   } catch (error) {
     console.error("Error:", error);

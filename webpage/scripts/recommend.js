@@ -9,7 +9,6 @@ async function getRecommendedFilms(user_id) {
 
         // Fetch films data from the API
         const response = await fetch(`http://localhost:8080/recommendedFilms?user_id=${user_id}`);
-        // films = response.data.films;
         if (response.ok) {
             films = await response.json();
         }
@@ -21,26 +20,42 @@ async function getRecommendedFilms(user_id) {
     return films
 };
 
-var films;
 window.onload = async function () {
 
     //initialise html elements
     const filmScroll = document.getElementById('film-scrollbox');
+    const plotScroll = document.getElementById('plot_box');
+    const castScroll = document.getElementById('cast_box');
+    const genreScroll = document.getElementById('genre_box');
+    const crewScroll = document.getElementById('crew_box');
 
     var user_id = filmScroll.getAttribute('data-id');
 
-    var films = await getRecommendedFilms(user_id)
-    console.log(films)
-    //initial update
-    loadBulkFilms();
+    var films = await getRecommendedFilms(user_id);
 
-    //Function to update the displayed film
-    async function loadBulkFilms() {
+    console.log(films)
+    console.log(films.length)
+
+    if (films.combined_films.length > 0) {
+        filmScroll.innerHTML = await loadBulkFilms(films.combined_films);
+        plotScroll.innerHTML = await loadCategoryFilms(films.plot_films, 'plot');
+        castScroll.innerHTML = await loadCategoryFilms(films.cast_films, 'cast');
+        genreScroll.innerHTML = await loadCategoryFilms(films.genre_films, 'genres');
+        crewScroll.innerHTML = await loadCategoryFilms(films.crew_films, 'crew');
+
+    } else {
+        filmScroll.innerHTML = `<span> your profile is empty </span>`;
+    }
+
+
+    // update the displayed film
+    async function loadBulkFilms(films) {
 
         var content = "";
 
         films.forEach(function (film) {
 
+            // format runtime
             const hours = Math.floor(film.runtimeMinutes / 60);
             const minutes = film.runtimeMinutes % 60;
             let time = ''
@@ -55,7 +70,14 @@ window.onload = async function () {
             }
 
             content += `<div class="film-card">`
-            content += `<img src="https://image.tmdb.org/t/p/w500/${film.poster}" class="film-poster">`
+
+            // check if poster exists
+            if (film.poster) {
+                content += `<img src="https://image.tmdb.org/t/p/w500/${film.poster}" class="film-poster">`;
+            } else {
+                content += `<img src="/images/MissingPoster.jpeg" class=film-poster>`;
+            }
+
             content += `<div class="film-details">`
 
             // Check if the film title is too long
@@ -71,20 +93,54 @@ window.onload = async function () {
             content += `<span class="film-runtime">${time}</span>`
             content += `<span class="film-rating">${film.averageRating}/10</span>`
             content += `</div>`
-            content += `<p class="film-genre">${film.genres}</p>`
+            const formatted_genre = film.genres.split(',').map(genre => genre.trim()).join(', ');
+            content += `<p class="film-genre">${formatted_genre}</p>`
             content += `<span class="film-cast">${film.cast}</span>`
             content += `</div>`
             content += `</div>`
-            
+
         });
 
-        filmScroll.innerHTML = content;
+        return content;
 
+    };
+
+    async function loadCategoryFilms(films, category) {
+
+        var content = "";
+
+        films.forEach(function (film) {
+
+            content += `<div class="small-film-card">`
+            content += `<div class="small-film-details">`
+
+            // Check if the film title is too long
+            content += `<h3 class="small-film-title">${film.primaryTitle}</h3>`; // Use a smaller font size class
+
+            if (category === 'crew') {
+                const fields = [];
+                if (film.director) fields.push(film.director);
+                if (film.producer) fields.push(film.producer);
+                if (film.cinematographer) fields.push(film.cinematographer);
+                if (film.composer) fields.push(film.composer);
+                if (film.editor) fields.push(film.editor);
+                const crewString = fields.join(', ');
+
+                content += `<p class="small-film-${category}">${crewString}</p>`;
+
+            } else {
+                content += `<p class="small-film-${category}">${film[category]}</p>`;
+            }
+            content += `</div> </div>`;
+
+        });
+        content += `</div>`;
+
+        return content
     };
 
 
     document.getElementById('page_title').addEventListener('click', function () {
-        // Redirect to the index page
         window.location.href = '/index';
     });
 

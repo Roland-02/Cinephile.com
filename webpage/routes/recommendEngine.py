@@ -4,20 +4,24 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.metrics.pairwise import linear_kernel
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
-from collections import Counter
-import mysql.connector
-import json
-import redis
 import warnings
-from flask import Flask, jsonify, request
 warnings.filterwarnings("ignore")
 
-redis_client = redis.Redis('localhost')
+import mysql.connector
+import json
+from flask import Flask, jsonify, request
+from flask_caching import Cache
+
+config = {         
+    "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
+    "CACHE_DEFAULT_TIMEOUT": 3600 #1 hours
+}
 
 app = Flask(__name__)
+app.config.from_mapping(config)
+cache = Cache(app)
 
 data = pd.read_json('./films.json')
-
 
 # join and concatenate inputted columns
 def create_soup(x, features):
@@ -254,12 +258,14 @@ def create_euclidean_vector(row, column):
     return euclidean_matrix
 
 # get top N films similar to user profile based on input vector (NOT CURRENTLY IN USE)
-def get_similar_films(vector, N):
-    filtered_vector = vector[~data['tconst'].isin(lovedFilms['tconst'])] #don't recommend film the user has already loved
-    mean_similarity = np.mean(filtered_vector, axis=1)
+def get_similar_films(vector, exclude, N):
+    mean_similarity = np.mean(vector, axis=1)
     sorted_indices = np.argsort(mean_similarity)[::-1]
-    top_N = sorted_indices[:N]
-    return data.iloc[top_N]
+    top_N = sorted_indices[:]
+    sorted_films = data.iloc[top_N]
+    filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(exclude['tconst'])]
+
+    return filtered_recommendations.iloc[:N]
 
 # function to calculate unified recommendations
 def get_unified_recommendations(user_profile_groups, similarity_vectors, exclude_films , N):
@@ -287,12 +293,12 @@ def get_unified_recommendations(user_profile_groups, similarity_vectors, exclude
     mean_similarity = np.mean(combined_scores, axis=1)
 
     # sort the mean similarity scores and retrieve the top N indices
-    sorted_indices = np.argsort(mean_similarity)[::-1][:N]
+    sorted_indices = np.argsort(mean_similarity)[::-1]
 
     sorted_films = data.iloc[sorted_indices]
     filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(exclude_films['tconst'])]
 
-    return filtered_recommendations
+    return filtered_recommendations[:N]
 
 
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
@@ -343,23 +349,22 @@ def initialise_profile():
                 'meta': meta_matrix.tolist()
             }
 
-        # Store JSON strings in Redis cache
-        redis_client.set(f'user_profile_{user_id}', user_profile.to_json())
-        redis_client.set(f'similarity_vectors_{user_id}', json.dumps(similarity_vectors_json))
+        cache.set(f'user_profile_{user_id}', user_profile.to_json())
+        cache.set(f'similarity_vectors_{user_id}', json.dumps(similarity_vectors_json))
+
         
         return jsonify({"message": "User profile and vectors updated and stored in cache."})
 
 
-@app.route('/get_bulk_recommend', methods=['GET'])
+@app.route('/get_recommend_pack', methods=['GET'])
 def bulk_recommend():
     user_id = request.args.get("user_id") 
 
     if user_id:
 
-        user_profile_json = redis_client.get(f'user_profile_{user_id}')
-      
-        user_profile_str = user_profile_json.decode('utf-8')
-        user_profile_data = json.loads(user_profile_str)
+        # user_profile_json = redis_client.get(f'user_profile_{user_id}')
+        user_profile_json = cache.get(f'user_profile_{user_id}')
+        user_profile_data = json.loads(user_profile_json)
         user_profile_df = pd.DataFrame(user_profile_data)
 
         if(not user_profile_df.empty):
@@ -380,9 +385,9 @@ def bulk_recommend():
                 'meta': liked_meta
             }
         
-            similarity_vectors_json = redis_client.get(f'similarity_vectors_{user_id}')
-            similarity_vectors_str = similarity_vectors_json.decode('utf-8')
-            similarity_vectors_data = json.loads(similarity_vectors_str)
+            # similarity_vectors_json = redis_client.get(f'similarity_vectors_{user_id}')
+            similarity_vectors_json = cache.get(f'similarity_vectors_{user_id}')
+            similarity_vectors_data = json.loads(similarity_vectors_json)
 
             # Convert lists to NumPy arrays
             similarity_vectors = {
@@ -394,17 +399,31 @@ def bulk_recommend():
             }
 
             lovedFilms = get_loved_films(user_id)
-            recommended = get_unified_recommendations(user_profile_groups, similarity_vectors, lovedFilms, 50)
-            recommended_dict = recommended.to_dict(orient='records')
-           
-            return jsonify({"films": recommended_dict})
+            
+            # combined recommendations 
+            combined_recommended = get_unified_recommendations(user_profile_groups, similarity_vectors, lovedFilms, 50)
+            combined_recommended_dict = combined_recommended.to_dict(orient='records')
+
+            #plot recommendations
+            plot_recommended = get_similar_films(similarity_vectors['plot'], lovedFilms, 25)
+            plot_recommended_dict = plot_recommended.to_dict(orient='records')
+
+            #cast recommendations
+            cast_recommended = get_similar_films(similarity_vectors['cast'], lovedFilms, 25)
+            cast_recommended_dict = cast_recommended.to_dict(orient='records')
+
+            #genre recommendations
+            genre_recommended = get_similar_films(similarity_vectors['genre'], lovedFilms, 25)
+            genre_recommended_dict = genre_recommended.to_dict(orient='records')
+
+            #crew recommendations
+            crew_recommended = get_similar_films(similarity_vectors['crew'], lovedFilms, 25)
+            crew_recommended_dict = crew_recommended.to_dict(orient='records')
+
+            return jsonify({"combined_films": combined_recommended_dict, "plot_films": plot_recommended_dict, "cast_films": cast_recommended_dict, "genre_films": genre_recommended_dict, "crew_films": crew_recommended_dict})
         else:
-            return jsonify({"films":"no films"})
+            return jsonify({"films": "no films"})
 
-
-# @app.rout('/get_plot_recommend', methods=['GET'])
-# def plot_recommend():
-#     return '' 
 
 
 if __name__ == "__main__":
