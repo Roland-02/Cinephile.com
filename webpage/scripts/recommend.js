@@ -1,6 +1,5 @@
 //HANDLE FILM INFO RENDERING ON FRONTEND, CAROUSEL NAVIGATION
 
-//load next batch of films
 async function cacheRecommendedFilms(user_id) {
     //load batch of films from file
 
@@ -13,6 +12,7 @@ async function cacheRecommendedFilms(user_id) {
 
 };
 
+//load next batch of films
 async function getRecommendedBatch(user_id, category, page) {
 
     try {
@@ -43,7 +43,7 @@ window.onload = async function () {
     const crewScroll = document.getElementById('crew_box');
 
     combinedScrollPosition = 1,
-        plotScrollPosition = 1;
+    plotScrollPosition = 1;
     castScrollPosition = 1;
     genreScrollPosition = 1;
     crewScrollPosition = 1;
@@ -52,7 +52,6 @@ window.onload = async function () {
 
     // Check if combined films are in the cache
     var combined_films = await getRecommendedBatch(user_id, 'combined', 1);
-    console.log(combined_films)
 
     if (combined_films !== '-') {
         // Films are in cache, display them
@@ -104,7 +103,7 @@ window.onload = async function () {
                 time = `${minutes}m`;;
             }
 
-            content += `<div class="film-card">`
+            content += `<div class="film-card" data-id="${film.tconst}">`
 
             // check if poster exists
             if (film.poster) {
@@ -148,7 +147,7 @@ window.onload = async function () {
 
         films.forEach(function (film) {
 
-            content += `<div class="small-film-card">`
+            content += `<div class="small-film-card" id="${category}-card" data-id="${film.tconst}">`
             content += `<div class="small-film-details">`
 
             // Check if the film title is too long
@@ -250,7 +249,7 @@ window.onload = async function () {
 
             // Append the newly fetched films to the scroll box
             if (films.length > 0) {
-                filmScroll.innerHTML += await displayCategoryFilms(films, 'genre');
+                filmScroll.innerHTML += await displayCategoryFilms(films, 'genres');
             }
         }
 

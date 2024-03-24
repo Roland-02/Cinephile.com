@@ -1,4 +1,5 @@
 /* mixed recommendations */
+
 .bulk-scrollbox {
     width: 100%;
     height: 80vh;
@@ -13,11 +14,11 @@
     flex-direction: row;
     height: 32%;
     overflow-y: hidden;
-    background-color: rgba(255, 180, 153, 0.594);
     border: 2px solid #000000;
     border-radius: 5px;
     margin: 10px;
     padding: 1px;
+    background-color: beige;
 }
 
 .film-poster {
@@ -45,7 +46,6 @@
     height: 25%;
     overflow-y: scroll;
     margin-bottom: 3px;
-
 }
 
 .film-metadata {
@@ -80,13 +80,13 @@
     position: static;
     text-align:right;
     font-size: 16px;
-    font-weight: bold;   
+    font-weight: bold;
+    margin:5px  
 }
 
 /* END combined recommendations */
 
 /* grouped recommendations */
-
 .group-scrollbox {
     width: 100%;
     height: 35vh;
@@ -101,7 +101,6 @@
     flex-direction: row;
     overflow-y: auto;
     height: 25%;
-    background-color: rgba(255, 180, 153, 0.594);
     border: 2px solid #000000;
     border-radius: 5px;
     margin: 5px;
@@ -117,12 +116,10 @@
 .small-film-plot {
     font-size: 10px;
     height: 70%;
-    /* Adjust the height as needed */
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: auto;
 }
 
-.small-film-genre {
+.small-film-genres {
     font-weight: 500;
     font-size: 12px;
 }
@@ -130,10 +127,27 @@
 .small-film-cast {
     font-size: 11px;
     font-style: italic;
-
 }
 
 .small-film-crew {
     font-size: 11px;
     font-style: italic;
+}
+
+
+
+#plot-card{
+    background-color: #E0FEFF;
+}
+#cast-card{
+    background-color: #d4ffc8;
+}
+
+#genres-card{
+    background-color: #FFC394;
+
+}
+#crew-card{
+    background-color: #ffc0fd;
+
 }
