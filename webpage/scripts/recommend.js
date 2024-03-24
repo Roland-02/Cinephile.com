@@ -1,55 +1,90 @@
 //HANDLE FILM INFO RENDERING ON FRONTEND, CAROUSEL NAVIGATION
 
 //load next batch of films
-async function getRecommendedFilms(user_id) {
+async function cacheRecommendedFilms(user_id) {
     //load batch of films from file
 
-    let films = '';
     try {
-
         // Fetch films data from the API
-        const response = await fetch(`http://localhost:8080/recommendedFilms?user_id=${user_id}`);
-        if (response.ok) {
-            films = await response.json();
-        }
-
+        const response = await axios.post(`http://localhost:8080/recommendedFilms?user_id=${user_id}`);
     } catch (error) {
         console.error('Error fetching films:', error);
     }
 
-    return films
 };
+
+async function getRecommendedBatch(user_id, category, page) {
+
+    try {
+        const response = await axios.get(`http://localhost:8080/getFilmsBatch?user_id=${user_id}&category=${category}&page=${page}`)
+        const films = response.data.films;
+        return films
+
+    } catch (error) {
+        console.error('Error getting films batch', error);
+        return null;
+    }
+
+
+}
+var combinedScrollPosition;
+var plotScrollPosition;
+var castScrollPosition;
+var genreScrollPosition;
+var crewScrollPosition;
 
 window.onload = async function () {
 
     //initialise html elements
-    const filmScroll = document.getElementById('film-scrollbox');
+    const combinedScroll = document.getElementById('combined_box');
     const plotScroll = document.getElementById('plot_box');
     const castScroll = document.getElementById('cast_box');
     const genreScroll = document.getElementById('genre_box');
     const crewScroll = document.getElementById('crew_box');
 
-    var user_id = filmScroll.getAttribute('data-id');
+    combinedScrollPosition = 1,
+        plotScrollPosition = 1;
+    castScrollPosition = 1;
+    genreScrollPosition = 1;
+    crewScrollPosition = 1;
 
-    var films = await getRecommendedFilms(user_id);
+    var user_id = combinedScroll.getAttribute('data-id');
 
-    console.log(films)
-    console.log(films.length)
+    // Check if combined films are in the cache
+    var combined_films = await getRecommendedBatch(user_id, 'combined', 1);
+    console.log(combined_films)
 
-    if (films.combined_films.length > 0) {
-        filmScroll.innerHTML = await loadBulkFilms(films.combined_films);
-        plotScroll.innerHTML = await loadCategoryFilms(films.plot_films, 'plot');
-        castScroll.innerHTML = await loadCategoryFilms(films.cast_films, 'cast');
-        genreScroll.innerHTML = await loadCategoryFilms(films.genre_films, 'genres');
-        crewScroll.innerHTML = await loadCategoryFilms(films.crew_films, 'crew');
-
+    if (combined_films !== '-') {
+        // Films are in cache, display them
+        await displayRecommendedFilms(combined_films);
     } else {
-        filmScroll.innerHTML = `<span> your profile is empty </span>`;
+        // Films are not in cache, fetch and cache them
+        await cacheRecommendedFilms(user_id);
+        combined_films = await getRecommendedBatch(user_id, 'combined', 1);
+        await displayRecommendedFilms(combined_films);
     }
 
+    async function displayRecommendedFilms(films) {
+        if (films.length > 0) {
+            combinedScroll.innerHTML = await displayCombinedFilms(films);
 
-    // update the displayed film
-    async function loadBulkFilms(films) {
+            var plot_films = await getRecommendedBatch(user_id, 'plot', 1);
+            plotScroll.innerHTML = await displayCategoryFilms(plot_films, 'plot');
+
+            var cast_films = await getRecommendedBatch(user_id, 'cast', 1);
+            castScroll.innerHTML = await displayCategoryFilms(cast_films, 'cast');
+
+            var genre_films = await getRecommendedBatch(user_id, 'genre', 1);
+            genreScroll.innerHTML = await displayCategoryFilms(genre_films, 'genres');
+
+            var crew_films = await getRecommendedBatch(user_id, 'crew', 1);
+            crewScroll.innerHTML = await displayCategoryFilms(crew_films, 'crew');
+        } else {
+            combinedScroll.innerHTML = `<span> Your profile is empty. </span>`;
+        }
+    }
+
+    async function displayCombinedFilms(films) {
 
         var content = "";
 
@@ -93,9 +128,11 @@ window.onload = async function () {
             content += `<span class="film-runtime">${time}</span>`
             content += `<span class="film-rating">${film.averageRating}/10</span>`
             content += `</div>`
-            const formatted_genre = film.genres.split(',').map(genre => genre.trim()).join(', ');
+            const formatted_genre = film.genres.split(',').map(genre => genre.trim()).join(', ')
             content += `<p class="film-genre">${formatted_genre}</p>`
-            content += `<span class="film-cast">${film.cast}</span>`
+            content += `<p class="film-cast">${film.cast}</p>`
+            const formatted_similarity = Math.round(film.similarity * 100)
+            content += `<p class="film-similarity">${formatted_similarity}%</p> </i>`
             content += `</div>`
             content += `</div>`
 
@@ -105,7 +142,7 @@ window.onload = async function () {
 
     };
 
-    async function loadCategoryFilms(films, category) {
+    async function displayCategoryFilms(films, category) {
 
         var content = "";
 
@@ -138,6 +175,113 @@ window.onload = async function () {
 
         return content
     };
+
+
+    async function loadMoreCombinedFilms() {
+        filmScroll = this;
+
+        // Check if the user has scrolled to the bottom of the scroll box
+        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
+
+
+            // Call getCombinedRecommended to fetch the next batch of films
+            combinedScrollPosition++;
+            const films = await getRecommendedBatch(user_id, 'combined', combinedScrollPosition);
+
+            // Append the newly fetched films to the scroll box
+            if (films.length > 0) {
+                filmScroll.innerHTML += await displayCombinedFilms(films);
+            }
+
+        }
+
+    };
+
+    async function loadMorePlotFilms() {
+        const filmScroll = this;
+
+        // Check if the user has scrolled to the bottom of the scroll box
+        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
+            // Increment the scroll position
+            plotScrollPosition++;
+
+            // Call getRecommendedBatch to fetch the next batch of films
+            const films = await getRecommendedBatch(user_id, 'plot', plotScrollPosition);
+
+            // Append the newly fetched films to the scroll box
+            if (films.length > 0) {
+                filmScroll.innerHTML += await displayCategoryFilms(films, 'plot');
+            }
+        }
+
+        return plotScrollPosition;
+    };
+
+    async function loadMoreCastFilms() {
+        const filmScroll = this;
+
+        // Check if the user has scrolled to the bottom of the scroll box
+        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
+            // Increment the scroll position
+            castScrollPosition++;
+
+            // Call getRecommendedBatch to fetch the next batch of films
+            const films = await getRecommendedBatch(user_id, 'cast', castScrollPosition);
+
+            // Append the newly fetched films to the scroll box
+            if (films.length > 0) {
+                filmScroll.innerHTML += await displayCategoryFilms(films, 'cast');
+            }
+        }
+
+        return castScrollPosition;
+    };
+
+    async function loadMoreGenreFilms() {
+        const filmScroll = this;
+
+        // Check if the user has scrolled to the bottom of the scroll box
+        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
+            // Increment the scroll position
+            genreScrollPosition++;
+
+            // Call getRecommendedBatch to fetch the next batch of films
+            const films = await getRecommendedBatch(user_id, 'genre', genreScrollPosition);
+
+            // Append the newly fetched films to the scroll box
+            if (films.length > 0) {
+                filmScroll.innerHTML += await displayCategoryFilms(films, 'genre');
+            }
+        }
+
+        return genreScrollPosition;
+    };
+
+    async function loadMoreCrewFilms() {
+        const filmScroll = this;
+
+        // Check if the user has scrolled to the bottom of the scroll box
+        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
+            // Increment the scroll position
+            crewScrollPosition++;
+
+            // Call getRecommendedBatch to fetch the next batch of films
+            const films = await getRecommendedBatch(user_id, 'crew', crewScrollPosition);
+
+            // Append the newly fetched films to the scroll box
+            if (films.length > 0) {
+                filmScroll.innerHTML += await displayCategoryFilms(films, 'crew');
+            }
+        }
+
+        return crewScrollPosition;
+    };
+
+    combinedScroll.addEventListener('scroll', loadMoreCombinedFilms);
+    plotScroll.addEventListener('scroll', loadMorePlotFilms);
+    castScroll.addEventListener('scroll', loadMoreCastFilms);
+    genreScroll.addEventListener('scroll', loadMoreGenreFilms);
+    crewScroll.addEventListener('scroll', loadMoreCrewFilms);
 
 
     document.getElementById('page_title').addEventListener('click', function () {

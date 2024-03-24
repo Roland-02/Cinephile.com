@@ -258,17 +258,17 @@ def create_euclidean_vector(row, column):
     return euclidean_matrix
 
 # get top N films similar to user profile based on input vector (NOT CURRENTLY IN USE)
-def get_similar_films(vector, exclude, N):
+def get_similar_films(vector, exclude):
     mean_similarity = np.mean(vector, axis=1)
     sorted_indices = np.argsort(mean_similarity)[::-1]
     top_N = sorted_indices[:]
     sorted_films = data.iloc[top_N]
     filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(exclude['tconst'])]
 
-    return filtered_recommendations.iloc[:N]
+    return filtered_recommendations
 
-# function to calculate unified recommendations
-def get_unified_recommendations(user_profile_groups, similarity_vectors, exclude_films , N):
+# function to calculate combined recommendations
+def get_combined_recommendations(user_profile_groups, similarity_vectors, exclude_films):
 
     weighted_scores = {}
     
@@ -277,11 +277,6 @@ def get_unified_recommendations(user_profile_groups, similarity_vectors, exclude
         similarity_vector = similarity_vectors[group]
         likeage_array = np.array(list(attributes['likeage'].tolist()))
         weighted_similarity = similarity_vector * likeage_array
-
-        # meta columns have higher similarity since its numerical so adjust for this
-        # if group == 'meta':
-        #     scaling_factor = 1 - weighted_similarity
-        #     weighted_similarity *= scaling_factor
 
         # dictionary of groups and weighted similarity vectors 
         weighted_scores[group] = weighted_similarity
@@ -296,9 +291,12 @@ def get_unified_recommendations(user_profile_groups, similarity_vectors, exclude
     sorted_indices = np.argsort(mean_similarity)[::-1]
 
     sorted_films = data.iloc[sorted_indices]
+
+    sorted_films['similarity'] = mean_similarity[sorted_indices] / 5
+
     filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(exclude_films['tconst'])]
 
-    return filtered_recommendations[:N]
+    return filtered_recommendations
 
 
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
@@ -352,11 +350,12 @@ def initialise_profile():
         cache.set(f'user_profile_{user_id}', user_profile.to_json())
         cache.set(f'similarity_vectors_{user_id}', json.dumps(similarity_vectors_json))
 
-        
-        return jsonify({"message": "User profile and vectors updated and stored in cache."})
+        return jsonify({"message": "User profile and vectors updated and stored in cache"})
+    else:
+        return jsonify({"message": "error loading profile"})
 
 
-@app.route('/get_recommend_pack', methods=['GET'])
+@app.route('/get_recommend_pack', methods=['POST'])
 def bulk_recommend():
     user_id = request.args.get("user_id") 
 
@@ -401,28 +400,63 @@ def bulk_recommend():
             lovedFilms = get_loved_films(user_id)
             
             # combined recommendations 
-            combined_recommended = get_unified_recommendations(user_profile_groups, similarity_vectors, lovedFilms, 50)
+            combined_recommended = get_combined_recommendations(user_profile_groups, similarity_vectors, lovedFilms)
             combined_recommended_dict = combined_recommended.to_dict(orient='records')
 
             #plot recommendations
-            plot_recommended = get_similar_films(similarity_vectors['plot'], lovedFilms, 25)
+            plot_recommended = get_similar_films(similarity_vectors['plot'], lovedFilms)
             plot_recommended_dict = plot_recommended.to_dict(orient='records')
 
             #cast recommendations
-            cast_recommended = get_similar_films(similarity_vectors['cast'], lovedFilms, 25)
+            cast_recommended = get_similar_films(similarity_vectors['cast'], lovedFilms)
             cast_recommended_dict = cast_recommended.to_dict(orient='records')
 
             #genre recommendations
-            genre_recommended = get_similar_films(similarity_vectors['genre'], lovedFilms, 25)
+            genre_recommended = get_similar_films(similarity_vectors['genre'], lovedFilms)
             genre_recommended_dict = genre_recommended.to_dict(orient='records')
 
             #crew recommendations
-            crew_recommended = get_similar_films(similarity_vectors['crew'], lovedFilms, 25)
+            crew_recommended = get_similar_films(similarity_vectors['crew'], lovedFilms)
             crew_recommended_dict = crew_recommended.to_dict(orient='records')
 
-            return jsonify({"combined_films": combined_recommended_dict, "plot_films": plot_recommended_dict, "cast_films": cast_recommended_dict, "genre_films": genre_recommended_dict, "crew_films": crew_recommended_dict})
+            cache.set(f'user_combined_recommended{user_id}', json.dumps(combined_recommended_dict))
+            cache.set(f'user_plot_recommended{user_id}', json.dumps(plot_recommended_dict))
+            cache.set(f'user_cast_recommended{user_id}', json.dumps(cast_recommended_dict))
+            cache.set(f'user_genre_recommended{user_id}', json.dumps(genre_recommended_dict))
+            cache.set(f'user_crew_recommended{user_id}', json.dumps(crew_recommended_dict))
+
+            return jsonify({"message": "recommendations stored in cache"})
         else:
-            return jsonify({"films": "no films"})
+            return jsonify({"message": "error caching recommendations"})
+
+
+
+@app.route('/get_batch', methods=['GET'])
+def get_batch():
+
+    user_id = request.args.get("user_id")
+    category = request.args.get("category")
+    page = int(request.args.get("page"))
+    batch_size = 25
+
+    films_json = cache.get(f'user_{category}_recommended{user_id}')
+    if(films_json is not None):
+
+        films_data = json.loads(films_json)
+
+        start_index = (page - 1) * batch_size
+        end_index = (page) * batch_size
+    
+        # Slice the films list to get the batch
+        batch = films_data[start_index:end_index]
+
+        return jsonify({"films": batch})
+    else:
+        return jsonify({"films": "-"})
+    
+
+    
+
 
 
 

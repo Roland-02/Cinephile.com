@@ -27,13 +27,13 @@ app.use('/scripts', express.static(path.join(__dirname, 'scripts'), { type: 'app
 
 
 //for sessions
-const oneDay = 1000 * 60 * 60 * 24;
+const timeout = 1000 * 60 * 60; //1 hour
 app.use(session({
   secret: process.env.SECRET,
   saveUninitialized: true,
   resave: false,
   cookie: {
-    maxAge: oneDay,
+    maxAge: timeout,
     secure: true
   }
 }));

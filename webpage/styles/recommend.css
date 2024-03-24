@@ -12,8 +12,7 @@
     display: flex;
     flex-direction: row;
     height: 32%;
-    overflow-y: auto;
-
+    overflow-y: hidden;
     background-color: rgba(255, 180, 153, 0.594);
     border: 2px solid #000000;
     border-radius: 5px;
@@ -28,7 +27,6 @@
     border-radius: 5px;
     margin: 4px;
     margin-right: 5px;
-
 }
 
 .film-title {
@@ -45,7 +43,7 @@
 .film-plot {
     font-size: 12px;
     height: 25%;
-    overflow-y:scroll;
+    overflow-y: scroll;
     margin-bottom: 3px;
 
 }
@@ -66,18 +64,23 @@
     display: flex;
     justify-content: space-around;
     align-items: center;
-    margin:3px;
-    /* font-weight: 500; */
+    margin: 3px;
     font-size: 18px;
 }
-
 
 .film-cast {
     margin: 3px;
     font-size: 12px;
+    text-align: left;
     font-weight: lighter;
     font-style: italic;
+}
 
+.film-similarity {
+    position: static;
+    text-align:right;
+    font-size: 16px;
+    font-weight: bold;   
 }
 
 /* END combined recommendations */
@@ -113,7 +116,8 @@
 
 .small-film-plot {
     font-size: 10px;
-    height: 70%; /* Adjust the height as needed */
+    height: 70%;
+    /* Adjust the height as needed */
     overflow: hidden;
     text-overflow: ellipsis;
 }
