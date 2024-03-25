@@ -1,14 +1,18 @@
 /* mixed recommendations */
-.myPeople{
-    font-weight: bold;
-}
+
 .bulk-scrollbox {
     width: 100%;
     height: 80vh;
     overflow-y: scroll;
-    padding: 3px;
-    margin: 3px;
-    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    border-radius: 5;
+    /* padding: 3px;
+    margin: 3px; */
+}
+
+.scroll-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Align items horizontally at the center */
 }
 
 .film-card {
@@ -16,11 +20,14 @@
     flex-direction: row;
     height: 32%;
     overflow-y: hidden;
-    border: 2px solid #000000;
-    border-radius: 5px;
-    margin: 10px;
-    padding: 1px;
+    border: 1px solid #000000;
+    border-radius: 0px;
+    margin: 15px;
     background-color: beige;
+}
+
+.film-details{
+    margin: 3px;
 }
 
 .film-poster {
@@ -92,21 +99,27 @@
 .group-scrollbox {
     width: 100%;
     height: 35vh;
-    border: 2px solid black;
     border-radius: 5px;
     padding: 2px;
     overflow-y: auto;
 }
 
+
+
 .small-film-card {
     display: flex;
     flex-direction: row;
-    overflow-y: auto;
+    overflow-y: hidden;
     height: 25%;
-    border: 2px solid #000000;
+    border: 1px solid #000000;
     border-radius: 5px;
-    margin: 5px;
-    padding: 5px;
+    margin: 10px;
+    padding: 10px;    
+
+}
+
+.small-film-details{
+    margin: 3px;
 }
 
 .small-film-title {
@@ -118,12 +131,12 @@
 .small-film-plot {
     font-size: 10px;
     height: 70%;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .small-film-genres {
     font-weight: 500;
-    font-size: 12px;
+    font-size: 16px;
 }
 
 .small-film-cast {
@@ -138,19 +151,25 @@
 
 
 
-#plot-card{
+
+
+
+.plot-card{
     background-color: #E0FEFF;
 }
-#cast-card{
+.cast-card{
     background-color: #d4ffc8;
 }
 
-#genres-card{
+.genres-card{
     background-color: #FFC394;
 
 }
-#crew-card{
+.crew-card{
     background-color: #ffc0fd;
 
 }
 
+.myPeople{
+    font-weight: bold;
+}

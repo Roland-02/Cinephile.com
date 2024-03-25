@@ -80,9 +80,8 @@
 
             <!-- MIXED RECOMMENDED FILM CARDS REEL -->
             <div class="col-lg-6 col-md-6 col-sm-12">
-                <div class="container">
-                    <div class="h2">based on your profile:</div>
-
+                <div class="container scroll-container">
+                    <div class="h2" style="font-weight: bold;">based on your profile:</div>
                     <div class="bulk-scrollbox" id="combined_box" data-id="<%= session.id %>" data-bs-spy="scroll">
                         <!-- FILM CARDS SPAWNED HERE -->
 
@@ -93,58 +92,66 @@
             <!-- END MIXED FILMS CARDS REEL -->
 
             <!-- REC FILMS CATEGORIES -->
-            <div class="col-lg-6 col-md-6 col-sm-12 py-2">
+            <div class="col-lg-6 col-md-6 col-sm-12">
 
-                <!-- plot and cast category boxes row -->
-                <div class="row d-flex justify-content-center m-1">
+                <div class="container group-box-container">
+                    <div class="h3">based on your liked...</div>
 
-                    <div class="col m-1">
-                        <!-- plot cateogry scroll box -->
-                        <div class="h3">storylines</div>
-                        <div class="group-scrollbox" id="plot_box" data-bs-spy="scroll">
-                            <!-- plot film card -->
-                            <!-- END plot film card -->
+                    <!-- plot and cast category boxes row -->
+                    <div class="row d-flex justify-content-center m-1">
+
+                        <div class="col">
+                            <!-- plot cateogry scroll box -->
+                            <div class="h3">storylines</div>
+                            <div class="group-scrollbox" id="plot_box" data-bs-spy="scroll">
+                                <!-- plot film card -->
+                                <!-- END plot film card -->
+                            </div>
+                            <!-- END plot cateogry scroll box -->
                         </div>
-                        <!-- END plot cateogry scroll box -->
+
+                        <div class="col">
+                            <!-- cast category scroll box -->
+                            <div class="h3">actors</div>
+                            <div class="group-scrollbox" id="cast_box" data-bs-spy="scroll">
+                                <!-- cast film card -->
+                                <!-- END cast film card -->
+                            </div>
+                            <!-- END cast category scroll box -->
+                        </div>
+
                     </div>
 
-                    <div class="col m-1">
+                    <!-- genre and crew category boxes row -->
+                    <div class="row d-flex justify-content-center m-1">
+
                         <!-- cast category scroll box -->
-                        <div class="h3">actors</div>
-                        <div class="group-scrollbox" id="cast_box" data-bs-spy="scroll">
-                            <!-- cast film card -->
-                            <!-- END cast film card -->
+                        <div class="col">
+                            <div class="h3">production crews</div>
+                            <div class="group-scrollbox" id="crew_box" data-bs-spy="scroll">
+                                <!-- crew film card -->
+                                <!-- END crew film card -->
+                            </div>
                         </div>
-                        <!-- END cast category scroll box -->
+                        <!-- END crew category scroll box -->
+
+                        <div class="col">
+                            <!-- genre cateogry scroll box -->
+                            <div class="h3">genre</div>
+                            <div class="group-scrollbox" id="genre_box" data-bs-spy="scroll">
+                                <!-- genre film card -->
+                                <!-- END genre film card -->
+                            </div>
+                            <!-- END genre category scroll box -->
+
+                        </div>
+
+
+
                     </div>
+                    <!-- END genre and crew category boxes row -->
 
                 </div>
-
-                <!-- genre and crew category boxes row -->
-                <div class="row d-flex justify-content-center m-1">
-
-                    <div class="col m-1">
-                        <!-- genre cateogry scroll box -->
-                        <div class="h3">genre</div>
-                        <div class="group-scrollbox" id="genre_box" data-bs-spy="scroll">
-                            <!-- genre film card -->
-                            <!-- END genre film card -->
-                        </div>
-                        <!-- END genre category scroll box -->
-
-                    </div>
-
-                    <!-- cast category scroll box -->
-                    <div class="col m-1">
-                        <div class="h3">production crews</div>
-                        <div class="group-scrollbox" id="crew_box" data-bs-spy="scroll">
-                            <!-- crew film card -->
-                            <!-- END crew film card -->
-                        </div>
-                    </div>
-                    <!-- END crew category scroll box -->
-                </div>
-                <!-- END genre and crew category boxes row -->
 
             </div>
 

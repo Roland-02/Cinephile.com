@@ -117,7 +117,7 @@ window.onload = async function () {
                 time = `${minutes}m`;;
             }
 
-            content += `<div class="film-card" data-id="${film.tconst}">`
+            content += `<div class="film-card card-body" data-id="${film.tconst}">`
 
             // check if poster exists
             if (film.poster) {
@@ -174,7 +174,7 @@ window.onload = async function () {
 
         films.forEach(function (film) {
 
-            content += `<div class="small-film-card" id="${category}-card" data-id="${film.tconst}">`
+            content += `<div class="small-film-card card-body ${category}-card" data-id="${film.tconst}">`
             content += `<div class="small-film-details">`
             content += `<h3 class="small-film-title">${film.primaryTitle}</h3>`; // Use a smaller font size class
             content += `<p class="small-film-${category}">${film[category]}</p>`;
@@ -189,7 +189,7 @@ window.onload = async function () {
         let content = "";
 
         films.forEach(function (film) {
-            content += `<div class="small-film-card" id="${category}-card" data-id="${film.tconst}">`;
+            content += `<div class="small-film-card card-body ${category}-card" data-id="${film.tconst}">`;
             content += `<div class="small-film-details">`;
 
             // Check if the film title is too long
