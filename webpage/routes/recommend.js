@@ -19,7 +19,7 @@ async function cacheRecommendedFilms(user_id) {
 
   try {
       // Fetch films data from the API
-      const response = await axios.post(`http://localhost:8080/recommendedFilms?user_id=${user_id}`);
+      const response = await axios.post(`http://localhost:8080/cacheRecommendedFilms?user_id=${user_id}`);
   } catch (error) {
       console.error('Error fetching films:', error);
   }

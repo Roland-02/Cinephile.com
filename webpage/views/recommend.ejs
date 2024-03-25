@@ -80,8 +80,9 @@
 
             <!-- MIXED RECOMMENDED FILM CARDS REEL -->
             <div class="col-lg-6 col-md-6 col-sm-12">
-                <div class="container scroll-container">
-                    <div class="h2" style="font-weight: bold;">based on your profile:</div>
+                <div class="main-title">based on your profile</div>
+
+                <div class="container scroll-container border-top-bottom-rounded">
                     <div class="bulk-scrollbox" id="combined_box" data-id="<%= session.id %>" data-bs-spy="scroll">
                         <!-- FILM CARDS SPAWNED HERE -->
 
@@ -94,16 +95,16 @@
             <!-- REC FILMS CATEGORIES -->
             <div class="col-lg-6 col-md-6 col-sm-12">
 
-                <div class="container group-box-container">
-                    <div class="h3">based on your liked...</div>
+                <div class="main-title">based on your favourite features</div>
+                <div class="container m-0 p-0 ">
 
                     <!-- plot and cast category boxes row -->
-                    <div class="row d-flex justify-content-center m-1">
+                    <div class="row d-flex justify-content-center m-0">
 
                         <div class="col">
                             <!-- plot cateogry scroll box -->
-                            <div class="h3">storylines</div>
-                            <div class="group-scrollbox" id="plot_box" data-bs-spy="scroll">
+                            <div class="secondary-title">storylines</div>
+                            <div class="group-scrollbox border-top-bottom-rounded" id="plot_box" data-bs-spy="scroll">
                                 <!-- plot film card -->
                                 <!-- END plot film card -->
                             </div>
@@ -112,8 +113,8 @@
 
                         <div class="col">
                             <!-- cast category scroll box -->
-                            <div class="h3">actors</div>
-                            <div class="group-scrollbox" id="cast_box" data-bs-spy="scroll">
+                            <div class="secondary-title">actors</div>
+                            <div class="group-scrollbox border-top-bottom-rounded" id="cast_box" data-bs-spy="scroll">
                                 <!-- cast film card -->
                                 <!-- END cast film card -->
                             </div>
@@ -123,12 +124,12 @@
                     </div>
 
                     <!-- genre and crew category boxes row -->
-                    <div class="row d-flex justify-content-center m-1">
+                    <div class="row d-flex justify-content-center m-0">
 
                         <!-- cast category scroll box -->
                         <div class="col">
-                            <div class="h3">production crews</div>
-                            <div class="group-scrollbox" id="crew_box" data-bs-spy="scroll">
+                            <div class="secondary-title mt-2">production crews</div>
+                            <div class="group-scrollbox border-top-bottom-rounded" id="crew_box" data-bs-spy="scroll">
                                 <!-- crew film card -->
                                 <!-- END crew film card -->
                             </div>
@@ -137,8 +138,8 @@
 
                         <div class="col">
                             <!-- genre cateogry scroll box -->
-                            <div class="h3">genre</div>
-                            <div class="group-scrollbox" id="genre_box" data-bs-spy="scroll">
+                            <div class="secondary-title mt-2">genre</div>
+                            <div class="group-scrollbox border-top-bottom-rounded" id="genre_box" data-bs-spy="scroll">
                                 <!-- genre film card -->
                                 <!-- END genre film card -->
                             </div>

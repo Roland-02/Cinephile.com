@@ -1,18 +1,21 @@
 /* mixed recommendations */
+.scroll-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Align items horizontally at the center */
+}
 
 .bulk-scrollbox {
     width: 100%;
     height: 80vh;
     overflow-y: scroll;
     border-radius: 5;
-    /* padding: 3px;
-    margin: 3px; */
 }
 
-.scroll-container{
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Align items horizontally at the center */
+.main-title{ 
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
 }
 
 .film-card {
@@ -23,10 +26,10 @@
     border: 1px solid #000000;
     border-radius: 0px;
     margin: 15px;
-    background-color: beige;
+    background-color: #F0EFEB;
 }
 
-.film-details{
+.film-details {
     margin: 3px;
 }
 
@@ -95,7 +98,17 @@
 
 /* END combined recommendations */
 
-/* grouped recommendations */
+
+
+
+.secondary-title{
+    font-size: 22px;
+    font-weight: 400;
+    font-style: italic;
+    text-align: center;
+
+}
+
 .group-scrollbox {
     width: 100%;
     height: 35vh;
@@ -104,15 +117,13 @@
     overflow-y: auto;
 }
 
-
-
 .small-film-card {
     display: flex;
     flex-direction: row;
     overflow-y: hidden;
     height: 25%;
     border: 1px solid #000000;
-    border-radius: 5px;
+    border-radius: 3px;
     margin: 10px;
     padding: 10px;    
 
@@ -124,6 +135,7 @@
 
 .small-film-title {
     margin: 1px;
+    text-decoration:underline;
     font-size: 14px;
     font-weight: bold;
 }
@@ -149,27 +161,39 @@
     font-style: italic;
 }
 
+/* END grouped recommendations */
 
 
-
-
-
+/* grouped card colours */
 .plot-card{
     background-color: #E0FEFF;
 }
+
 .cast-card{
     background-color: #d4ffc8;
 }
 
 .genres-card{
     background-color: #FFC394;
-
 }
+
 .crew-card{
     background-color: #ffc0fd;
-
 }
+/* END grouped card colours */
+
 
 .myPeople{
     font-weight: bold;
+}
+
+.border-top-bottom-rounded {
+    border-top: 2px solid; /* Top border */
+    border-bottom: 2px solid; /* Bottom border */
+    border-left: none; /* No left border */
+    border-right: none; /* No right border */
+    border-top-left-radius: 10px; /* Rounded top-left corner */
+    border-top-right-radius: 10px; /* Rounded top-right corner */
+    border-bottom-left-radius: 10px; /* Rounded bottom-left corner */
+    border-bottom-right-radius: 10px; /* Rounded bottom-right corner */
 }
