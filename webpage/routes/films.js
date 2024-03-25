@@ -25,7 +25,7 @@ router.get('/films', (req, res) => {
 
 });
 
-router.post('/recommendedFilms', async (req, res) => {
+router.post('/cacheRecommendedFilms', async (req, res) => {
 
   try {
 
@@ -60,5 +60,20 @@ router.get('/getFilmsBatch', async (req, res) => {
 
 
 });
+
+
+router.get('/getLikedStaff', async function (req, res) {
+  try{
+    const userId = req.cookies.sessionID;
+
+    const response = await axios.get(`http://127.0.0.1:5000/get_liked_staff?user_id=${userId}`)
+    res.json(response.data)
+
+  }catch(error){
+    console.error('Error fetching films:', error);
+
+  }
+
+})
 
 module.exports = router;
