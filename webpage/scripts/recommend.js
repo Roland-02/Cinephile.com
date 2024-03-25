@@ -1,20 +1,16 @@
 //HANDLE FILM INFO RENDERING ON FRONTEND, CAROUSEL NAVIGATION
 
 async function cacheRecommendedFilms(user_id) {
-    //load batch of films from file
-
     try {
         // Fetch films data from the API
-        const response = await axios.post(`http://localhost:8080/recommendedFilms?user_id=${user_id}`);
+        const response = await axios.post(`http://localhost:8080/cacheRecommendedFilms?user_id=${user_id}`);
     } catch (error) {
         console.error('Error fetching films:', error);
     }
 
 };
 
-//load next batch of films
-async function getRecommendedBatch(user_id, category, page) {
-
+async function getRecommendedFilmsBatch(user_id, category, page) {
     try {
         const response = await axios.get(`http://localhost:8080/getFilmsBatch?user_id=${user_id}&category=${category}&page=${page}`)
         const films = response.data.films;
@@ -27,6 +23,20 @@ async function getRecommendedBatch(user_id, category, page) {
 
 
 }
+
+async function getLikedStaff(user_id) {
+    try {
+        const response = await axios.get(`http://localhost:8080/getLikedStaff?user_id=${user_id}`)
+        const liked_cast = response.data.liked_cast;
+        const liked_crew = response.data.liked_crew;
+        return { liked_cast, liked_crew }
+
+    } catch (error) {
+        console.error('Error getting films batch', error);
+        return null;
+    }
+}
+
 var combinedScrollPosition;
 var plotScrollPosition;
 var castScrollPosition;
@@ -51,7 +61,11 @@ window.onload = async function () {
     var user_id = combinedScroll.getAttribute('data-id');
 
     // Check if combined films are in the cache
-    var combined_films = await getRecommendedBatch(user_id, 'combined', 1);
+    var combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
+    var likedStaff = await getLikedStaff(user_id);
+    var liked_cast = likedStaff.liked_cast
+    var liked_crew = likedStaff.liked_crew
+
 
     if (combined_films !== '-') {
         // Films are in cache, display them
@@ -59,7 +73,7 @@ window.onload = async function () {
     } else {
         // Films are not in cache, fetch and cache them
         await cacheRecommendedFilms(user_id);
-        combined_films = await getRecommendedBatch(user_id, 'combined', 1);
+        combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
         await displayRecommendedFilms(combined_films);
     }
 
@@ -67,17 +81,17 @@ window.onload = async function () {
         if (films.length > 0) {
             combinedScroll.innerHTML = await displayCombinedFilms(films);
 
-            var plot_films = await getRecommendedBatch(user_id, 'plot', 1);
-            plotScroll.innerHTML = await displayCategoryFilms(plot_films, 'plot');
+            var plot_films = await getRecommendedFilmsBatch(user_id, 'plot', 1);
+            plotScroll.innerHTML = await displayGenrePlot(plot_films, 'plot');
 
-            var cast_films = await getRecommendedBatch(user_id, 'cast', 1);
-            castScroll.innerHTML = await displayCategoryFilms(cast_films, 'cast');
+            var cast_films = await getRecommendedFilmsBatch(user_id, 'cast', 1);
+            castScroll.innerHTML = await displayCastCrew(cast_films, 'cast');
 
-            var genre_films = await getRecommendedBatch(user_id, 'genre', 1);
-            genreScroll.innerHTML = await displayCategoryFilms(genre_films, 'genres');
+            var genre_films = await getRecommendedFilmsBatch(user_id, 'genre', 1);
+            genreScroll.innerHTML = await displayGenrePlot(genre_films, 'genres');
 
-            var crew_films = await getRecommendedBatch(user_id, 'crew', 1);
-            crewScroll.innerHTML = await displayCategoryFilms(crew_films, 'crew');
+            var crew_films = await getRecommendedFilmsBatch(user_id, 'crew', 1);
+            crewScroll.innerHTML = await displayCastCrew(crew_films, 'crew');
         } else {
             combinedScroll.innerHTML = `<span> Your profile is empty. </span>`;
         }
@@ -129,7 +143,20 @@ window.onload = async function () {
             content += `</div>`
             const formatted_genre = film.genres.split(',').map(genre => genre.trim()).join(', ')
             content += `<p class="film-genre">${formatted_genre}</p>`
-            content += `<p class="film-cast">${film.cast}</p>`
+
+            let names = film.cast.split(','); // Split the cast string into individual names
+            let castContent = ''; // Initialize a variable to store the HTML content for cast
+            for (let i = 0; i < names.length; i++) {
+                let name = names[i].trim(); // Remove any leading/trailing spaces
+                let bold = liked_cast.includes(name) ? 'myPeople' : '';
+                castContent += `<span class="${bold}">${name}</span>`;
+                // Add a comma if it's not the last name
+                if (i < names.length - 1) {
+                    castContent += ', ';
+                }
+            }
+            content += `<p class="film-cast">${castContent}</p>`;
+
             const formatted_similarity = Math.round(film.similarity * 100)
             content += `<p class="film-similarity">${formatted_similarity}%</p> </i>`
             content += `</div>`
@@ -141,7 +168,7 @@ window.onload = async function () {
 
     };
 
-    async function displayCategoryFilms(films, category) {
+    async function displayGenrePlot(films, category) {
 
         var content = "";
 
@@ -149,9 +176,25 @@ window.onload = async function () {
 
             content += `<div class="small-film-card" id="${category}-card" data-id="${film.tconst}">`
             content += `<div class="small-film-details">`
+            content += `<h3 class="small-film-title">${film.primaryTitle}</h3>`; // Use a smaller font size class
+            content += `<p class="small-film-${category}">${film[category]}</p>`;
+            content += `</div> </div>`;
+        });
+        content += `</div>`;
+
+        return content
+    };
+
+    async function displayCastCrew(films, category) {
+        let content = "";
+
+        films.forEach(function (film) {
+            content += `<div class="small-film-card" id="${category}-card" data-id="${film.tconst}">`;
+            content += `<div class="small-film-details">`;
 
             // Check if the film title is too long
             content += `<h3 class="small-film-title">${film.primaryTitle}</h3>`; // Use a smaller font size class
+            content += `<p class="small-film-${category}">`;
 
             if (category === 'crew') {
                 const fields = [];
@@ -162,19 +205,35 @@ window.onload = async function () {
                 if (film.editor) fields.push(film.editor);
                 const crewString = fields.join(', ');
 
-                content += `<p class="small-film-${category}">${crewString}</p>`;
+                const names = crewString.split(','); // Split the crew string into individual names
+                let crewContent = '';
+                names.forEach(function (name) {
+                    const trimmedName = name.trim(); // Remove any leading/trailing spaces
+                    const bold = liked_crew.includes(trimmedName) ? 'myPeople' : '';
+                    crewContent += `<span class="${bold}">${trimmedName}</span>, `;
+                });
 
+                content += crewContent;
             } else {
-                content += `<p class="small-film-${category}">${film[category]}</p>`;
+                const names = film.cast.split(','); // Split the cast string into individual names
+                let castContent = '';
+                names.forEach(function (name) {
+                    const trimmedName = name.trim(); // Remove any leading/trailing spaces
+                    const bold = liked_cast.includes(trimmedName) ? 'myPeople' : '';
+                    castContent += `<span class="${bold}">${trimmedName}</span>, `;
+                });
+                // Remove the trailing comma and space
+                castContent = castContent.slice(0, -2);
+
+                content += castContent;
             }
+
+            content += `</p>`;
             content += `</div> </div>`;
-
         });
-        content += `</div>`;
 
-        return content
-    };
-
+        return content;
+    }
 
     async function loadMoreCombinedFilms() {
         filmScroll = this;
@@ -185,7 +244,7 @@ window.onload = async function () {
 
             // Call getCombinedRecommended to fetch the next batch of films
             combinedScrollPosition++;
-            const films = await getRecommendedBatch(user_id, 'combined', combinedScrollPosition);
+            const films = await getRecommendedFilmsBatch(user_id, 'combined', combinedScrollPosition);
 
             // Append the newly fetched films to the scroll box
             if (films.length > 0) {
@@ -205,11 +264,11 @@ window.onload = async function () {
             plotScrollPosition++;
 
             // Call getRecommendedBatch to fetch the next batch of films
-            const films = await getRecommendedBatch(user_id, 'plot', plotScrollPosition);
+            const films = await getRecommendedFilmsBatch(user_id, 'plot', plotScrollPosition);
 
             // Append the newly fetched films to the scroll box
             if (films.length > 0) {
-                filmScroll.innerHTML += await displayCategoryFilms(films, 'plot');
+                filmScroll.innerHTML += await displayGenrePlot(films, 'plot');
             }
         }
 
@@ -225,11 +284,11 @@ window.onload = async function () {
             castScrollPosition++;
 
             // Call getRecommendedBatch to fetch the next batch of films
-            const films = await getRecommendedBatch(user_id, 'cast', castScrollPosition);
+            const films = await getRecommendedFilmsBatch(user_id, 'cast', castScrollPosition);
 
             // Append the newly fetched films to the scroll box
             if (films.length > 0) {
-                filmScroll.innerHTML += await displayCategoryFilms(films, 'cast');
+                filmScroll.innerHTML += await displayCastCrew(films, 'cast');
             }
         }
 
@@ -245,11 +304,11 @@ window.onload = async function () {
             genreScrollPosition++;
 
             // Call getRecommendedBatch to fetch the next batch of films
-            const films = await getRecommendedBatch(user_id, 'genre', genreScrollPosition);
+            const films = await getRecommendedFilmsBatch(user_id, 'genre', genreScrollPosition);
 
             // Append the newly fetched films to the scroll box
             if (films.length > 0) {
-                filmScroll.innerHTML += await displayCategoryFilms(films, 'genres');
+                filmScroll.innerHTML += await displayGenrePlot(films, 'genres');
             }
         }
 
@@ -265,11 +324,11 @@ window.onload = async function () {
             crewScrollPosition++;
 
             // Call getRecommendedBatch to fetch the next batch of films
-            const films = await getRecommendedBatch(user_id, 'crew', crewScrollPosition);
+            const films = await getRecommendedFilmsBatch(user_id, 'crew', crewScrollPosition);
 
             // Append the newly fetched films to the scroll box
             if (films.length > 0) {
-                filmScroll.innerHTML += await displayCategoryFilms(films, 'crew');
+                filmScroll.innerHTML += await displayCastCrew(films, 'crew');
             }
         }
 

@@ -1,6 +1,6 @@
 //handle GET request for /home, load film data
 var express = require('express');
-var router = express.Router();
+const router = express.Router();
 const axios = require("axios");
 
 
@@ -13,7 +13,7 @@ async function updateProfileAndVectors(userId) {
       .catch(function (error) {
         console.log(error);
       });
-}
+};
 async function cacheRecommendedFilms(user_id) {
   //load batch of films from file
 
@@ -25,7 +25,6 @@ async function cacheRecommendedFilms(user_id) {
   }
 
 };
-
 
 
 router.get(['/', '/recommend', '/Recommend'], async function (req, res) {

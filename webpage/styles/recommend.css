@@ -1,5 +1,7 @@
 /* mixed recommendations */
-
+.myPeople{
+    font-weight: bold;
+}
 .bulk-scrollbox {
     width: 100%;
     height: 80vh;
@@ -151,3 +153,4 @@
     background-color: #ffc0fd;
 
 }
+

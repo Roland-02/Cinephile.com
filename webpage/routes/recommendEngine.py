@@ -298,9 +298,38 @@ def get_combined_recommendations(user_profile_groups, similarity_vectors, exclud
 
     return filtered_recommendations
 
+def extract_names(data):
+    names = set()
+    for column in data.columns:
+        for value in data[column]:
+            if value and isinstance(value, str) and value.lower() not in ['none', 'null', 'nan']:
+                names.update(value.split(", "))
+    return list(names)
 
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
 
+
+
+@app.route('/get_liked_staff', methods=['GET'])
+def get_staff():
+
+    user_id = request.args.get("user_id")
+    get_profile = get_user_profile(user_id)
+    user_profile = get_profile[0]
+    grouped_likes = collate_liked_groups(user_profile)
+
+    liked_cast = grouped_likes[1]
+    liked_crew = grouped_likes[2]
+
+    if not liked_cast.empty:
+        liked_cast_names = extract_names(liked_cast)
+
+    if not liked_crew.empty:
+        liked_crew_names = extract_names(liked_crew)
+
+    return jsonify({"liked_cast": liked_cast_names, "liked_crew": liked_crew_names})
+        
+  
 @app.route('/update_profile_and_vectors', methods=['POST'])
 def initialise_profile():
     user_id = request.args.get("user_id") 
