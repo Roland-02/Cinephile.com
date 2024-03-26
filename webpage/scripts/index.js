@@ -23,10 +23,11 @@ async function getFilms(counter) {
 
 //number of films loaded into frontend at a time - .env
 const MAX_LOAD = 100;
+const LAST_INDEX = 23643;
 
 window.onload = async function () {
 
-    
+
     //initialise html elements
     const filmInfo = document.getElementById('film-info');
     const filmPoster = document.getElementById('film-poster');
@@ -40,7 +41,7 @@ window.onload = async function () {
     //stop processes overlapping
     var isClickLocked = false;
 
-    
+
 
     //initialize counter and currentIndex with saved values
     var savedCounter = localStorage.getItem('counter');
@@ -324,8 +325,10 @@ window.onload = async function () {
         if (!isClickLocked) {
             isClickLocked = true;
 
-            currentIndex++;
-            counter++;
+            if (counter < LAST_INDEX - 1) {
+                currentIndex++;
+                counter++;
+            }
 
             // Clicking forwards to next load
             if (currentIndex % MAX_LOAD == 0) {
