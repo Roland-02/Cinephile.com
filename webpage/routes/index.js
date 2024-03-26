@@ -4,12 +4,14 @@ const router = express.Router();
 const filmsRouter = require('../routes/films');
 const { getConnection } = require('../database');
 router.use('/routes', filmsRouter);
+var hasUserInteracted = false;
 
 //open index page, load in films
 router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
 
     try {
 
+        hasUserInteracted = false;
         res.render('index', { title: 'Express', session: { email: req.cookies.sessionEmail, id: req.cookies.sessionID } });
 
     } catch (error) {
@@ -23,6 +25,7 @@ router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
 router.get('/index', async function (req, res) {
     try{
 
+        hasUserInteracted = false;
         var page = req.query.page;
         var tconst = req.query.tconst;
 
@@ -144,6 +147,7 @@ router.post('/loveFilm', (req, res) => {
         connection.release()
 
     });
+    hasUserInteracted = true;
 
     res.send('Film saved successfully'); //send response
 
@@ -165,12 +169,15 @@ router.post('/unloveFilm', function (req, res) {
 
             if (err) throw (err)
 
+
             console.log('unloved film')
 
         });
 
         connection.release()
     });
+
+    hasUserInteracted = true;
 
     res.send('Removed succesfully')
 
@@ -246,6 +253,7 @@ router.post('/saveLikedElements', (req, res) => {
         connection.release()
     });
 
+    hasUserInteracted = true;
     res.send('Data saved successfully'); //send response
 
 });
@@ -380,6 +388,13 @@ router.get('/getWatchlist', function (req, res) {
     });
 
 });
+
+router.get('/hasUserInteracted', function (req, res) {
+
+    res.json({ hasUserInteracted });
+    hasUserInteracted = false;
+
+})
 
 //user logs out
 router.post('/signout', function (req, res) {

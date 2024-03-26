@@ -47,14 +47,28 @@ async function updateProfileAndVectors(userId) {
 }
 
 
+  async function cacheRecommendedFilms(user_id) {
+    //load batch of films from file
+    await axios.post(`http://127.0.0.1:5000/cache_recommend_pack?user_id=${user_id}`, {
+    })
+      .then(function (response) {
+        console.log(response.data.message);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  
+  };
+  
+
 async function startEngineAndProfileUpdate(user_id) {
     try {
         console.log('Starting engine...');
         await startRecommendEngine();
         console.log('Engine started');
-        console.log('Loading profile...');
+        
         await updateProfileAndVectors(user_id);
-        console.log('Profile loaded');
+        await cacheRecommendedFilms(user_id);
 
     } catch (error) {
         console.error('Error starting engine or updating profile:', error);
