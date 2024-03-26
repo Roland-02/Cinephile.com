@@ -1,13 +1,12 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
-
+const allFilms = require('../films.json');
 const PAGE_SIZE = process.env.PAGE_SIZE; //number of films loaded at a time
 
-const allFilms = require('../films.json');
 
 // Route to handle paginated film requests
-router.get('/films', (req, res) => {
+router.get('/indexPageFilms', (req, res) => {
   try {
     const page = req.query.page || 1;  // Get the requested page number
 
@@ -25,6 +24,54 @@ router.get('/films', (req, res) => {
 
 });
 
+
+// // Route to handle opening a specific film
+// router.get('/openClickedFilm', async (req, res) => {
+//   try {
+//     const tconst = req.query.tconst; // Assuming tconst is sent in the request body
+
+//     // Find the page to which the film belongs
+//     const pageIndex = allFilms.findIndex(film => film.tconst === tconst);
+//     const page = Math.floor(pageIndex / PAGE_SIZE) + 1; // Calculate the page number
+
+//     // Redirect to the index page with the appropriate page number
+//     res.redirect(`/index?page=${page}?tconst=${tconst}`);
+
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+  
+// });
+
+// Route to handle opening a specific film
+router.get('/openClickedFilm', async (req, res) => {
+  try {
+    const tconst = req.query.tconst; // Assuming tconst is sent in the request query
+
+    // Find the index of the film in the allFilms dataset
+    const filmIndex = allFilms.findIndex(film => film.tconst === tconst);
+
+    // Calculate the page number to which the film belongs
+    const page = Math.floor(filmIndex / PAGE_SIZE) + 1;
+
+    // Calculate the currentIndex within the page
+    const startIndex = (page - 1) * PAGE_SIZE;
+    const currentIndex = filmIndex - startIndex;
+
+    // Calculate the counter
+    const counter = filmIndex;
+
+    res.json({"counter":counter, "currentIndex":currentIndex})
+
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
 router.post('/cacheRecommendedFilms', async (req, res) => {
 
   try {
@@ -40,6 +87,7 @@ router.post('/cacheRecommendedFilms', async (req, res) => {
   }
 
 });
+
 
 router.get('/getFilmsBatch', async (req, res) => {
 
@@ -63,17 +111,18 @@ router.get('/getFilmsBatch', async (req, res) => {
 
 
 router.get('/getLikedStaff', async function (req, res) {
-  try{
+  try {
     const userId = req.cookies.sessionID;
 
     const response = await axios.get(`http://127.0.0.1:5000/get_liked_staff?user_id=${userId}`)
     res.json(response.data)
 
-  }catch(error){
+  } catch (error) {
     console.error('Error fetching films:', error);
 
   }
 
 })
+
 
 module.exports = router;
