@@ -65,31 +65,6 @@ window.onload = async function () {
     // var liked_cast = likedStaff.liked_cast
     // var liked_crew = likedStaff.liked_crew
 
-    // // check if recommendations are in cache
-    // if (combined_films !== '-') {
-    //     // films are in cache, display them
-    //     likedStaff = await getLikedStaff(user_id);
-    //     liked_cast = likedStaff.liked_cast
-    //     liked_crew = likedStaff.liked_crew
-    //     await displayRecommendedFilms(combined_films);
-    // } else {
-    //     // films are not in cache, fetch
-    //     await cacheRecommendedFilms(user_id);
-    //     combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
-    //     // if recommendations are still blank then user's profile is blank
-    //     if (combined_films === '-') { //user profile is empty, there are no recommendations
-    //         console.log('profile is empty')
-
-
-    //     } else { //user profile is not empty, recommendations are now in cache
-    //         likedStaff = await getLikedStaff(user_id);
-    //         liked_cast = likedStaff.liked_cast
-    //         liked_crew = likedStaff.liked_crew
-    //         await displayRecommendedFilms(combined_films);
-    //     }
-
-    // }
-
     // check if recommendations are in cache
     if (combined_films !== '-') {
         // Films are in cache, display them
@@ -98,6 +73,7 @@ window.onload = async function () {
         // Films are not in cache, fetch and cache them
         await cacheRecommendedFilms(user_id);
         combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
+       
         if (combined_films === '-') {
             // User profile is empty, there are no recommendations
             console.log('profile is empty');
@@ -107,13 +83,15 @@ window.onload = async function () {
         }
     }
 
+
     // Function to display films from cache
     async function displayFilmsFromCache(films, user_id) {
         likedStaff = await getLikedStaff(user_id);
         liked_cast = likedStaff.liked_cast;
         liked_crew = likedStaff.liked_crew;
         await displayRecommendedFilms(films);
-    }
+    };
+
 
     async function displayRecommendedFilms(films) {
         if (films.length > 0) {
@@ -387,26 +365,6 @@ window.onload = async function () {
     castScroll.addEventListener('scroll', loadMoreCastFilms);
     genreScroll.addEventListener('scroll', loadMoreGenreFilms);
     crewScroll.addEventListener('scroll', loadMoreCrewFilms);
-
-
-    // open index page on clicked film
-    document.querySelectorAll('.clickable').forEach(element => {
-        element.addEventListener('click', async function () {
-            const tconst = this.getAttribute('data-id');
-            const response = await axios.get(`http://localhost:8080/openClickedFilm?tconst=${tconst}`);
-            let savedCounter = response.data.counter
-            let savedIndex = response.data.currentIndex
-            localStorage.setItem('counter', savedCounter);
-            localStorage.setItem('currentIndex', savedIndex);
-            window.location.href = '/index';
-
-        });
-    });
-
-
-    document.getElementById('page_title').addEventListener('click', function () {
-        window.location.href = '/index';
-    });
 
 
 };
