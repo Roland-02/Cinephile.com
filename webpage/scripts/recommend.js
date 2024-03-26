@@ -59,17 +59,13 @@ window.onload = async function () {
 
     // Check if combined films are in the cache
     var combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
-    console.log(combined_films)
-
-    // var likedStaff = await getLikedStaff(user_id);
-    // var liked_cast = likedStaff.liked_cast
-    // var liked_crew = likedStaff.liked_crew
-
+    
     // check if recommendations are in cache
     if (combined_films !== '-') {
-        // Films are in cache, display them
-        await displayFilmsFromCache(combined_films, user_id);
+        await displayFilmsFromCache(combined_films, user_id); // Films are in cache, display them
+
     } else {
+
         // Films are not in cache, fetch and cache them
         await cacheRecommendedFilms(user_id);
         combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
@@ -77,10 +73,12 @@ window.onload = async function () {
         if (combined_films === '-') {
             // User profile is empty, there are no recommendations
             console.log('profile is empty');
+
         } else {
             // User profile is not empty, recommendations are now in cache
             await displayFilmsFromCache(combined_films, user_id);
         }
+
     }
 
 

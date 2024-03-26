@@ -34,9 +34,13 @@ router.get(['/', '/recommend', '/Recommend'], async function (req, res) {
 
     const userId = req.cookies.sessionID;
 
-    // update profile when page is loaded - stagger later
-    await updateProfileAndVectors(userId);
-    await cacheRecommendedFilms(userId);
+    const axiosRes = await axios.get(`http://localhost:8080/hasUserInteracted`)
+    userInteracted = axiosRes.data.hasUserInteracted;
+
+    if (userInteracted) {
+      await updateProfileAndVectors(userId);
+      await cacheRecommendedFilms(userId);
+    }
 
     res.render('recommend', {
       title: 'Express',

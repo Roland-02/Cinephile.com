@@ -211,6 +211,15 @@ def get_user_profile(user_id):
 
     return (user_profile, lovedFilms)
 
+# get array of names from inputted dataframe
+def extract_names(data):
+    names = set()
+    for column in data.columns:
+        for value in data[column]:
+            if value and isinstance(value, str) and value.lower() not in ['none', 'null', 'nan']:
+                names.update(value.split(", "))
+    return list(names)
+
 # split user profile into likes by group
 def collate_liked_groups(user_profile):
     group_dataframes = []
@@ -298,17 +307,8 @@ def get_combined_recommendations(user_profile_groups, similarity_vectors, exclud
 
     return filtered_recommendations
 
-def extract_names(data):
-    names = set()
-    for column in data.columns:
-        for value in data[column]:
-            if value and isinstance(value, str) and value.lower() not in ['none', 'null', 'nan']:
-                names.update(value.split(", "))
-    return list(names)
 
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
-
-
 
   
   
@@ -472,10 +472,8 @@ def get_batch():
             batch = films_data[start_index:end_index]
             
             return jsonify({"films": batch})
-        else:
-            return jsonify({"films": "-"})
-    else:
-        return jsonify({"films": "-"})
+   
+    return jsonify({"films": "-"})
     
 
     
