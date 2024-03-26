@@ -36,7 +36,7 @@ router.get(['/', '/recommend', '/Recommend'], async function (req, res) {
 
     // update profile when page is loaded - stagger later
     await updateProfileAndVectors(userId);
-    await cacheRecommendedFilms(userId)
+    await cacheRecommendedFilms(userId);
 
     res.render('recommend', {
       title: 'Express',
@@ -48,6 +48,7 @@ router.get(['/', '/recommend', '/Recommend'], async function (req, res) {
     console.error("Error:", error);
     res.render('error', { message: 'Failed to get profile' });
   }
+
 });
 
 
