@@ -51,6 +51,7 @@ window.onload = async function () {
     const castScroll = document.getElementById('cast_box');
     const genreScroll = document.getElementById('genre_box');
     const crewScroll = document.getElementById('crew_box');
+    var user_id = combinedScroll.getAttribute('data-id');
 
     combinedScrollPosition = 1,
     plotScrollPosition = 1;
@@ -58,14 +59,11 @@ window.onload = async function () {
     genreScrollPosition = 1;
     crewScrollPosition = 1;
 
-    var user_id = combinedScroll.getAttribute('data-id');
-
     // Check if combined films are in the cache
     var combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
     var likedStaff = await getLikedStaff(user_id);
     var liked_cast = likedStaff.liked_cast
     var liked_crew = likedStaff.liked_crew
-
 
     if (combined_films !== '-') {
         // Films are in cache, display them
@@ -97,6 +95,7 @@ window.onload = async function () {
         }
     }
 
+
     async function displayCombinedFilms(films) {
 
         var content = "";
@@ -117,7 +116,7 @@ window.onload = async function () {
                 time = `${minutes}m`;;
             }
 
-            content += `<div class="film-card card-body" data-id="${film.tconst}">`
+            content += `<div class="film-card card-body clickable" data-id="${film.tconst}">`
 
             // check if poster exists
             if (film.poster) {
@@ -174,7 +173,7 @@ window.onload = async function () {
 
         films.forEach(function (film) {
 
-            content += `<div class="small-film-card card-body ${category}-card" data-id="${film.tconst}">`
+            content += `<div class="small-film-card card-body ${category}-card clickable" data-id="${film.tconst}">`
             content += `<div class="small-film-details">`
             content += `<h3 class="small-film-title">${film.primaryTitle}</h3>`; // Use a smaller font size class
             content += `<p class="small-film-${category}">${film[category]}</p>`;
@@ -189,7 +188,7 @@ window.onload = async function () {
         let content = "";
 
         films.forEach(function (film) {
-            content += `<div class="small-film-card card-body ${category}-card" data-id="${film.tconst}">`;
+            content += `<div class="small-film-card card-body ${category}-card clickable" data-id="${film.tconst}">`;
             content += `<div class="small-film-details">`;
 
             // Check if the film title is too long
@@ -234,6 +233,8 @@ window.onload = async function () {
 
         return content;
     }
+
+
 
     async function loadMoreCombinedFilms() {
         filmScroll = this;
@@ -335,11 +336,27 @@ window.onload = async function () {
         return crewScrollPosition;
     };
 
+
     combinedScroll.addEventListener('scroll', loadMoreCombinedFilms);
     plotScroll.addEventListener('scroll', loadMorePlotFilms);
     castScroll.addEventListener('scroll', loadMoreCastFilms);
     genreScroll.addEventListener('scroll', loadMoreGenreFilms);
     crewScroll.addEventListener('scroll', loadMoreCrewFilms);
+
+
+    // open index page on clicked film
+    document.querySelectorAll('.clickable').forEach(element => {
+        element.addEventListener('click', async function () {
+            const tconst = this.getAttribute('data-id');
+            const response = await axios.get(`http://localhost:8080/openClickedFilm?tconst=${tconst}`);
+            let savedCounter = response.data.counter
+            let savedIndex = response.data.currentIndex
+            localStorage.setItem('counter', savedCounter);
+            localStorage.setItem('currentIndex', savedIndex);
+            window.location.href = '/index';
+
+        });
+    });
 
 
     document.getElementById('page_title').addEventListener('click', function () {

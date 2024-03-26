@@ -9,7 +9,7 @@ async function getFilms(counter) {
         page = Math.floor((counter / MAX_LOAD)) + 1;
 
         //request to the films API with the current page
-        const response = await fetch(`http://localhost:8080/films?page=${page}`);
+        const response = await fetch(`http://localhost:8080/indexPageFilms?page=${page}`);
         if (response.ok) {
             films = await response.json();
         }
@@ -26,6 +26,7 @@ const MAX_LOAD = 100;
 
 window.onload = async function () {
 
+    
     //initialise html elements
     const filmInfo = document.getElementById('film-info');
     const filmPoster = document.getElementById('film-poster');
@@ -39,6 +40,7 @@ window.onload = async function () {
     //stop processes overlapping
     var isClickLocked = false;
 
+    
 
     //initialize counter and currentIndex with saved values
     var savedCounter = localStorage.getItem('counter');
@@ -303,7 +305,6 @@ window.onload = async function () {
 
         //display all film data
         filmInfo.innerHTML = content;
-
 
         //display film poster
         if (films[currentIndex].poster) {

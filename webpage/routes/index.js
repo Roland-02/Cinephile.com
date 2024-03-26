@@ -1,6 +1,6 @@
 //handle GET request for /home, load film data
 var express = require('express');
-var router = express.Router();
+const router = express.Router();
 const filmsRouter = require('../routes/films');
 const { getConnection } = require('../database');
 router.use('/routes', filmsRouter);
@@ -12,10 +12,26 @@ router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
 
         res.render('index', { title: 'Express', session: { email: req.cookies.sessionEmail, id: req.cookies.sessionID } });
 
-
     } catch (error) {
         console.error('Error fetching films:', error);
         res.status(500).send('Internal Server Error');
+    }
+
+});
+
+// open index page on specific film
+router.get('/index', async function (req, res) {
+    try{
+
+        var page = req.query.page;
+        var tconst = req.query.tconst;
+
+        res.render('index', { title: 'Express', session: { email: req.cookies.sessionEmail, id: req.cookies.sessionID, tconst: tconst, page: page} });
+
+    }catch (error){
+        console.error('Error opening index page on film', error)
+        res.status(500).send('Internal Server Error');
+
     }
 
 });
@@ -260,9 +276,6 @@ router.get('/getLikedElements', function (req, res) {
                         });
                     });
                 }
-
-
-
 
                 const findCastQuery = `SELECT name FROM user_liked_cast WHERE user_id = ? AND tconst = ?`;
                 await connection.query(findCastQuery, [userid, film_id], async (err, castResults) => {

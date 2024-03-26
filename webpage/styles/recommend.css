@@ -182,14 +182,17 @@
 }
 /* END grouped card colours */
 
+.clickable{
+    cursor: pointer;
+}
 
 .myPeople{
     font-weight: bold;
 }
 
 .border-top-bottom-rounded {
-    border-top: 2px solid; /* Top border */
-    border-bottom: 2px solid; /* Bottom border */
+    border-top: 1px solid; /* Top border */
+    border-bottom: 1px solid; /* Bottom border */
     border-left: none; /* No left border */
     border-right: none; /* No right border */
     border-top-left-radius: 10px; /* Rounded top-left corner */
