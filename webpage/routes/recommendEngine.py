@@ -310,25 +310,7 @@ data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
 
 
 
-@app.route('/get_liked_staff', methods=['GET'])
-def get_staff():
-
-    user_id = request.args.get("user_id")
-    get_profile = get_user_profile(user_id)
-    user_profile = get_profile[0]
-    grouped_likes = collate_liked_groups(user_profile)
-
-    liked_cast = grouped_likes[1]
-    liked_crew = grouped_likes[2]
-
-    if not liked_cast.empty:
-        liked_cast_names = extract_names(liked_cast)
-
-    if not liked_crew.empty:
-        liked_crew_names = extract_names(liked_crew)
-
-    return jsonify({"liked_cast": liked_cast_names, "liked_crew": liked_crew_names})
-        
+  
   
 @app.route('/update_profile_and_vectors', methods=['POST'])
 def initialise_profile():
@@ -384,7 +366,7 @@ def initialise_profile():
         return jsonify({"message": "error loading profile"})
 
 
-@app.route('/get_recommend_pack', methods=['POST'])
+@app.route('/cache_recommend_pack', methods=['POST'])
 def bulk_recommend():
     user_id = request.args.get("user_id") 
 
@@ -448,13 +430,14 @@ def bulk_recommend():
             crew_recommended = get_similar_films(similarity_vectors['crew'], lovedFilms)
             crew_recommended_dict = crew_recommended.to_dict(orient='records')
 
+            #save recommendations to cache
             cache.set(f'user_combined_recommended{user_id}', json.dumps(combined_recommended_dict))
             cache.set(f'user_plot_recommended{user_id}', json.dumps(plot_recommended_dict))
             cache.set(f'user_cast_recommended{user_id}', json.dumps(cast_recommended_dict))
             cache.set(f'user_genre_recommended{user_id}', json.dumps(genre_recommended_dict))
             cache.set(f'user_crew_recommended{user_id}', json.dumps(crew_recommended_dict))
 
-            return jsonify({"message": "recommendations stored in cache"})
+            return jsonify({"message": "Recommendations stored in cache"})
         else:
             return jsonify({"message": "error caching recommendations"})
 
@@ -485,7 +468,27 @@ def get_batch():
     
 
     
+@app.route('/get_liked_staff', methods=['GET'])
+def get_staff():
 
+    user_id = request.args.get("user_id")
+    get_profile = get_user_profile(user_id)
+    user_profile = get_profile[0]
+    grouped_likes = collate_liked_groups(user_profile)
+
+    liked_cast = grouped_likes[1]
+    liked_crew = grouped_likes[2]
+    liked_cast_names = ''
+    liked_crew_names = ''
+
+    if not liked_cast.empty:
+        liked_cast_names = extract_names(liked_cast)
+
+    if not liked_crew.empty:
+        liked_crew_names = extract_names(liked_crew)
+
+    return jsonify({"liked_cast": liked_cast_names, "liked_crew": liked_crew_names})
+      
 
 
 

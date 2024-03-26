@@ -25,25 +25,6 @@ router.get('/indexPageFilms', (req, res) => {
 });
 
 
-// // Route to handle opening a specific film
-// router.get('/openClickedFilm', async (req, res) => {
-//   try {
-//     const tconst = req.query.tconst; // Assuming tconst is sent in the request body
-
-//     // Find the page to which the film belongs
-//     const pageIndex = allFilms.findIndex(film => film.tconst === tconst);
-//     const page = Math.floor(pageIndex / PAGE_SIZE) + 1; // Calculate the page number
-
-//     // Redirect to the index page with the appropriate page number
-//     res.redirect(`/index?page=${page}?tconst=${tconst}`);
-
-//   } catch (error) {
-//     console.error("Error:", error);
-//     res.status(500).json({ error: 'Internal server error' });
-//   }
-  
-// });
-
 // Route to handle opening a specific film
 router.get('/openClickedFilm', async (req, res) => {
   try {
@@ -79,7 +60,7 @@ router.post('/cacheRecommendedFilms', async (req, res) => {
     const userId = req.query.user_id;
 
     // Fetch films data from the API
-    const response = await axios.post(`http://127.0.0.1:5000/get_recommend_pack?user_id=${userId}`);
+    const response = await axios.post(`http://127.0.0.1:5000/cache_recommend_pack?user_id=${userId}`);
     res.json(response.data.message);
 
   } catch (error) {

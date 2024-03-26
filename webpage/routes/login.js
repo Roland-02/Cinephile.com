@@ -11,22 +11,22 @@ const axios = require('axios');
 
 let pythonServerProcess;
 
-// Function to stop the Python server
-function stopEngine() {
-  if (pythonServerProcess) {
-      pythonServerProcess.kill('SIGINT'); // Send the interrupt signal to terminate the process
-      pythonServerProcess = null;
-      console.log('Engine stopped')
-  }
-}
+// // Function to stop the Python server
+// function stopEngine() {
+//   if (pythonServerProcess) {
+//       pythonServerProcess.kill('SIGINT'); // Send the interrupt signal to terminate the process
+//       pythonServerProcess = null;
+//       console.log('Engine stopped')
+//   }
+// }
 
-function startRecommendEngine() {
+async function startRecommendEngine() {
     return new Promise((resolve, reject) => {
         const pythonScriptPath = path.resolve(__dirname, './recommendEngine.py');
         pythonServerProcess = spawn('python', [pythonScriptPath]);
 
         // Listen for standard output
-        pythonServerProcess.stdout.on('data', function(data) {
+        pythonServerProcess.stdout.on('data', function (data) {
             console.log('Python server:', data.toString());
             resolve()
         });
@@ -37,25 +37,25 @@ function startRecommendEngine() {
 
 async function updateProfileAndVectors(userId) {
     await axios.post(`http://127.0.0.1:5000/update_profile_and_vectors?user_id=${userId}`, {
-   
-      })
-      .then(function (response) {
-        console.log(response.data.message);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+    })
+        .then(function (response) {
+            console.log(response.data.message);
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
 }
 
-  
+
 async function startEngineAndProfileUpdate(user_id) {
     try {
         console.log('Starting engine...');
         await startRecommendEngine();
         console.log('Engine started');
-        // console.log('Loading profile...');
-        // await updateProfileAndVectors(user_id);
-        // console.log('Profile loaded');
+        console.log('Loading profile...');
+        await updateProfileAndVectors(user_id);
+        console.log('Profile loaded');
+
     } catch (error) {
         console.error('Error starting engine or updating profile:', error);
     }
@@ -64,8 +64,8 @@ async function startEngineAndProfileUpdate(user_id) {
 
 
 //get request - open login.ejs page
-router.get(['/','/login', '/signin'], function (req, res) {
-    res.render('login', { title: 'Express', session: req.session, message: null, email: null, id: null});
+router.get(['/', '/login', '/signin'], function (req, res) {
+    res.render('login', { title: 'Express', session: req.session, message: null, email: null, id: null });
 });
 
 //post request - user wants to login
@@ -76,7 +76,7 @@ router.post('/', async (req, res) => {
 
     if (!email || !password) {
         //empty fields
-        return res.render('login', { title: 'Express', session: req.session, message: null, email: null, id: null});
+        return res.render('login', { title: 'Express', session: req.session, message: null, email: null, id: null });
     }
 
     getConnection(async (err, connection) => {
@@ -106,7 +106,7 @@ router.post('/', async (req, res) => {
                         console.log('--------> User login')
                         res.cookie('sessionEmail', email); // Store email in a cookie
                         res.cookie('sessionID', user_id);
-         
+
                         await startEngineAndProfileUpdate(user_id);
 
                         return res.redirect('index');
@@ -128,6 +128,6 @@ router.post('/', async (req, res) => {
 });
 //end of post request
 
-// module.exports = { stopEngine }; // Export stopEngine function for use in other files
+
 module.exports = router;
 
