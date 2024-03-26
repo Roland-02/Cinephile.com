@@ -363,7 +363,7 @@ def initialise_profile():
 
         return jsonify({"message": "User profile and vectors updated and stored in cache"})
     else:
-        return jsonify({"message": "error loading profile"})
+        return jsonify({"message": "Error loading profile"})
 
 
 @app.route('/cache_recommend_pack', methods=['POST'])
@@ -377,8 +377,18 @@ def bulk_recommend():
         user_profile_data = json.loads(user_profile_json)
         user_profile_df = pd.DataFrame(user_profile_data)
 
-        if(not user_profile_df.empty):
+        if(user_profile_df.empty):
 
+            # save recommendations to cache
+            cache.set(f'user_combined_recommended{user_id}', json.dumps({}))
+            cache.set(f'user_plot_recommended{user_id}', json.dumps({}))
+            cache.set(f'user_cast_recommended{user_id}', json.dumps({}))
+            cache.set(f'user_genre_recommended{user_id}', json.dumps({}))
+            cache.set(f'user_crew_recommended{user_id}', json.dumps({}))
+
+            return jsonify({"message": "Profile empty, empty recommendations cached"})
+    
+        else:    
             # get groups of liked attributes
             grouped_likes = collate_liked_groups(user_profile_df)
             liked_plot = grouped_likes[0]
@@ -438,9 +448,7 @@ def bulk_recommend():
             cache.set(f'user_crew_recommended{user_id}', json.dumps(crew_recommended_dict))
 
             return jsonify({"message": "Recommendations stored in cache"})
-        else:
-            return jsonify({"message": "error caching recommendations"})
-
+           
 
 
 @app.route('/get_batch', methods=['GET'])
@@ -456,13 +464,16 @@ def get_batch():
 
         films_data = json.loads(films_json)
 
-        start_index = (page - 1) * batch_size
-        end_index = (page) * batch_size
-    
-        # Slice the films list to get the batch
-        batch = films_data[start_index:end_index]
+        if films_data:
+            start_index = (page - 1) * batch_size
+            end_index = (page) * batch_size
 
-        return jsonify({"films": batch})
+            # Slice the films list to get the batch
+            batch = films_data[start_index:end_index]
+            
+            return jsonify({"films": batch})
+        else:
+            return jsonify({"films": "-"})
     else:
         return jsonify({"films": "-"})
     
