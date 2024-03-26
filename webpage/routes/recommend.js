@@ -31,7 +31,7 @@ async function cacheRecommendedFilms(user_id) {
 
 router.get(['/', '/recommend', '/Recommend'], async function (req, res) {
   try {
-
+    
     const userId = req.cookies.sessionID;
 
     const axiosRes = await axios.get(`http://localhost:8080/hasUserInteracted`)
