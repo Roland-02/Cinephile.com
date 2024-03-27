@@ -52,7 +52,6 @@ router.get('/openClickedFilm', async (req, res) => {
 });
 
 
-
 router.post('/cacheRecommendedFilms', async (req, res) => {
 
   try {
@@ -93,8 +92,8 @@ router.get('/getFilmsBatch', async (req, res) => {
 
 router.get('/getLikedStaff', async function (req, res) {
   try {
-    const userId = req.cookies.sessionID;
 
+    const userId = req.cookies.sessionID;
     const response = await axios.get(`http://127.0.0.1:5000/get_liked_staff?user_id=${userId}`)
     res.json(response.data)
 
@@ -109,10 +108,8 @@ router.get('/getLikedStaff', async function (req, res) {
 router.get('/getLovedFilmsDetails', async function(req, res) {
   try {
     const user_id = req.query.user_id;
-
-    const response = await axios.get(`http://127.0.0.1:5000/get_loved_films?user_id=${user_id}`)
-    console.log('hello')
-    res.json(response.data)
+    const response = await axios.get(`http://127.0.0.1:5000/get_loved_films?user_id=${user_id}`);
+    res.json(response.data);
 
   } catch (error) {
     console.error('Error fetching films:', error);
@@ -120,6 +117,19 @@ router.get('/getLovedFilmsDetails', async function(req, res) {
   }
 });
 
+
+router.get('/getProfileStats', async function(req, res) {
+  try{
+    const user_id = req.query.user_id;
+    const response = await axios.get(`http://127.0.0.1:5000/get_profile_stats?user_id=${user_id}`);
+    res.json(response.data);
+
+  }catch (error) {
+    console.error('Error fetching films:', error);
+
+  }
+
+});
 
 
 module.exports = router;
