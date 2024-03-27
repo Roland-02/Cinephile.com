@@ -14,6 +14,7 @@
     <script src="/scripts/profile.js"></script>
     <script src="/bootstrap/js/mdb.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 </head>
@@ -83,7 +84,7 @@
             <!-- MIXED RECOMMENDED FILM CARDS REEL -->
             <div class="col-lg-6 col-md-6 col-sm-12">
 
-                <div class="main-title">your favourite films</div>
+                <div class="main-title">your films</div>
 
                 <div class="container">
                     <div class="poster-container" id="loved-films" data-id="<%= session.id %>" data-bs-spy="scroll">
@@ -99,7 +100,7 @@
             <!-- REC FILMS CATEGORIES -->
             <div class="col-lg-6 col-md-6 col-sm-12">
 
-                <div class="main-title">your favourite...</div>
+                <div class="main-title">your top...</div>
                 <div class="container d-flex flex-column m-15 p-10">
 
                     <!-- plot and cast category boxes row -->
@@ -114,7 +115,7 @@
                     <!-- END cast category scroll box -->
 
                     <!-- plot cateogry scroll box -->
-                    <div class="secondary-title">filmmakers</div>
+                    <div class="secondary-title">film-makers and crew</div>
                     <div id="crew-box" class="favourite-item">
                         <!-- <div class="spinner" style="display: block;"></div> -->
                         <!-- favourite actors box -->
@@ -123,8 +124,10 @@
                     <!-- END plot cateogry scroll box -->
 
                     <!-- cast category scroll box -->
-                    <div class="secondary-title">genre</div>
+                    <div class="secondary-title">genres</div>
                     <div id="genre-box" class="favourite-item">
+                        <canvas id="genreChart"></canvas>
+
                         <!-- <div class="spinner" style="display: block;"></div> -->
                         <!-- favourite film-makers box -->
                         <!-- END favourite film-makers box -->

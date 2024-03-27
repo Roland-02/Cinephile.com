@@ -532,7 +532,20 @@ def get_fav_cast():
         top_crew = most_common_names(liked_crew)
         top_genre = most_common_names(liked_genre)
 
-        return jsonify({"message": True, "cast": top_cast, "crew": top_crew, "genre": top_genre})
+        #
+
+        # Count occurrences of each unique genre string
+        genre_counts = liked_genre['genres'].value_counts()
+        genre_counts_df = genre_counts.reset_index()
+        genre_counts_df.columns = ['Genres', 'Count']
+        sorted_genre_counts_df = genre_counts_df.sort_values(by='Count', ascending=False)
+        top_genres = sorted_genre_counts_df.head(5)
+        top_genres_dict = top_genres.to_dict(orient='records')
+
+        # 
+
+
+        return jsonify({"message": True, "cast": top_cast, "crew": top_crew, "genre": top_genres_dict})
 
 
 
