@@ -1,7 +1,7 @@
 //handle POST and GET request for /login
 
 var express = require('express');
-var router = express.Router();
+const router = express.Router();
 const mysql = require('mysql');
 var { getConnection } = require('../database');
 var bcrypt = require('bcrypt');

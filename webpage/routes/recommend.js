@@ -2,36 +2,13 @@
 var express = require('express');
 const router = express.Router();
 const axios = require("axios");
-
-
-async function updateProfileAndVectors(user_id) {
-  await axios.post(`http://127.0.0.1:5000/update_profile_and_vectors?user_id=${user_id}`, {
-  })
-    .then(function (response) {
-      console.log(response.data.message);
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
-};
-
-async function cacheRecommendedFilms(user_id) {
-  //load batch of films from file
-  await axios.post(`http://127.0.0.1:5000/cache_recommend_pack?user_id=${user_id}`, {
-  })
-    .then(function (response) {
-      console.log(response.data.message);
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
-
-};
+const filmsRouter = require('../routes/films');
+router.use('/routes', filmsRouter);
 
 
 router.get(['/', '/recommend', '/Recommend'], async function (req, res) {
   try {
-    
+
     const userId = req.cookies.sessionID;
 
     const axiosRes = await axios.get(`http://localhost:8080/hasUserInteracted`)
@@ -54,6 +31,33 @@ router.get(['/', '/recommend', '/Recommend'], async function (req, res) {
   }
 
 });
+
+
+async function updateProfileAndVectors(user_id) {
+  await axios.post(`http://127.0.0.1:5000/update_profile_and_vectors?user_id=${user_id}`, {
+  })
+    .then(function (response) {
+      console.log(response.data.message);
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
+};
+
+
+async function cacheRecommendedFilms(user_id) {
+  //load batch of films from file
+  await axios.post(`http://127.0.0.1:5000/cache_recommend_pack?user_id=${user_id}`, {
+  })
+    .then(function (response) {
+      console.log(response.data.message);
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
+
+};
+
 
 
 module.exports = router;

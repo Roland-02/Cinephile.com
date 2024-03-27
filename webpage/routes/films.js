@@ -106,4 +106,20 @@ router.get('/getLikedStaff', async function (req, res) {
 })
 
 
+router.get('/getLovedFilmsDetails', async function(req, res) {
+  try {
+    const user_id = req.query.user_id;
+
+    const response = await axios.get(`http://127.0.0.1:5000/get_loved_films?user_id=${user_id}`)
+    console.log('hello')
+    res.json(response.data)
+
+  } catch (error) {
+    console.error('Error fetching films:', error);
+
+  }
+});
+
+
+
 module.exports = router;

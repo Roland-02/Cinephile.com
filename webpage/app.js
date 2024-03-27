@@ -52,6 +52,9 @@ app.use('/login', loginRoute);
 var recommendRoute = require('./routes/recommend');
 app.use('/recommend', recommendRoute);
 
+var profileRoute = require('./routes/profile');
+app.use('/profile', profileRoute);
+
 var filmsRouter = require('./routes/films');
 app.use(filmsRouter);
 
