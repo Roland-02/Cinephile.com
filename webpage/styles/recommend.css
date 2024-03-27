@@ -190,16 +190,6 @@
     font-weight: bold;
 }
 
-.border-top-bottom-rounded {
-    border-top: 1px solid; /* Top border */
-    border-bottom: 1px solid; /* Bottom border */
-    border-left: none; /* No left border */
-    border-right: none; /* No right border */
-    border-top-left-radius: 10px; /* Rounded top-left corner */
-    border-top-right-radius: 10px; /* Rounded top-right corner */
-    border-bottom-left-radius: 10px; /* Rounded bottom-left corner */
-    border-bottom-right-radius: 10px; /* Rounded bottom-right corner */
-}
 
 .spinner {
     border: 4px solid rgba(255, 247, 247, 0.1);

@@ -105,8 +105,8 @@
                     <!-- plot and cast category boxes row -->
 
                     <!-- cast category scroll box -->
-                    <div class="secondary-title">production</div>
-                    <div class="favourite-item" id="production-box">
+                    <div class="secondary-title">actors</div>
+                    <div id="cast-box" class="favourite-item">
                         <!-- <div class="spinner" style="display: block;"></div> -->
                         <!-- favourite film-makers box -->
                         <!-- END favourite film-makers box -->
@@ -114,18 +114,17 @@
                     <!-- END cast category scroll box -->
 
                     <!-- plot cateogry scroll box -->
-                    <div class="secondary-title">actors</div>
-                    <div class="favourite-item" id="actors-box" data-bs-spy="scroll">
+                    <div class="secondary-title">filmmakers</div>
+                    <div id="crew-box" class="favourite-item">
                         <!-- <div class="spinner" style="display: block;"></div> -->
-
                         <!-- favourite actors box -->
                         <!-- END favourite actors box -->
                     </div>
                     <!-- END plot cateogry scroll box -->
 
                     <!-- cast category scroll box -->
-                    <div class="secondary-title">film-makers</div>
-                    <div class="favourite-item" id="film-makers-box">
+                    <div class="secondary-title">genre</div>
+                    <div id="genre-box" class="favourite-item">
                         <!-- <div class="spinner" style="display: block;"></div> -->
                         <!-- favourite film-makers box -->
                         <!-- END favourite film-makers box -->
@@ -150,6 +149,21 @@
 
     <script>
 
+        // click on film card to open in index
+        $(document).on('click', '.clickable', async function () {
+            const tconst = $(this).data('id');
+            const response = await axios.get(`http://localhost:8080/openClickedFilm?tconst=${tconst}`);
+            let savedCounter = response.data.counter;
+            let savedIndex = response.data.currentIndex;
+            localStorage.setItem('counter', savedCounter);
+            localStorage.setItem('currentIndex', savedIndex);
+            window.location.href = '/index';
+        });
+
+        // click on titlebar to go back to index
+        $('#page_title').click(function () {
+            window.location.href = '/index';
+        });
 
 
     </script>

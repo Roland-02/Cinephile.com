@@ -307,6 +307,15 @@ def get_combined_recommendations(user_profile_groups, similarity_vectors, exclud
 
     return filtered_recommendations
 
+# 
+def most_common_names(df, top_n=10):
+    all_names = pd.Series(df.values.flatten())
+    split_names = all_names.str.split(',').explode()
+    name_counts = split_names.value_counts()
+    top_n_names = name_counts.head(top_n)
+    return top_n_names.index.tolist()
+
+
 
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
 
@@ -502,6 +511,30 @@ def get_loved():
     loved_films = get_loved_films(user_id)
     loved_films_dict = loved_films.to_dict(orient='records')
     return jsonify({"films": loved_films_dict})
+
+
+@app.route('/get_profile_stats', methods=['GET'])
+def get_fav_cast():
+    user_id = request.args.get("user_id")
+    user_profile_df = get_user_profile(user_id)[0]
+    
+
+    if(user_profile_df.empty):
+        return jsonify({"message": False})
+    
+    else:
+        grouped_likes = collate_liked_groups(user_profile_df)
+        liked_cast = grouped_likes[1]
+        liked_crew = grouped_likes[2]
+        liked_genre = grouped_likes[3]
+
+        top_cast = most_common_names(liked_cast)
+        top_crew = most_common_names(liked_crew)
+        top_genre = most_common_names(liked_genre)
+
+        return jsonify({"message": True, "cast": top_cast, "crew": top_crew, "genre": top_genre})
+
+
 
 
 if __name__ == "__main__":
