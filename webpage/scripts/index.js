@@ -27,7 +27,6 @@ const LAST_INDEX = 23643;
 
 window.onload = async function () {
 
-
     //initialise html elements
     const filmInfo = document.getElementById('film-info');
     const filmPoster = document.getElementById('film-poster');
@@ -40,8 +39,6 @@ window.onload = async function () {
     var counter = 0;
     //stop processes overlapping
     var isClickLocked = false;
-
-
 
     //initialize counter and currentIndex with saved values
     var savedCounter = localStorage.getItem('counter');

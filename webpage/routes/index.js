@@ -1,8 +1,8 @@
 //handle GET request for /home, load film data
 var express = require('express');
 const router = express.Router();
-const filmsRouter = require('../routes/films');
 const { getConnection } = require('../database');
+const filmsRouter = require('../routes/films');
 router.use('/routes', filmsRouter);
 var hasUserInteracted = false;
 

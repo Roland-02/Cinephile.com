@@ -311,7 +311,6 @@ def get_combined_recommendations(user_profile_groups, similarity_vectors, exclud
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
 
   
-  
 @app.route('/update_profile_and_vectors', methods=['POST'])
 def initialise_profile():
     user_id = request.args.get("user_id") 
@@ -450,7 +449,6 @@ def bulk_recommend():
             return jsonify({"message": "Recommendations stored in cache"})
            
 
-
 @app.route('/get_batch', methods=['GET'])
 def get_batch():
 
@@ -476,7 +474,6 @@ def get_batch():
     return jsonify({"films": "-"})
     
 
-    
 @app.route('/get_liked_staff', methods=['GET'])
 def get_staff():
 
@@ -499,6 +496,12 @@ def get_staff():
     return jsonify({"liked_cast": liked_cast_names, "liked_crew": liked_crew_names})
       
 
+@app.route('/get_loved_films', methods=['GET'])
+def get_loved():
+    user_id = request.args.get("user_id")
+    loved_films = get_loved_films(user_id)
+    loved_films_dict = loved_films.to_dict(orient='records')
+    return jsonify({"films": loved_films_dict})
 
 
 if __name__ == "__main__":
