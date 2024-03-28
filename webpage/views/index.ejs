@@ -11,8 +11,8 @@
 
     <link rel="stylesheet" href="/styles/index.css" />
     <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
-    <script src="/bootstrap/js/mdb.min.js"></script>
     <script src="/scripts/index.js"></script>
+    <script src="/bootstrap/js/mdb.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
@@ -76,92 +76,109 @@
     <div class="container m-1">
 
         <div class="row">
+            
+            <!-- Filters and refresh -->
+            <div class="container m-2 position-absolute d-flex justify-content-between" style="width: 98%;">
+                <div>
+                    <!-- filter blank button -->
+                    <svg id="filter-blank" xmlns="http://www.w3.org/2000/svg" width="32" height="32" type="button"
+                        class="bi bi-filter-circle" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                        <path
+                            d="M7 11.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5" />
+                    </svg>
 
-            <!-- Filters -->
-            <div class="container position-absolute m-2 d-flex" style="width: 15%;">
+                    <!-- filter filled blank -->
+                    <svg id="filter-filled" xmlns="http://www.w3.org/2000/svg" width="32" height="32" type="button"
+                        class="bi bi-filter-circle-fill" viewBox="0 0 16 16" style="display:none;">
+                        <path
+                            d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16M3.5 5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1 0-1M5 8.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m2 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5" />
+                    </svg>
 
-                <!-- filter blank button -->
-                <svg id="filter-blank" xmlns="http://www.w3.org/2000/svg" width="32" height="32" type="button"
-                    class="bi bi-filter-circle" viewBox="0 0 16 16">
-                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                    <path
-                        d="M7 11.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5" />
-                </svg>
+                    <div class="d-flex align-items-center justify-content-center">
 
-                <!-- filter filled blank -->
-                <svg id="filter-filled" xmlns="http://www.w3.org/2000/svg" width="32" height="32" type="button"
-                    class="bi bi-filter-circle-fill" viewBox="0 0 16 16" style="display:none;">
-                    <path
-                        d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16M3.5 5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1 0-1M5 8.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m2 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5" />
-                </svg>
+                        <div id="filterOptions" class="container border border-2 rounded-5 m-2 p-3"
+                            style="display: none; background-color: white;">
+                            <form>
+                                <div class="mb-2">
+                                    <label for="filterYear" class="form-label">Year</label>
+                                    <select id="filterYear" class="form-select">
+                                        <option selected>Any</option>
+                                        <option>2022</option>
+                                        <option>2021</option>
+                                        <!-- more... -->
+                                    </select>
+                                </div>
 
-                <div class="d-flex align-items-center justify-content-center">
+                                <div class="mb-2">
+                                    <label for="filterGenre" class="form-label">Genre</label>
+                                    <select id="filterGenre" class="form-select">
+                                        <option selected>Any</option>
+                                        <option>Action</option>
+                                        <option>Drama</option>
+                                        <!-- more... -->
+                                    </select>
+                                </div>
 
+                                <div class="mb-2">
+                                    <label for="filterRuntime" class="form-label">Runtime</label>
+                                    <select id="filterRuntime" class="form-select">
+                                        <option selected>Any</option>
+                                        <option>1 hour or less</option>
+                                        <option>90 min</option>
+                                        <option>2 hours</option>
+                                        <option>150 min</option>
+                                        <option>3 hours or more</option>
+                                        <!-- more... -->
+                                    </select>
+                                </div>
 
-                    <div id="filterOptions" class="container border border-2 rounded-5 m-2 p-3"
-                        style="display: none; background-color: white;">
-                        <form>
-                            <div class="mb-2">
-                                <label for="filterYear" class="form-label">Year</label>
-                                <select id="filterYear" class="form-select">
-                                    <option selected>Any</option>
-                                    <option>2022</option>
-                                    <option>2021</option>
-                                    <!-- more... -->
-                                </select>
-                            </div>
-
-                            <div class="mb-2">
-                                <label for="filterGenre" class="form-label">Genre</label>
-                                <select id="filterGenre" class="form-select">
-                                    <option selected>Any</option>
-                                    <option>Action</option>
-                                    <option>Drama</option>
-                                    <!-- more... -->
-                                </select>
-                            </div>
-
-                            <div class="mb-2">
-                                <label for="filterRuntime" class="form-label">Runtime</label>
-                                <select id="filterRuntime" class="form-select">
-                                    <option selected>Any</option>
-                                    <option>1 hour or less</option>
-                                    <option>90 min</option>
-                                    <option>2 hours</option>
-                                    <option>150 min</option>
-                                    <option>3 hours or more</option>
-                                    <!-- more... -->
-                                </select>
-                            </div>
-
-                            <div class="mb-2">
-                                <label for="filterRating" class="form-label">Rating</label>
-                                <select id="filterRating" class="form-select">
-                                    <option selected>Any</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                    <option value="7">7</option>
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                    <option value="10">10</option>
-                                    <!-- more... -->
-                                </select>
-                            </div>
+                                <div class="mb-2">
+                                    <label for="filterRating" class="form-label">Rating</label>
+                                    <select id="filterRating" class="form-select">
+                                        <option selected>Any</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                        <!-- more... -->
+                                    </select>
+                                </div>
 
 
-                            <button type="submit" class="btn btn-primary text-start mt-3">apply</button>
-                        </form>
+                                <button type="submit" class="btn btn-primary text-start mt-3">apply</button>
+                            </form>
+                        </div>
+                        <!-- END Options box -->
+
                     </div>
-                    <!-- END Options box -->
-
+                    <!-- END filters -->
                 </div>
 
+                <% if (session && session.email) { %>
+                <div>
+                    <!-- refresh button -->
+                    <svg id="refresh-btn" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-bootstrap-reboot" viewBox="0 0 16 16" type="button">
+                        <path
+                            d="M1.161 8a6.84 6.84 0 1 0 6.842-6.84.58.58 0 1 1 0-1.16 8 8 0 1 1-6.556 3.412l-.663-.577a.58.58 0 0 1 .227-.997l2.52-.69a.58.58 0 0 1 .728.633l-.332 2.592a.58.58 0 0 1-.956.364l-.643-.56A6.8 6.8 0 0 0 1.16 8z" />
+                        <path
+                            d="M6.641 11.671V8.843h1.57l1.498 2.828h1.314L9.377 8.665c.897-.3 1.427-1.106 1.427-2.1 0-1.37-.943-2.246-2.456-2.246H5.5v7.352zm0-3.75V5.277h1.57c.881 0 1.416.499 1.416 1.32 0 .84-.504 1.324-1.386 1.324z" />
+                    </svg>
+                    <!-- END refresh button -->
+                </div>
+                <% } %>
+
+
             </div>
-            <!-- END filters -->
+            <!-- END filters and refresh -->
+
+
 
             <!-- Film poster carousel -->
             <div class="col-lg-6 col-md-6 col-sm-12 py-5 carousel-container">
@@ -205,12 +222,13 @@
             </div>
             <!-- END film poster carousel -->
 
+
             <!-- Film info -->
             <div class="col-lg-6 col-md-6 col-sm-12 py-2">
                 <div class="container">
 
                     <% if (session && session.email) { %>
-                        <div id="film-info" class="h3 text-center" data-email="<%= session.email %>">
+                        <div id="film-info" class="h3 text-center" data-email="<%= session.email %>" data-id="<%= session.id %>">
                             <% } else { %>
                                 <div id="film-info" class="h3 text-center">
                                     <% } %>
@@ -268,6 +286,7 @@
 
             </div>
             <!-- END film info -->
+
 
         </div>
 

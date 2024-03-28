@@ -530,10 +530,7 @@ def get_fav_cast():
 
         top_cast = most_common_names(liked_cast)
         top_crew = most_common_names(liked_crew)
-        top_genre = most_common_names(liked_genre)
-
-        #
-
+        
         # Count occurrences of each unique genre string
         genre_counts = liked_genre['genres'].value_counts()
         genre_counts_df = genre_counts.reset_index()
@@ -542,10 +539,20 @@ def get_fav_cast():
         top_genres = sorted_genre_counts_df.head(5)
         top_genres_dict = top_genres.to_dict(orient='records')
 
-        # 
-
-
         return jsonify({"message": True, "cast": top_cast, "crew": top_crew, "genre": top_genres_dict})
+
+
+@app.route('/get_user_films', methods=['GET'])
+def get_user_films():
+    user_id = request.args.get("user_id")
+    user_profile = get_user_profile(user_id)[0]
+
+    if user_profile is not None:
+        tconsts = user_profile['tconst'].tolist()
+    
+        return jsonify({"tconsts": tconsts})
+    else:
+        return jsonify({"tconst": []})
 
 
 

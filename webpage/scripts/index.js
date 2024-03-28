@@ -21,6 +21,16 @@ async function getFilms(counter) {
     return films
 };
 
+async function refreshFilms(user_id){
+    try{
+        const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
+        return response.data
+    }catch (error){
+        console.error('Error shuffling films')
+    }
+
+}
+
 //number of films loaded into frontend at a time - .env
 const MAX_LOAD = 100;
 const LAST_INDEX = 23643;
@@ -53,7 +63,7 @@ window.onload = async function () {
     //for getting film poster jpegs
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
-    var loggedIn = document.getElementById('film-info').getAttribute('data-email')
+    var user_id = document.getElementById('film-info').getAttribute('data-id')
 
     //initial update
     updateFilm();
@@ -89,7 +99,7 @@ window.onload = async function () {
         document.dispatchEvent(event);
 
         //only allow page interaction if user is signed in
-        var likeable = loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
+        var likeable = user_id != null ? 'likeable' : ''; //add the class only if writer is not null
 
         //film title and plot
         content += `<div id="_filmTitle" class="${likeable}"><strong>${films[currentIndex].primaryTitle}</strong></div>`;
@@ -195,7 +205,7 @@ window.onload = async function () {
 
         //director
         var director = films[currentIndex].director || null;
-        likeable = director != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = director != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
 
         content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">DIRECTOR</div>`;
@@ -211,7 +221,7 @@ window.onload = async function () {
 
         //cinematographer
         var camera = films[currentIndex].cinematographer || null;
-        likeable = camera != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = camera != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
 
         content += `<div id="_filmCamera" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">CAMERA</div>`;
@@ -227,7 +237,7 @@ window.onload = async function () {
 
         //writer
         var writer = films[currentIndex].writer || null;
-        likeable = writer != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = writer != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
 
         content += `<div id="_filmWriter" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">WRITER</div>`;
@@ -250,7 +260,7 @@ window.onload = async function () {
 
         //producer
         var producer = films[currentIndex].producer || null;
-        likeable = producer != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = producer != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
 
 
         content += `<div id="_filmProducer" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
@@ -267,7 +277,7 @@ window.onload = async function () {
 
         //editor
         var editor = films[currentIndex].editor || null;
-        likeable = editor != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = editor != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
 
         content += `<div id="_filmEditor" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">EDITOR</div>`;
@@ -283,7 +293,7 @@ window.onload = async function () {
 
         //composer
         var composer = films[currentIndex].composer || null;
-        likeable = composer != null && loggedIn != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = composer != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
 
         content += `<div id="_filmComposer" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">SOUNDTRACK</div>`;
@@ -385,10 +395,22 @@ window.onload = async function () {
 
     });
 
+    // click title bar to go home
     document.getElementById('page_title').addEventListener('click', function () {
         // Redirect to the index page
         window.location.href = '/index';
     });
+
+    // refresh button click - shuffle films, reset counter, reload page
+    document.getElementById('refresh-btn').addEventListener('click', async function () {
+        const shuffle = await refreshFilms(user_id)
+        localStorage.setItem('counter', 0);
+        localStorage.setItem('currentIndex', 0);
+        window.location.href = '/';        
+        
+    });
+
+
 
 };
 
