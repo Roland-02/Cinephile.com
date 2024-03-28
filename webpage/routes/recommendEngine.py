@@ -316,12 +316,11 @@ def most_common_names(df, top_n=10):
     return top_n_names.index.tolist()
 
 
-
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
 
   
 @app.route('/update_profile_and_vectors', methods=['POST'])
-def initialise_profile():
+def initialise_profile_route():
     user_id = request.args.get("user_id") 
 
     if user_id:
@@ -375,7 +374,7 @@ def initialise_profile():
 
 
 @app.route('/cache_recommend_pack', methods=['POST'])
-def bulk_recommend():
+def bulk_recommend_route():
     user_id = request.args.get("user_id") 
 
     if user_id:
@@ -459,7 +458,7 @@ def bulk_recommend():
            
 
 @app.route('/get_batch', methods=['GET'])
-def get_batch():
+def get_batch_route():
 
     user_id = request.args.get("user_id")
     category = request.args.get("category")
@@ -484,7 +483,7 @@ def get_batch():
     
 
 @app.route('/get_liked_staff', methods=['GET'])
-def get_staff():
+def get_staff_route():
 
     user_id = request.args.get("user_id")
     get_profile = get_user_profile(user_id)
@@ -506,15 +505,41 @@ def get_staff():
       
 
 @app.route('/get_loved_films', methods=['GET'])
-def get_loved():
+def get_loved_route():
     user_id = request.args.get("user_id")
     loved_films = get_loved_films(user_id)
     loved_films_dict = loved_films.to_dict(orient='records')
     return jsonify({"films": loved_films_dict})
 
 
+@app.route('/get_watchlist', methods=['GET'])
+def get_watchlist_route():
+    user_id = request.args.get("user_id")
+    watchlist = get_watchlist(user_id)
+
+    if watchlist is not None:
+        watchlist_dict = watchlist.to_dict(orient='records')
+
+        return jsonify({"watchlist": watchlist_dict})
+    else:
+        return jsonify({"watchlist": {}})
+
+
+@app.route('/get_user_films', methods=['GET'])
+def get_user_films_route():
+    user_id = request.args.get("user_id")
+    user_profile = get_user_profile(user_id)[0]
+
+    if user_profile is not None:
+        tconsts = user_profile['tconst'].tolist()
+    
+        return jsonify({"tconsts": tconsts})
+    else:
+        return jsonify({"tconst": []})
+
+
 @app.route('/get_profile_stats', methods=['GET'])
-def get_fav_cast():
+def get_fav_cast_route():
     user_id = request.args.get("user_id")
     user_profile_df = get_user_profile(user_id)[0]
     
@@ -540,21 +565,6 @@ def get_fav_cast():
         top_genres_dict = top_genres.to_dict(orient='records')
 
         return jsonify({"message": True, "cast": top_cast, "crew": top_crew, "genre": top_genres_dict})
-
-
-@app.route('/get_user_films', methods=['GET'])
-def get_user_films():
-    user_id = request.args.get("user_id")
-    user_profile = get_user_profile(user_id)[0]
-
-    if user_profile is not None:
-        tconsts = user_profile['tconst'].tolist()
-    
-        return jsonify({"tconsts": tconsts})
-    else:
-        return jsonify({"tconst": []})
-
-
 
 
 if __name__ == "__main__":
