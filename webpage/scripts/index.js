@@ -3,7 +3,6 @@
 //load next batch of films
 async function getFilms(counter) {
     //load batch of films from file
-
     var films = '';
     try {
         page = Math.floor((counter / MAX_LOAD)) + 1;
@@ -17,7 +16,6 @@ async function getFilms(counter) {
     } catch (error) {
         console.error('Error fetching films:', error);
     }
-
     return films
 };
 
