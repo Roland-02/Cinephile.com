@@ -54,15 +54,17 @@
                 <!-- Right elements -->
                 <div class="col-lg-4 col-md-12 col-sm-12 text-end">
                     <% if (session && session.email) { %>
-                        <!-- watchlist and profile buttons -->
-                        <a href="/recommend" class="border rounded nav-link d-inline-block">
-                            <p class="btn d-md-block mb-0">Recommend</p>
+                        <a href="/search" class="border rounded nav-link d-inline-block menu-btn">
+                            <p class="btn btn-sm d-md-block mb-0">Search</p>
                         </a>
-                        <a href="/Profile" class="border rounded nav-link d-inline-block">
-                            <p class="btn d-md-block mb-0">My films</p>
+                        <a href="/recommend" class="border rounded nav-link d-inline-block menu-btn">
+                            <p class="btn btn-sm d-md-block mb-0">Recommend</p>
                         </a>
-                        <a href="/Watchlist" class="border rounded nav-link d-inline-block">
-                            <p class="btn d-md-block mb-0">Watchlist</p>
+                        <a href="/profile" class="border rounded nav-link d-inline-block menu-btn">
+                            <p class="btn btn-sm d-md-block mb-0">My films</p>
+                        </a>
+                        <a href="/watchlist" class="border rounded nav-link d-inline-block menu-btn">
+                            <p class="btn btn-sm d-md-block mb-0">Watchlist</p>
                         </a>
                         <% } %>
                 </div>
