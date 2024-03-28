@@ -1,6 +1,6 @@
 async function getLovedFilms(user_id) {
     try {
-        const response = await axios.get(`http://localhost:8080/getLovedFilmsDetails?user_id=${user_id}`)
+        const response = await axios.get(`http://127.0.0.1:5000/get_loved_films?user_id=${user_id}`)
         const lovedFilms = response.data.films;
         return lovedFilms;
 
@@ -9,11 +9,23 @@ async function getLovedFilms(user_id) {
         return null;
     }
 
+    // try {
+    //     const response = await $.ajax({
+    //         url: `http://127.0.0.1:5000/get_loved_films?user_id=${user_id}`,
+    //         method: 'GET'
+    //     });
+    //     const films = response.data;
+    //     return films
+    // } catch (error) {
+    //     console.error('Error getting profile statistics', error);
+    //     return null;
+    // }
+
 };
 
 async function getProfileStats(user_id) {
     try {
-        const response = await axios.get(`http://localhost:8080/getProfileStats?user_id=${user_id}`)
+        const response = await axios.get(`http://127.0.0.1:5000/get_profile_stats?user_id=${user_id}`)
         const message = response.data.message;
 
         if (message) {
@@ -30,6 +42,19 @@ async function getProfileStats(user_id) {
         return null;
 
     }
+
+    // try {
+    //     const response = await $.ajax({
+    //         url: `http://127.0.0.1:5000/get_profile_stats?user_id=${user_id}`,
+    //         method: 'GET'
+    //     });
+    //     const stats = response.data;
+    //     return stats
+    // } catch (error) {
+    //     console.error('Error getting profile statistics', error);
+    //     return null;
+    // }
+
 
 };
 

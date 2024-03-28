@@ -60,7 +60,6 @@ router.post('/shuffleFilms', async (req, res) => {
 
 });
 
-
 // Route to handle opening a specific film
 router.get('/openClickedFilm', async (req, res) => {
   try {
@@ -86,98 +85,5 @@ router.get('/openClickedFilm', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-
-router.post('/cacheRecommendedFilms', async (req, res) => {
-
-  try {
-
-    const userId = req.query.user_id;
-
-    // Fetch films data from the API
-    const response = await axios.post(`http://127.0.0.1:5000/cache_recommend_pack?user_id=${userId}`);
-    res.json(response.data.message);
-
-  } catch (error) {
-    console.error("Error:", error);
-  }
-
-});
-
-
-router.get('/getFilmsBatch', async (req, res) => {
-
-  try {
-
-    const user_id = req.query.user_id;
-    const category = req.query.category;
-    const page = req.query.page;
-
-    const response = await axios.get(`http://127.0.0.1:5000/get_batch?user_id=${user_id}&category=${category}&page=${page}`);
-    const films = response.data;
-    res.json(films);
-
-
-  } catch (error) {
-    console.error("Error:", error);
-  }
-
-
-});
-
-
-router.get('/getLikedStaff', async function (req, res) {
-  try {
-
-    const userId = req.cookies.sessionID;
-    const response = await axios.get(`http://127.0.0.1:5000/get_liked_staff?user_id=${userId}`)
-    res.json(response.data)
-
-  } catch (error) {
-    console.error('Error fetching films:', error);
-
-  }
-
-})
-
-
-router.get('/getLovedFilmsDetails', async function (req, res) {
-  try {
-    const user_id = req.query.user_id;
-    const response = await axios.get(`http://127.0.0.1:5000/get_loved_films?user_id=${user_id}`);
-    res.json(response.data);
-
-  } catch (error) {
-    console.error('Error fetching films:', error);
-
-  }
-});
-
-
-router.get('/getProfileStats', async function (req, res) {
-  try {
-    const user_id = req.query.user_id;
-    const response = await axios.get(`http://127.0.0.1:5000/get_profile_stats?user_id=${user_id}`);
-    res.json(response.data);
-
-  } catch (error) {
-    console.error('Error fetching films:', error);
-
-  }
-
-});
-
-router.get('/getWatchlist', async function (req, res) {
-  try{
-    const user_id = req.query.user_id;
-    const response = await axios.get(`http://127.0.0.1:5000/get_user_watchlist?user_id=${user_id}`);
-    res.json(response);
-  }catch (error) {
-    console.error('Error fetching watchlist', error)
-
-  }
-
-});
-
 
 module.exports = router;
