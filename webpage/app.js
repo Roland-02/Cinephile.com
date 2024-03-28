@@ -55,6 +55,9 @@ app.use('/recommend', recommendRoute);
 var profileRoute = require('./routes/profile');
 app.use('/profile', profileRoute);
 
+var watchlistRoute = require('./routes/watchlist');
+app.use('/watchlist', watchlistRoute);
+
 var filmsRouter = require('./routes/films');
 app.use(filmsRouter);
 

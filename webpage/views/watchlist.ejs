@@ -7,14 +7,13 @@
 <head>
     <meta charset=utf-8>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recommend</title>
+    <title>Watchlist</title>
 
-    <link rel="stylesheet" href="/styles/profile.css" />
+    <link rel="stylesheet" href="/styles/watchlist.css" />
     <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
-    <script src="/scripts/profile.js"></script>
+    <script src="/scripts/watchlist.js"></script>
     <script src="/bootstrap/js/mdb.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 </head>
@@ -65,7 +64,6 @@
                         <a href="/Watchlist" class="border rounded nav-link d-inline-block">
                             <p class="btn d-md-block mb-0">Watchlist</p>
                         </a>
-
                         <% } %>
                 </div>
             </div>
@@ -73,73 +71,22 @@
     </div>
     <!-- END nav bar -->
 
+
     <!-- page content -->
     <div class="container">
-        <div class="row">
-
-            <!-- favourite film posters -->
-            <div class="col-lg-6 col-md-6 col-sm-12">
-
-                <div class="main-title">your films</div>
-
-                <div class="container">
-                    <div class="poster-container" id="loved-films" data-id="<%= session.id %>" data-bs-spy="scroll">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8">
+                <div class="row d-flex justify-content-center align-items-center">
+                    <div class="poster-container" id="watchlist-films" data-id="<%= session.id %>" data-bs-spy="scroll">
                         <div class="spinner" style="display: block;"></div>
                         <!-- FILM CARDS SPAWNED HERE -->
-
                     </div>
-
                 </div>
-            </div>
-            <!-- END favourite film posters -->
-
-            <!-- REC FILMS CATEGORIES -->
-            <div class="col-lg-6 col-md-6 col-sm-12">
-
-                <div class="main-title">your top...</div>
-                <div class="container d-flex flex-column m-15 p-10">
-
-                    <!-- plot and cast category boxes row -->
-
-                    <!-- cast category scroll box -->
-                    <div class="secondary-title">actors</div>
-                    <div id="cast-box" class="favourite-item">
-                        <div class="spinner" style="display: block;"></div>
-
-                        <!-- <div class="spinner" style="display: block;"></div> -->
-                        <!-- favourite film-makers box -->
-                        <!-- END favourite film-makers box -->
-                    </div>
-                    <!-- END cast category scroll box -->
-
-                    <!-- plot cateogry scroll box -->
-                    <div class="secondary-title">film-makers and crew</div>
-                    <div id="crew-box" class="favourite-item">
-                        <div class="spinner" style="display: block;"></div>
-
-                        <!-- favourite crew box -->
-                        <!-- END favourite crew box -->
-                    </div>
-                    <!-- END plot cateogry scroll box -->
-
-                    <!-- cast category scroll box -->
-                    <div class="secondary-title">genres</div>
-                    <div id="genre-box" class="favourite-item">
-                        <canvas id="genreChart"></canvas>
-
-                    </div>
-                    <!-- END cast category scroll box -->
-
-
-                </div>
-
             </div>
 
         </div>
-
     </div>
     <!-- END page content -->
-
 
 </body>
 
@@ -147,23 +94,6 @@
 <footer>
 
     <script>
-
-        // click on film card to open in index
-        $(document).on('click', '.clickable', async function () {
-            const tconst = $(this).data('id');
-            const response = await axios.get(`http://localhost:8080/openClickedFilm?tconst=${tconst}`);
-            let savedCounter = response.data.counter;
-            let savedIndex = response.data.currentIndex;
-            localStorage.setItem('counter', savedCounter);
-            localStorage.setItem('currentIndex', savedIndex);
-            window.location.href = '/index';
-        });
-
-        // click on titlebar to go back to index
-        $('#page_title').click(function () {
-            window.location.href = '/index';
-        });
-
 
     </script>
 

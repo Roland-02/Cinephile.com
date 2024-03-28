@@ -32,8 +32,7 @@ async function getProfileStats(user_id) {
 
     }
 
-}
-
+};
 
 
 window.onload = async function () {
@@ -45,8 +44,6 @@ window.onload = async function () {
 
     const user_id = postersBox.getAttribute('data-id');
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
-
-
 
     var films = await getLovedFilms(user_id);
 
