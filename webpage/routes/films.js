@@ -1,7 +1,9 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
-const allFilms = require('../films.json');
+var allFilms = require('../films.json');
+// var showFilms = allFilms
+
 const PAGE_SIZE = process.env.PAGE_SIZE; //number of films loaded at a time
 
 
@@ -24,6 +26,40 @@ router.get('/indexPageFilms', (req, res) => {
 
 });
 
+router.post('/shuffleFilms', async (req, res) => {
+  try {
+
+    var user_id = req.query.user_id;
+    var excludeRes = await axios.get(`http://127.0.0.1:5000/get_user_films?user_id=${user_id}`)
+    var excludeTconsts = excludeRes.data.tconsts;
+
+    var shuffledFilms = allFilms = [...allFilms].sort(() => Math.random() - 0.5);
+
+    const includedFilms = [];
+    const excludedFilms = [];
+    shuffledFilms.forEach(film => {
+      if (excludeTconsts.includes(film.tconst)) {
+        excludedFilms.push(film);
+      } else {
+        includedFilms.push(film);
+      }
+    });
+
+    // Concatenate included and excluded films
+    allFilms = includedFilms.concat(excludedFilms);
+
+    res.json('Film shuffled')
+
+
+  } catch (error) {
+    console.error("Error:", error);
+
+  }
+
+
+
+});
+
 
 // Route to handle opening a specific film
 router.get('/openClickedFilm', async (req, res) => {
@@ -43,7 +79,7 @@ router.get('/openClickedFilm', async (req, res) => {
     // Calculate the counter
     const counter = filmIndex;
 
-    res.json({"counter":counter, "currentIndex":currentIndex})
+    res.json({ "counter": counter, "currentIndex": currentIndex })
 
   } catch (error) {
     console.error("Error:", error);
@@ -105,7 +141,7 @@ router.get('/getLikedStaff', async function (req, res) {
 })
 
 
-router.get('/getLovedFilmsDetails', async function(req, res) {
+router.get('/getLovedFilmsDetails', async function (req, res) {
   try {
     const user_id = req.query.user_id;
     const response = await axios.get(`http://127.0.0.1:5000/get_loved_films?user_id=${user_id}`);
@@ -118,13 +154,13 @@ router.get('/getLovedFilmsDetails', async function(req, res) {
 });
 
 
-router.get('/getProfileStats', async function(req, res) {
-  try{
+router.get('/getProfileStats', async function (req, res) {
+  try {
     const user_id = req.query.user_id;
     const response = await axios.get(`http://127.0.0.1:5000/get_profile_stats?user_id=${user_id}`);
     res.json(response.data);
 
-  }catch (error) {
+  } catch (error) {
     console.error('Error fetching films:', error);
 
   }
