@@ -11,15 +11,16 @@ import mysql.connector
 import json
 from flask import Flask, jsonify, request
 from flask_caching import Cache
+from flask_cors import CORS
 
 config = {         
     "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
     "CACHE_DEFAULT_TIMEOUT": 3600 #1 hours
 }
-
 app = Flask(__name__)
 app.config.from_mapping(config)
 cache = Cache(app)
+CORS(app) 
 
 data = pd.read_json('./films.json')
 
@@ -151,7 +152,7 @@ def get_watchlist(user_id):
     mydb.close()
 
     tconst_list = [row[1] for row in watchlist_fetch]
-    attributes_template = ['tconst','primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes', 'startYear', 'cast', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer']
+    attributes_template = ['tconst','primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes', 'startYear', 'cast', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer', 'poster']
     watchlist_df = pd.DataFrame(columns=attributes_template)
 
     x = 0
@@ -512,7 +513,7 @@ def get_loved_route():
     return jsonify({"films": loved_films_dict})
 
 
-@app.route('/get_watchlist', methods=['GET'])
+@app.route('/get_user_watchlist', methods=['GET'])
 def get_watchlist_route():
     user_id = request.args.get("user_id")
     watchlist = get_watchlist(user_id)
