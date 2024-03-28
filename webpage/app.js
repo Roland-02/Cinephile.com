@@ -58,6 +58,9 @@ app.use('/profile', profileRoute);
 var watchlistRoute = require('./routes/watchlist');
 app.use('/watchlist', watchlistRoute);
 
+var searchRoute = require('./routes/search');
+app.use('/search', searchRoute);
+
 var filmsRouter = require('./routes/films');
 app.use(filmsRouter);
 

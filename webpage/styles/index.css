@@ -58,6 +58,11 @@
   position: relative;
 }
 
+.menu-btn{
+  margin: 0px;
+  padding: 0px;
+}
+
 .loading-spinner {
   position: absolute;
   top: 50%;
