@@ -15,4 +15,9 @@
     height: auto;
     margin: 7px;
 }
+
+.clickable {
+    cursor: pointer;
+}
+
 /* END watchlist film posters */

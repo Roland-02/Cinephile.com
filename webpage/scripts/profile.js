@@ -11,7 +11,6 @@ async function getLovedFilms(user_id) {
 
 };
 
-
 async function getProfileStats(user_id) {
     try {
         const response = await axios.get(`http://localhost:8080/getProfileStats?user_id=${user_id}`)

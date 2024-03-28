@@ -1,16 +1,16 @@
 async function getWatchlist(user_id) {
     try {
-        const response = await axios.get(`http://localhost:8080/getWatchlist?user_id=${user_id}`)
-        const watchlist = response.data;
-        console.log(response.data)
-        return watchlist;
-
+        const response = await $.ajax({
+            url: `http://127.0.0.1:5000/get_user_watchlist?user_id=${user_id}`,
+            method: 'GET'
+        });
+        console.log(response);
+        return response.watchlist;
     } catch (error) {
-        console.error('Error getting films batch', error);
+        console.error('Error getting watchlist', error);
         return null;
     }
-
-};
+}
 
 
 window.onload = async function () {
@@ -20,6 +20,7 @@ window.onload = async function () {
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
     var films = await getWatchlist(user_id);
+    console.log(films)
 
     if(films){
         await displayWatchlist(films);

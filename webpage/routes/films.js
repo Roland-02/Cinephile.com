@@ -170,8 +170,8 @@ router.get('/getProfileStats', async function (req, res) {
 router.get('/getWatchlist', async function (req, res) {
   try{
     const user_id = req.query.user_id;
-    const response = await axios.get(`http://127.0.0.1:5000/get_watchlist?user_id=${user_id}`);
-    res.json(response.data.json);
+    const response = await axios.get(`http://127.0.0.1:5000/get_user_watchlist?user_id=${user_id}`);
+    res.json(response);
   }catch (error) {
     console.error('Error fetching watchlist', error)
 
