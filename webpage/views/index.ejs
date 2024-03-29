@@ -102,58 +102,70 @@
                         <div id="filterOptions" class="container border border-2 rounded-5 m-2 p-3"
                             style="display: none; background-color: white;">
                             <form>
-                                <div class="mb-2">
-                                    <label for="filterYear" class="form-label">Year</label>
-                                    <select id="filterYear" class="form-select">
-                                        <option selected>Any</option>
-                                        <option>2022</option>
-                                        <option>2021</option>
-                                        <!-- more... -->
-                                    </select>
-                                </div>
 
-                                <div class="mb-2">
-                                    <label for="filterGenre" class="form-label">Genre</label>
-                                    <select id="filterGenre" class="form-select">
-                                        <option selected>Any</option>
-                                        <option>Action</option>
-                                        <option>Drama</option>
-                                        <!-- more... -->
-                                    </select>
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="filterRuntime" class="form-label">Runtime</label>
-                                    <select id="filterRuntime" class="form-select">
-                                        <option selected>Any</option>
-                                        <option>1 hour or less</option>
-                                        <option>90 min</option>
-                                        <option>2 hours</option>
-                                        <option>150 min</option>
-                                        <option>3 hours or more</option>
-                                        <!-- more... -->
-                                    </select>
-                                </div>
-
+                                <!-- rating -->
                                 <div class="mb-2">
                                     <label for="filterRating" class="form-label">Rating</label>
                                     <select id="filterRating" class="form-select">
                                         <option selected>Any</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                        <option value="10">10</option>
+                                        <option value="1">1/10</option>
+                                        <option value="2">2/10</option>
+                                        <option value="3">3/10</option>
+                                        <option value="4">4/10</option>
+                                        <option value="5">5/10</option>
+                                        <option value="6">6/10</option>
+                                        <option value="7">7/10</option>
+                                        <option value="8">8/10</option>
+                                        <option value="9">9/10</option>
+                                    </select>
+                                </div>
+
+                                <!-- genre -->
+                                <div class="mb-2">
+                                    <label for="filterGenre" class="form-label">Genre</label>
+                                    <select id="filterGenre" class="form-select">
+                                        <option selected>Any</option>
+                                        <option>Drama</option>
+                                        <option>Action</option>
+                                        <option>Comedy</option>
+                                        <option>Sci-fi</option>
+                                        <option>Fantasy</option>
+                                        <option>Romance</option>
+                                        <option>Family</option>
+                                        <option>Documentary</option>
+                                    </select>
+                                </div>
+
+                                <!-- runtime -->
+                                <div class="mb-2">
+                                    <label for="filterRuntime" class="form-label">Runtime</label>
+                                    <select id="filterRuntime" class="form-select">
+                                        <option selected>Any</option>
+                                        <option>≤ 1 Hr</option>
+                                        <option>≤ 1Hr 30m</option>
+                                        <option>≤ 2Hrs</option>
+                                        <option>≤ 2Hrs 30m</option>
+                                        <option>≤ 3Hrs</option>
+                                        <option>really long...</option>
+
                                         <!-- more... -->
                                     </select>
                                 </div>
 
-
+                                <!-- year -->
+                                <div class="mb-2">
+                                    <label for="filterYear" class="form-label">Year</label>
+                                    <select id="filterYear" class="form-select">
+                                        <option selected>Any</option>
+                                        <option>2020s</option>
+                                        <option>2010s</option>
+                                        <option>2000s</option>
+                                        <option>1990s</option>
+                                        <option>1980s</option>
+                                        <option>1970s</option>
+                                        <option>1960s</option>
+                                    </select>
+                                </div>
                                 <button type="submit" class="btn btn-primary text-start mt-3">apply</button>
                             </form>
                         </div>

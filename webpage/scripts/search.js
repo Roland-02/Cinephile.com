@@ -2,7 +2,7 @@ async function getSearchFilms(query, page = 1) {
 
     try {
         // Send all the queries to the server using Axios
-        var response = await axios.get(`http://127.0.0.1:5000/search_general?filters=${query}&page=${page}`)
+        var response = await axios.get(`http://127.0.0.1:5000/search_general?query=${query}&page=${page}`)
         var films = response.data.films;
         return films;
     } catch (error) {

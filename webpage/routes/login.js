@@ -11,29 +11,6 @@ const axios = require('axios');
 
 let pythonServerProcess;
 
-// // Function to stop the Python server
-// function stopEngine() {
-//   if (pythonServerProcess) {
-//       pythonServerProcess.kill('SIGINT'); // Send the interrupt signal to terminate the process
-//       pythonServerProcess = null;
-//       console.log('Engine stopped')
-//   }
-// }
-
-async function startRecommendEngine() {
-    return new Promise((resolve, reject) => {
-        const pythonScriptPath = path.resolve(__dirname, './recommendEngine.py');
-        pythonServerProcess = spawn('python', [pythonScriptPath]);
-
-        // Listen for standard output
-        pythonServerProcess.stdout.on('data', function (data) {
-            console.log('Python server:', data.toString());
-            resolve()
-        });
-
-    });
-}
-
 
 async function updateProfileAndVectors(userId) {
     await axios.post(`http://127.0.0.1:5000/update_profile_and_vectors?user_id=${userId}`, {
@@ -63,11 +40,13 @@ async function updateProfileAndVectors(userId) {
 
 async function startEngineAndProfileUpdate(user_id) {
     try {
-        console.log('Starting engine...');
-        await startRecommendEngine();
-        console.log('Engine started');
+        // console.log('Starting engine...');
+        // await startRecommendEngine();
+        // console.log('Engine started');
         
+        console.log('Loading profile');
         await updateProfileAndVectors(user_id);
+        console.log('Loading films')
         await cacheRecommendedFilms(user_id);
 
     } catch (error) {
