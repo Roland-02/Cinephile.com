@@ -572,7 +572,7 @@ def get_fav_cast_route():
 
 @app.route('/search_general', methods=['GET'])
 def search_general():
-    filters_str = request.args.get("filters")
+    filters_str = request.args.get("query")
     page = int(request.args.get("page", 1))  # Default to page 1 if not provided
     page_size = 100  # Default page size to 100 if not provided
 
@@ -598,6 +598,9 @@ def search_general():
     else:
         return jsonify({'films': []})
 
+@app.route('/filterCategory', methods=['GET'])
+def filter_category():
+    print()
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
