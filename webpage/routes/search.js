@@ -16,10 +16,11 @@ router.get(['/', '/search'], async function (req, res) {
         });
 
     } catch (error) {
-        console.error("Error:", error);
+        console.error("Error: ", error);
     }
 
 });
+
 
 
 module.exports = router;

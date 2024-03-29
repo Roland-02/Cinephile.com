@@ -7,12 +7,12 @@
 <head>
     <meta charset=utf-8>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watchlist</title>
+    <title>Search</title>
 
     <link rel="stylesheet" href="/styles/search.css" />
     <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
     <script src="/scripts/search.js"></script>
-    <script src="/bootstrap/js/mdb.min.js"></script>
+    <!-- <script src="/bootstrap/js/mdb.min.js"></script> -->
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
@@ -76,9 +76,43 @@
 
     <!-- page content -->
     <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <form id="searchForm" class="search-container" action="/search" method="GET">
+                    <div class="input-group">
+                        <div class="form-outline border" style="border-radius: 10px" data-mdb-input-init>
+                            <input type="search" id="searchInput" name="filter" class="form-control" />
+                            <label for="searchInput" class="form-label search-btn">Search...</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary" data-mdb-ripple-init>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-search" viewBox="0 0 16 16">
+                                <path
+                                    d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+
+            <div class="searchQueriesContainer">
+                <div id="searchQueries" class="col container d-flex justify-content-center inline-block "></div>
+            </div>
+
+            <div class="container poster-container m-3" id="poster-scroll" data-bs-spy="scroll">
+
+            </div>
+
+
+        </div>
+
+
 
     </div>
     <!-- END page content -->
+
+
 
 </body>
 

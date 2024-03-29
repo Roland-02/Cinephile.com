@@ -317,7 +317,9 @@ def most_common_names(df, top_n=10):
     return top_n_names.index.tolist()
 
 
+attributes = ['primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes','cast' ,'startYear', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer']
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
+data['soup'] = data.apply(lambda x: create_soup(x, attributes), axis=1)
 
   
 @app.route('/update_profile_and_vectors', methods=['POST'])
@@ -566,6 +568,35 @@ def get_fav_cast_route():
         top_genres_dict = top_genres.to_dict(orient='records')
 
         return jsonify({"message": True, "cast": top_cast, "crew": top_crew, "genre": top_genres_dict})
+
+
+@app.route('/search_general', methods=['GET'])
+def search_general():
+    filters_str = request.args.get("filters")
+    page = int(request.args.get("page", 1))  # Default to page 1 if not provided
+    page_size = 100  # Default page size to 100 if not provided
+
+    if filters_str:
+        filters = filters_str.split(',')
+        keywords_lower = set(keyword.lower() for keyword in filters)
+        filtered_films = data.copy()
+        for keyword in keywords_lower:
+            filtered_films = filtered_films[filtered_films['soup'].str.lower().str.contains(keyword)]
+
+        end_index = (page) * page_size
+
+        # Extract the subset of films based on pagination
+        paginated_films = filtered_films.iloc[:end_index].copy()
+
+        # Remove the 'soup' column
+        paginated_films = paginated_films.drop(columns=['soup'])
+
+        # Convert paginated films to dictionary records
+        paginated_films_dict = paginated_films.to_dict(orient='records')
+
+        return jsonify({'films': paginated_films_dict})
+    else:
+        return jsonify({'films': []})
 
 
 if __name__ == "__main__":

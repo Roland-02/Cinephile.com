@@ -86,4 +86,21 @@ router.get('/openClickedFilm', async (req, res) => {
   }
 });
 
+router.get('/searchFor', async function (req, res) {
+  try{
+      console.log('search')
+      var filters = req.query.filter;
+      res.json(filters)
+      console.log(filters)
+
+  }catch (error){
+      console.error("Error: ", error)
+  }
+
+
+});
+
+
+
+
 module.exports = router;
