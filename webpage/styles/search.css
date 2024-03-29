@@ -1,0 +1,58 @@
+.search-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin: 15px;
+}
+
+/* Center-align user text input */
+.form-outline input[type=search] {
+    text-align: center;
+}
+
+#searchQueries {
+    width: 90%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+
+.saved-query-box {
+    margin: 5px;
+}
+
+.searchQueriesContainer {
+
+
+}
+
+.poster-container {
+    width: 100%;
+    height: 70vh;
+    display: flex; 
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    align-items: center;
+
+}
+
+/* CSS for individual film posters */
+.film-poster {
+    margin: 10px; 
+}
+
+/* CSS for film poster images */
+.film-img {
+    width: auto;
+    height: 65vh;
+}
+
+.clickable{
+    cursor: pointer;
+}
+
+.btn-close:hover {
+    opacity: 1;
+}
