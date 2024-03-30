@@ -34,6 +34,18 @@ async function getLikedStaff(user_id) {
     }
 };
 
+
+async function refreshFilms(user_id) {
+    try {
+        const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
+        return response.data
+    } catch (error) {
+        console.error('Error shuffling films')
+    }
+
+}
+
+
 window.onload = async function () {
 
     //initialise html elements
@@ -361,6 +373,17 @@ window.onload = async function () {
     genreScroll.addEventListener('scroll', loadMoreGenreFilms);
     crewScroll.addEventListener('scroll', loadMoreCrewFilms);
 
+
+        // click title bar to refresh - shuffle films, reset counter, reload page
+        document.getElementById('page_title').addEventListener('click', async function () {
+            const shuffle = await refreshFilms(user_id)
+            localStorage.setItem('counter', 0);
+            localStorage.setItem('currentIndex', 0);
+            window.location.href = '/';
+    
+        });
+    
+    
 
 };
 

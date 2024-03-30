@@ -1,16 +1,26 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+const fetch = require('node-fetch');
 const PAGE_SIZE = process.env.PAGE_SIZE; //number of films loaded at a time
-var { loadFilmsDB } = require('./readFilmsDataset');
-var allFilmsWait = loadFilmsDB();
-// var allFilms = require('../films.json');
+var { getConnection } = require('../database');
+const allFilmsPromise = loadFilmsDB();
+let allFilms = []
 
 
+router.get('/datasetLength', async (req, res) => {
+  try {
+    await allFilmsPromise;
+    res.json(allFilms.length);
+  } catch (error) {
+    console.error(error)
+  }
+
+})
 
 router.get('/indexPageFilms', async (req, res) => {
   try {
-    let allFilms = await allFilmsWait;
+    await allFilmsPromise;
 
     const page = req.query.page || 1;  // Get the requested page number
 
@@ -33,6 +43,7 @@ router.get('/indexPageFilms', async (req, res) => {
 
 router.post('/shuffleFilms', async (req, res) => {
   try {
+    await allFilmsPromise;
 
     var user_id = req.query.user_id;
     var excludeRes = await axios.get(`http://127.0.0.1:8081/get_user_films?user_id=${user_id}`)
@@ -65,6 +76,8 @@ router.post('/shuffleFilms', async (req, res) => {
 // Route to handle opening a specific film
 router.get('/openClickedFilm', async (req, res) => {
   try {
+    await allFilmsPromise;
+
     const tconst = req.query.tconst; // Assuming tconst is sent in the request query
 
     // Find the index of the film in the allFilms dataset
@@ -88,19 +101,32 @@ router.get('/openClickedFilm', async (req, res) => {
   }
 });
 
-router.get('/searchFor', async function (req, res) {
-  try {
-    console.log('search')
-    var filters = req.query.filter;
-    res.json(filters)
-    console.log(filters)
 
-  } catch (error) {
-    console.error("Error: ", error)
-  }
+function loadFilmsDB() {
+  return new Promise((resolve, reject) => {
+    getConnection(async (err, connection) => {
 
+      if (err) {
+        reject(err);
+        return;
+      }
 
-});
+      const query = 'SELECT * FROM all_films';
+
+      connection.query(query, async (err, results) => {
+        connection.release();
+
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        allFilms = JSON.parse(JSON.stringify(results))
+        resolve();
+      });
+    });
+  });
+}
 
 
 

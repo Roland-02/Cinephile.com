@@ -102,7 +102,7 @@
 
 
             <div class="col-12 col-md-8" style="width:100%">
-                <div class="poster-container m-3" id="search-films">
+                <div class="poster-container m-3" id="search-films" data-id="<%= session.id %>">
                     <div class="loading-spinner" style="display: block;"></div>
                     <!-- FILM CARDS SPAWNED HERE -->
                 </div>
@@ -135,12 +135,6 @@
             localStorage.setItem('currentIndex', savedIndex);
             window.location.href = '/index';
         });
-
-        // click on titlebar to go back to index
-        $('#page_title').click(function () {
-            window.location.href = '/index';
-        });
-
 
     </script>
 

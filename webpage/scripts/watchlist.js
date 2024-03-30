@@ -11,6 +11,17 @@ async function getWatchlist(user_id) {
 };
 
 
+async function refreshFilms(user_id) {
+    try {
+        const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
+        return response.data
+    } catch (error) {
+        console.error('Error shuffling films')
+    }
+
+}
+
+
 window.onload = async function () {
 
     const postersBox = document.getElementById('watchlist-films');
@@ -44,10 +55,16 @@ window.onload = async function () {
 
     }
 
-    // click title bar to go home
-    document.getElementById('page_title').addEventListener('click', function () {
-        window.location.href = '/index';
-    });
+        // click title bar to refresh - shuffle films, reset counter, reload page
+        document.getElementById('page_title').addEventListener('click', async function () {
+            const shuffle = await refreshFilms(user_id)
+            localStorage.setItem('counter', 0);
+            localStorage.setItem('currentIndex', 0);
+            window.location.href = '/';
+    
+        });
+    
+    
 
 
 };

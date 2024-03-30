@@ -10,7 +10,6 @@ var hasUserInteracted = false;
 router.get(['/', '/index', '/discover', '/home'], async function (req, res) {
 
     try {
-
         hasUserInteracted = false;
         res.render('index', { title: 'Express', session: { email: req.cookies.sessionEmail, id: req.cookies.sessionID } });
 
