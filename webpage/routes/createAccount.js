@@ -10,7 +10,7 @@ const axios = require('axios');
 
 
 async function updateProfileAndVectors(userId) {
-    await axios.post(`http://127.0.0.1:5000/update_profile_and_vectors?user_id=${userId}`, {
+    await axios.post(`http://127.0.0.1:8081/update_profile_and_vectors?user_id=${userId}`, {
    
       })
       .then(function (response) {

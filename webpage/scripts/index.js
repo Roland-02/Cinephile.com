@@ -19,11 +19,11 @@ async function getFilms(counter) {
     return films
 };
 
-async function refreshFilms(user_id){
-    try{
+async function refreshFilms(user_id) {
+    try {
         const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
         return response.data
-    }catch (error){
+    } catch (error) {
         console.error('Error shuffling films')
     }
 
@@ -91,6 +91,8 @@ window.onload = async function () {
 
         }
 
+
+
         //trigger event in index.ejs jquery
         filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
         const event = new CustomEvent('updateFilm', { detail: films[currentIndex].tconst });
@@ -103,7 +105,7 @@ window.onload = async function () {
         content += `<div id="_filmTitle" class="${likeable}"><strong>${films[currentIndex].primaryTitle}</strong></div>`;
 
         if (films[currentIndex].plot) {
-            content += `<div id="_filmPlot" class="small-text py-2 overflow-scroll mb-3 ${likeable}" style="height: 70px; cursor: pointer;"> <p> ${films[currentIndex].plot} </p> </div>`;
+            content += `<div id="_filmPlot" class="small-text py-1 overflow-scroll mb-2 ${likeable}" style="height: 60px; cursor: pointer;"> <p> ${films[currentIndex].plot} </p> </div>`;
 
         } else {
             content += `<div> <p> - </p> </div>`;
@@ -199,110 +201,106 @@ window.onload = async function () {
 
 
         //director, cinematographer, writer
+        // director
+        content += `<div class="row d-flex justify-content-center py-2">`;
+
         content += `<div class="row d-flex py-2">`;
 
-        //director
         var director = films[currentIndex].director || null;
-        likeable = director != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = director != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
+        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">DIRECTOR</div>`;
 
-        if (director != null) {
-            content += `<div class="p medium-text text-center">${director}</div>
-                        <p></p>`;
-        } else {
-            content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`;
-        }
+        var directorNames = director.split(','); // Split the director names by comma
+        directorNames.forEach(name => {
+            content += `<div class="p medium-text text-center">${name.trim()}</div>`; // Trim to remove any leading or trailing whitespace
+        });
+        content += `<p></p>`;
+
         content += `</div>`;
 
         //cinematographer
-        var camera = films[currentIndex].cinematographer || null;
-        likeable = camera != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
+        var cinematographer = films[currentIndex].cinematographer || null;
+        likeable = cinematographer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-        content += `<div id="_filmCamera" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
+        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">CAMERA</div>`;
 
-        if (camera != null) {
-            content += `<div class="p medium-text text-center">${camera}</div>
-                        <p></p>`;
-        } else {
-            content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`;
-        }
+        var cinematographerNames = cinematographer.split(','); // Split the director names by comma
+        cinematographerNames.forEach(name => {
+            content += `<div class="p medium-text text-center">${name.trim()}</div>`; // Trim to remove any leading or trailing whitespace
+        });
+        content += `<p></p>`;
+
         content += `</div>`;
 
         //writer
         var writer = films[currentIndex].writer || null;
-        likeable = writer != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = writer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-        content += `<div id="_filmWriter" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
+        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">WRITER</div>`;
 
-        if (writer != null) {
-            content += `<div class="p medium-text text-center">${writer}</div>
-                        <p></p>`;
-        } else {
-            content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`;
-        }
+        var writerNames = writer.split(','); // Split the director names by comma
+        writerNames.forEach(name => {
+            content += `<div class="p medium-text text-center">${name.trim()}</div>`; // Trim to remove any leading or trailing whitespace
+        });
+        content += `<p></p>`;
+
         content += `</div>`;
 
         content += `</div>`;
+
         //END director, cinematographer, writer
 
 
         //producer, editor, composer
-        content += `<div class="row d-flex py-4">`;
+        content += `<div class="row d-flex py-2">`;
 
         //producer
         var producer = films[currentIndex].producer || null;
-        likeable = producer != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = producer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-
-        content += `<div id="_filmProducer" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
+        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">PRODUCER</div>`;
 
-        if (producer != null) {
-            content += `<div class="p medium-text text-center">${producer}</div>
-                        <p></p>`;
-        } else {
-            content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`;
-        }
+        var producerNames = producer.split(','); // Split the director names by comma
+        producerNames.forEach(name => {
+            content += `<div class="p medium-text text-center">${name.trim()}</div>`; // Trim to remove any leading or trailing whitespace
+        });
+        content += `<p></p>`;
+
         content += `</div>`;
 
         //editor
         var editor = films[currentIndex].editor || null;
-        likeable = editor != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = editor != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-        content += `<div id="_filmEditor" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
+        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">EDITOR</div>`;
 
-        if (editor != null) {
-            content += `<div class="p medium-text text-center">${editor}</div>
-                        <p></p>`;
-        } else {
-            content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`;
-        }
+        var editorNames = editor.split(','); // Split the director names by comma
+        editorNames.forEach(name => {
+            content += `<div class="p medium-text text-center">${name.trim()}</div>`; // Trim to remove any leading or trailing whitespace
+        });
+        content += `<p></p>`;
+
         content += `</div>`;
 
         //composer
         var composer = films[currentIndex].composer || null;
-        likeable = composer != null && user_id != null ? 'likeable' : ''; //add the class only if writer is not null
+        likeable = composer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-        content += `<div id="_filmComposer" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
-                    <div class="h5 mb-2 border-bottom">SOUNDTRACK</div>`;
+        content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
+                    <div class="h5 mb-2 border-bottom">COMPOSER</div>`;
 
-        if (composer != null) {
-            content += `<div class="p medium-text text-center">${composer}</div>
-                        <p></p>`;
-        } else {
-            content += `<div class="p medium-text text-center">-</div>
-                        <p></p>`;
-        }
+        var composerNames = composer.split(','); // Split the director names by comma
+        composerNames.forEach(name => {
+            content += `<div class="p medium-text text-center">${name.trim()}</div>`; // Trim to remove any leading or trailing whitespace
+        });
+        content += `<p></p>`;
+
         content += `</div>`;
 
         content += `</div>`;
@@ -404,8 +402,8 @@ window.onload = async function () {
         const shuffle = await refreshFilms(user_id)
         localStorage.setItem('counter', 0);
         localStorage.setItem('currentIndex', 0);
-        window.location.href = '/';        
-        
+        window.location.href = '/';
+
     });
 
 

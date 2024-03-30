@@ -6,7 +6,6 @@
     margin: 15px;
 }
 
-/* Center-align user text input */
 .form-outline input[type=search] {
     text-align: center;
 }
@@ -23,36 +22,71 @@
     margin: 5px;
 }
 
-.searchQueriesContainer {
+/* END queries */
 
-
-}
+/* Film poster */
 
 .poster-container {
+    display: flex;
+    flex-wrap: wrap;
     width: 100%;
     height: 70vh;
-    display: flex; 
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    align-items: center;
+    overflow-y: scroll;
+    justify-content: center;
+  }
+  
+  .poster-wrapper {
+    width: 20%;
+    height: auto;
+    margin: 7px;
+  }
+  
+  .film-poster {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+  
+  }
 
+.caption {
+    display: None;
+  }
+  
+
+.poster-wrapper:hover .caption {
+    display: block;
 }
 
-/* CSS for individual film posters */
-.film-poster {
-    margin: 10px; 
-}
-
-/* CSS for film poster images */
-.film-img {
-    width: auto;
-    height: 65vh;
-}
-
-.clickable{
+.clickable {
     cursor: pointer;
 }
 
 .btn-close:hover {
     opacity: 1;
+}
+
+figure:hover .figcaption {
+    display: flex;
+}
+
+figure {
+    position: relative;
+    display: inline-block;
+    text-align: left;
+    overflow-y: hidden;
+
+}
+
+figcaption {
+    position: absolute;
+    inset: 2px;
+    display: none;
+
+    color: black;
+    font-size: 12px;
+    text-align: left;
+    padding: 3px;
+    overflow-y: hidden;
+    background-color: rgba(255, 255, 255, 0.7);
 }

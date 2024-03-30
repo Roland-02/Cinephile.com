@@ -1,15 +1,17 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
-var allFilms = require('../films.json');
-// var showFilms = allFilms
-
 const PAGE_SIZE = process.env.PAGE_SIZE; //number of films loaded at a time
+var { loadFilmsDB } = require('./readFilmsDataset');
+var allFilmsWait = loadFilmsDB();
+// var allFilms = require('../films.json');
 
 
-// Route to handle paginated film requests
-router.get('/indexPageFilms', (req, res) => {
+
+router.get('/indexPageFilms', async (req, res) => {
   try {
+    let allFilms = await allFilmsWait;
+
     const page = req.query.page || 1;  // Get the requested page number
 
     // Calculate the start and end indices for the current page
@@ -18,19 +20,22 @@ router.get('/indexPageFilms', (req, res) => {
 
     const filmsForPage = allFilms.slice(startIndex, endIndex);
 
+
     res.json(filmsForPage);
 
   } catch (error) {
     console.error("Error:", error);
+
   }
 
 });
+
 
 router.post('/shuffleFilms', async (req, res) => {
   try {
 
     var user_id = req.query.user_id;
-    var excludeRes = await axios.get(`http://127.0.0.1:5000/get_user_films?user_id=${user_id}`)
+    var excludeRes = await axios.get(`http://127.0.0.1:8081/get_user_films?user_id=${user_id}`)
     var excludeTconsts = excludeRes.data.tconsts;
 
     var shuffledFilms = allFilms = [...allFilms].sort(() => Math.random() - 0.5);
@@ -50,13 +55,10 @@ router.post('/shuffleFilms', async (req, res) => {
 
     res.json('Film shuffled')
 
-
   } catch (error) {
     console.error("Error:", error);
 
   }
-
-
 
 });
 
@@ -87,14 +89,14 @@ router.get('/openClickedFilm', async (req, res) => {
 });
 
 router.get('/searchFor', async function (req, res) {
-  try{
-      console.log('search')
-      var filters = req.query.filter;
-      res.json(filters)
-      console.log(filters)
+  try {
+    console.log('search')
+    var filters = req.query.filter;
+    res.json(filters)
+    console.log(filters)
 
-  }catch (error){
-      console.error("Error: ", error)
+  } catch (error) {
+    console.error("Error: ", error)
   }
 
 

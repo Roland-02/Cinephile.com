@@ -1,6 +1,6 @@
 async function getWatchlist(user_id) {
     try {
-        const response = await axios.get(`http://127.0.0.1:5000/get_user_watchlist?user_id=${user_id}`)
+        const response = await axios.get(`http://127.0.0.1:8081/get_user_watchlist?user_id=${user_id}`)
         const watchlist = response.data.watchlist;
         return watchlist;
 
@@ -19,23 +19,25 @@ window.onload = async function () {
 
     var films = await getWatchlist(user_id);
 
-    if(films){
+    if (films) {
         await displayWatchlist(films);
 
-    }else{
+    } else {
         postersBox.innerHTML = `<p style="text-align: center; font-size: 20px">...</p>`;
     }
 
-    async function displayWatchlist(films){
+    async function displayWatchlist(films) {
         content = '';
 
         films.forEach(function (film) {
-            if (film.poster) {
-                content += `<img class="film-poster clickable" data-id="${film.tconst}" src="${baseImagePath + film.poster}" alt="${film.title}">`;
-
-            } else {
-                content += `<img class="film-poster clickable" data-id="${film.tconst}" src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
-            }
+            content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}">
+                    <figcaption class="caption">
+                        <p>Released: ${film.startYear}</p>
+                        <p>Genre: ${film.genres}</p>
+                        <p>${film.plot}</p>                    
+                    </figcaption>
+                    <img class="film-poster" src="${baseImagePath + film.poster}" alt="${film.title}">  
+                    </figure>`;
         });
 
         postersBox.innerHTML = content;

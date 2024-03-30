@@ -75,14 +75,12 @@
 
 
     <!-- page content -->
-    <div class="page-container">
+    <div class="watchlist-container">
         <div class="row justify-content-center">
             <div class="col-12 col-md-8">
-                <div class="row d-flex justify-content-center align-items-center">
-                    <div class="poster-container scrollbox" id="watchlist-films" data-id="<%= session.id %>" data-bs-spy="scroll">
-                        <div class="loading-spinner" style="display: block;"></div>
-                        <!-- FILM CARDS SPAWNED HERE -->
-                    </div>
+                <div id="watchlist-films" class="poster-container" data-id="<%= session.id %>">
+                    <div class="loading-spinner" style="display: block;"></div>
+                    <!-- FILM CARDS SPAWNED HERE -->
                 </div>
             </div>
         </div>
