@@ -34,7 +34,7 @@ router.get(['/', '/recommend', '/Recommend'], async function (req, res) {
 
 
 async function updateProfileAndVectors(user_id) {
-  await axios.post(`http://127.0.0.1:5000/update_profile_and_vectors?user_id=${user_id}`, {
+  await axios.post(`http://127.0.0.1:8081/update_profile_and_vectors?user_id=${user_id}`, {
   })
     .then(function (response) {
       console.log(response.data.message);
@@ -47,7 +47,7 @@ async function updateProfileAndVectors(user_id) {
 
 async function cacheRecommendedFilms(user_id) {
   //load batch of films from file
-  await axios.post(`http://127.0.0.1:5000/cache_recommend_pack?user_id=${user_id}`, {
+  await axios.post(`http://127.0.0.1:8081/cache_recommend_pack?user_id=${user_id}`, {
   })
     .then(function (response) {
       console.log(response.data.message);

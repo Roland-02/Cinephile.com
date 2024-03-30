@@ -2,7 +2,7 @@ async function getSearchFilms(query, page = 1) {
 
     try {
         // Send all the queries to the server using Axios
-        var response = await axios.get(`http://127.0.0.1:5000/search_general?query=${query}&page=${page}`)
+        var response = await axios.get(`http://127.0.0.1:8081/search_general?query=${query}&page=${page}`)
         var films = response.data.films;
         return films;
     } catch (error) {
@@ -14,7 +14,7 @@ async function getSearchFilms(query, page = 1) {
 
 window.onload = async function () {
 
-    const posterContainer = document.getElementById('poster-scroll');
+    const posterContainer = document.getElementById('search-films');
     const searchForm = document.getElementById('searchForm');
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
     var scrollPage = 1;
@@ -36,11 +36,17 @@ window.onload = async function () {
 
     async function displaySearchFilms(films) {
         var content = '';
-        films.forEach(film => {
-            content += `
-                <div class="film-poster">
-                    <img src="${baseImagePath}${film.poster}" alt="${film.primaryTitle}" data-id="${film.tconst}" class="film-img clickable">
-                </div>
+
+        films.forEach(function (film) {
+            content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}">
+                <figcaption class="caption">
+                    <p>Released: ${film.startYear}</p>
+                    <p>Genre: ${film.genres}</p>
+                    <p>Starring: ${film.cast}</p>
+                    <p>${film.plot}</p>                    
+                </figcaption>
+                <img class="film-poster" src="${baseImagePath}${film.poster}" alt="${film.primaryTitle}">
+                </figure>
             `;
         });
         posterContainer.innerHTML = content;
@@ -63,7 +69,7 @@ window.onload = async function () {
     async function loadMoreFilms() {
         let filmScroll = this;
 
-        if (filmScroll.scrollLeft + filmScroll.clientWidth >= filmScroll.scrollWidth - 2) {
+        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
             scrollPage++;
             console.log(scrollPage)
             await updateQueryFilms(scrollPage)

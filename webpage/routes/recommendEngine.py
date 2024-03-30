@@ -15,8 +15,9 @@ from flask_cors import CORS
 
 config = {         
     "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
-    "CACHE_DEFAULT_TIMEOUT": 3600 #1 hours
+    "CACHE_DEFAULT_TIMEOUT": 86400 #1 hours
 }
+
 app = Flask(__name__)
 app.config.from_mapping(config)
 cache = Cache(app)
@@ -598,12 +599,14 @@ def search_general():
     else:
         return jsonify({'films': []})
 
+
 @app.route('/filterCategory', methods=['GET'])
 def filter_category():
     print()
 
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=8081)
 
 
 

@@ -24,7 +24,7 @@ app.use('/bootstrap/css', express.static(path.join(__dirname, 'css'), { type: 'a
 app.use('/scripts', express.static(path.join(__dirname, 'scripts'), { type: 'application/javascript' }));
 
 //for sessions
-const timeout = 1000 * 60 * 60; //1 hour
+const timeout = 86400; //1 day
 app.use(session({
   secret: process.env.SECRET,
   saveUninitialized: true,
@@ -60,6 +60,7 @@ app.use('/search', searchRoute);
 var filmsRouter = require('./routes/films');
 app.use(filmsRouter);
 
+
 // start pytohn flask server
 async function startRecommendEngine() {
   return new Promise((resolve, reject) => {
@@ -77,22 +78,29 @@ async function startRecommendEngine() {
       console.error('Flask server:', data.toString());
       reject(data.toString());
     });
+
   });
+
 }
 
 
 // start the recommendation and web server together 
-startRecommendEngine()
-  .then(() => {
+async function startServers() {
+  try {
+    // Start the recommendation engine
+    await startRecommendEngine();
     console.log('Flask server started successfully.');
 
-    //start server
-    const port = process.env.PORT
-    app.listen(port, () => console.log(`Web server Started on port ${port}...`));
+    // Start the web server
+    const port = process.env.PORT;
+    app.listen(port, () => console.log(`Web server started, page accessible here http://localhost:${port}`));
 
-  })
-  .catch((error) => {
-    console.error('Failed to start Flask server:', error);
+  } catch (error) {
+    console.error('Failed to start servers:', error);
+  }
 
-  });
+}
 
+
+startServers()
+  

@@ -2,7 +2,7 @@
 async function cacheRecommendedFilms(user_id) {
     try {
         // Fetch films data from the API
-        const response = await axios.post(`http://127.0.0.1:5000/cache_recommend_pack?user_id=${user_id}`);
+        const response = await axios.post(`http://127.0.0.1:8081/cache_recommend_pack?user_id=${user_id}`);
     } catch (error) {
         console.error('Error fetching films:', error);
     }
@@ -10,7 +10,7 @@ async function cacheRecommendedFilms(user_id) {
 
 async function getRecommendedFilmsBatch(user_id, category, page) {
     try {
-        const response = await axios.get(`http://127.0.0.1:5000/get_batch?user_id=${user_id}&category=${category}&page=${page}`)
+        const response = await axios.get(`http://127.0.0.1:8081/get_batch?user_id=${user_id}&category=${category}&page=${page}`)
         const films = response.data.films;
         return films
 
@@ -23,7 +23,7 @@ async function getRecommendedFilmsBatch(user_id, category, page) {
 async function getLikedStaff(user_id) {
     try {
 
-        const response = await axios.get(`http://127.0.0.1:5000/get_liked_staff?user_id=${user_id}`)
+        const response = await axios.get(`http://127.0.0.1:8081/get_liked_staff?user_id=${user_id}`)
         const liked_cast = response.data.liked_cast;
         const liked_crew = response.data.liked_crew;
         return { liked_cast, liked_crew }

@@ -21,7 +21,12 @@
 }
 
 .medium-text {
-  font-size: 18px;
+  font-size: 16.5px;
+  text-align: center;
+}
+
+.small-text {
+  font-size: 14px;
 }
 
 .row.display-flex {
@@ -34,9 +39,7 @@
   flex-direction: column;
 }
 
-.small-text {
-  font-size: 14px;
-}
+
 
 #film-poster {
   width: 100%;

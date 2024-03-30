@@ -5,15 +5,12 @@ const router = express.Router();
 const mysql = require('mysql');
 var { getConnection } = require('../database');
 var bcrypt = require('bcrypt');
-const path = require('path');
-const { spawn } = require('child_process');
 const axios = require('axios');
 
-let pythonServerProcess;
 
 
 async function updateProfileAndVectors(userId) {
-    await axios.post(`http://127.0.0.1:5000/update_profile_and_vectors?user_id=${userId}`, {
+    await axios.post(`http://127.0.0.1:8081/update_profile_and_vectors?user_id=${userId}`, {
     })
         .then(function (response) {
             console.log(response.data.message);
@@ -24,26 +21,22 @@ async function updateProfileAndVectors(userId) {
 }
 
 
-  async function cacheRecommendedFilms(user_id) {
+async function cacheRecommendedFilms(user_id) {
     //load batch of films from file
-    await axios.post(`http://127.0.0.1:5000/cache_recommend_pack?user_id=${user_id}`, {
+    await axios.post(`http://127.0.0.1:8081/cache_recommend_pack?user_id=${user_id}`, {
     })
-      .then(function (response) {
-        console.log(response.data.message);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  
-  };
-  
+        .then(function (response) {
+            console.log(response.data.message);
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+
+};
+
 
 async function startEngineAndProfileUpdate(user_id) {
     try {
-        // console.log('Starting engine...');
-        // await startRecommendEngine();
-        // console.log('Engine started');
-        
         console.log('Loading profile');
         await updateProfileAndVectors(user_id);
         console.log('Loading films')
@@ -53,7 +46,6 @@ async function startEngineAndProfileUpdate(user_id) {
         console.error('Error starting engine or updating profile:', error);
     }
 }
-
 
 
 //get request - open login.ejs page
