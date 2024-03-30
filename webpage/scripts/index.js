@@ -29,12 +29,28 @@ async function refreshFilms(user_id) {
 
 }
 
+async function getFilmsLength() {
+    try {
+        //request to the films API with the current page
+        const response = await fetch(`http://localhost:8080/datasetLength`);
+        const data = await response.json()
+        return data
+
+    } catch (error) {
+        console.error('Error:', error);
+        return null;
+    }
+    return films
+}
+
 //number of films loaded into frontend at a time - .env
 const MAX_LOAD = 100;
-const LAST_INDEX = 23643;
-
+let LAST_INDEX = 0;
 window.onload = async function () {
 
+    const filmsLength = await getFilmsLength();  
+    LAST_INDEX = filmsLength;
+    
     //initialise html elements
     const filmInfo = document.getElementById('film-info');
     const filmPoster = document.getElementById('film-poster');
@@ -391,14 +407,9 @@ window.onload = async function () {
 
     });
 
-    // click title bar to go home
-    document.getElementById('page_title').addEventListener('click', function () {
-        // Redirect to the index page
-        window.location.href = '/index';
-    });
 
-    // refresh button click - shuffle films, reset counter, reload page
-    document.getElementById('refresh-btn').addEventListener('click', async function () {
+    // click title bar to refresh - shuffle films, reset counter, reload page
+    document.getElementById('page_title').addEventListener('click', async function () {
         const shuffle = await refreshFilms(user_id)
         localStorage.setItem('counter', 0);
         localStorage.setItem('currentIndex', 0);

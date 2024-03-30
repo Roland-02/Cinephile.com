@@ -23,7 +23,33 @@ app.config.from_mapping(config)
 cache = Cache(app)
 CORS(app) 
 
-data = pd.read_json('./films.json')
+
+# load whole films dataset from db
+def loadAllFilms():
+
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Leicester69lol",
+        database="users"
+    )
+
+    mycursor = mydb.cursor()
+
+    sql_query = "SELECT * FROM all_films"
+
+    mycursor.execute(sql_query)
+    
+    columns = [col[0] for col in mycursor.description]
+
+    films = mycursor.fetchall()
+
+    mycursor.close()
+    mydb.close()
+
+    films_data = pd.DataFrame(films, columns=columns)
+
+    return films_data
 
 # join and concatenate inputted columns
 def create_soup(x, features):
@@ -309,7 +335,7 @@ def get_combined_recommendations(user_profile_groups, similarity_vectors, exclud
 
     return filtered_recommendations
 
-# 
+# return most recurring names in input data
 def most_common_names(df, top_n=10):
     all_names = pd.Series(df.values.flatten())
     split_names = all_names.str.split(',').explode()
@@ -317,12 +343,12 @@ def most_common_names(df, top_n=10):
     top_n_names = name_counts.head(top_n)
     return top_n_names.index.tolist()
 
+data = loadAllFilms()
 
 attributes = ['primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes','cast' ,'startYear', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer']
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
 data['soup'] = data.apply(lambda x: create_soup(x, attributes), axis=1)
 
-  
 @app.route('/update_profile_and_vectors', methods=['POST'])
 def initialise_profile_route():
     user_id = request.args.get("user_id") 

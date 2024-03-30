@@ -9,19 +9,20 @@ async function getLovedFilms(user_id) {
         return null;
     }
 
-    // try {
-    //     const response = await $.ajax({
-    //         url: `http://127.0.0.1:8081/get_loved_films?user_id=${user_id}`,
-    //         method: 'GET'
-    //     });
-    //     const films = response.data;
-    //     return films
-    // } catch (error) {
-    //     console.error('Error getting profile statistics', error);
-    //     return null;
-    // }
 
 };
+
+
+async function refreshFilms(user_id) {
+    try {
+        const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
+        return response.data
+    } catch (error) {
+        console.error('Error shuffling films')
+    }
+
+}
+
 
 async function getProfileStats(user_id) {
     try {
@@ -42,19 +43,6 @@ async function getProfileStats(user_id) {
         return null;
 
     }
-
-    // try {
-    //     const response = await $.ajax({
-    //         url: `http://127.0.0.1:8081/get_profile_stats?user_id=${user_id}`,
-    //         method: 'GET'
-    //     });
-    //     const stats = response.data;
-    //     return stats
-    // } catch (error) {
-    //     console.error('Error getting profile statistics', error);
-    //     return null;
-    // }
-
 
 };
 
@@ -203,10 +191,16 @@ window.onload = async function () {
     
     
 
-    document.getElementById('page_title').addEventListener('click', function () {
-        // Redirect to the index page
-        window.location.href = '/index';
+    // click title bar to refresh - shuffle films, reset counter, reload page
+    document.getElementById('page_title').addEventListener('click', async function () {
+        const shuffle = await refreshFilms(user_id)
+        localStorage.setItem('counter', 0);
+        localStorage.setItem('currentIndex', 0);
+        window.location.href = '/';
+
     });
+
+
 
 
 };
