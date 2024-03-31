@@ -1,7 +1,6 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
-const fetch = require('node-fetch');
 const PAGE_SIZE = process.env.PAGE_SIZE; //number of films loaded at a time
 var { getConnection } = require('../database');
 const allFilmsPromise = loadFilmsDB();

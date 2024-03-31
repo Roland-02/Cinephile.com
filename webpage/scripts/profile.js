@@ -1,3 +1,4 @@
+
 async function getLovedFilms(user_id) {
     try {
         const response = await axios.get(`http://127.0.0.1:8081/get_loved_films?user_id=${user_id}`)
@@ -107,7 +108,7 @@ window.onload = async function () {
         let content = '';
         content += '<ol class="column-list">';
         category.forEach(function (name) {
-            content += `<li>${name}</li>`;
+            content += `<li class="clickable" data-id="${name}">${name}</li>`;
         });
         content += '</ol>';
         return content;
@@ -119,17 +120,17 @@ window.onload = async function () {
             label: item.Genres,
             data: item.Count
         }));
-    
+
         const labels = genreData.map(item => item.label);
         const data = genreData.map(item => item.data);
-    
+
 
         const container = document.getElementById('genre-box');
 
         // Set the container's width and height
         container.style.width = '63%'; // Set the desired width
         container.style.height = '40px'; // Set the desired height   
-        container.style.marginLeft = '50px'; 
+        container.style.marginLeft = '50px';
         // Create the
 
         const ctx = document.getElementById('genreChart').getContext('2d');
@@ -157,7 +158,7 @@ window.onload = async function () {
                 }]
             },
             options: {
-                
+
 
                 responsive: true,
                 legend: {
@@ -168,12 +169,12 @@ window.onload = async function () {
                             size: 12 // Adjust font size as needed
                         },
                         padding: 10,
-                        
+
                     }
                 },
                 tooltips: {
                     callbacks: {
-                        label: function(tooltipItem, data) {
+                        label: function (tooltipItem, data) {
                             const dataset = data.datasets[tooltipItem.datasetIndex];
                             const total = dataset.data.reduce((acc, value) => acc + value, 0);
                             const currentValue = dataset.data[tooltipItem.index];
@@ -186,10 +187,22 @@ window.onload = async function () {
             }
 
         });
-        
+
     }
-    
-    
+
+
+    document.querySelectorAll('.clickable').forEach(function(element) {
+        element.addEventListener('click', async function(event) {
+            try {
+                const queryName = element.dataset.id;
+                window.location.href = `http://localhost:8080/search?query=${queryName}`
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    });    
+
 
     // click title bar to refresh - shuffle films, reset counter, reload page
     document.getElementById('page_title').addEventListener('click', async function () {
