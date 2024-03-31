@@ -1,6 +1,4 @@
 
-
-
 async function refreshFilms(user_id) {
     try {
         const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
@@ -10,8 +8,6 @@ async function refreshFilms(user_id) {
     }
 
 };
-
-
 
 async function getSearchFilms(query, page = 1) {
 
@@ -25,8 +21,6 @@ async function getSearchFilms(query, page = 1) {
     }
 
 };
-
-
 
 window.onload = async function () {
 
@@ -44,10 +38,10 @@ window.onload = async function () {
     if(queryName && queryName.trim() !== ''){
         await handleFormSubmission(queryName)
     }
-    console.log(queryName)
 
 
     async function updateQueryFilms(page = 1) {
+        console.log(allQueries)
         var concatenatedQueries = allQueries.join(', ');
 
         var films = await getSearchFilms(concatenatedQueries, page);
@@ -106,12 +100,19 @@ window.onload = async function () {
         var alertBox = button.parentElement;
         var query = alertBox.textContent.trim();
         alertBox.remove();
-        var index = allQueries.indexOf(query);
-        if (index !== -1) {
-            allQueries.splice(index, 1);
-        }
+
+        allQueries = allQueries.filter(item => item !== query)
+
+        console.log(allQueries)
+
+        // clear url
+
+        window.history.pushState({}, document.title, window.location.pathname);
 
         await updateQueryFilms();
+
+
+
     };
 
     posterContainer.addEventListener('scroll', loadMoreFilms);
@@ -120,7 +121,7 @@ window.onload = async function () {
         if (!(query === "")) {
             document.getElementById('searchInput').value = "";
             await displaySearchQuery(query);
-            allQueries.push(query);
+            allQueries.push(query.trim());
             await updateQueryFilms();
         }
     }
@@ -133,25 +134,7 @@ window.onload = async function () {
     });
 
 
-    // Function to handle form submission
-    // searchForm.addEventListener('submit', async function (event) {
-    //     event.preventDefault(); // Prevent default form submission behavior
-
-    //     var searchQuery = document.getElementById('searchInput').value.trim();
-
-    //     if (!(searchQuery === "")) {
-
-    //         document.getElementById('searchInput').value = "";
-    //         await displaySearchQuery(searchQuery);
-    //         allQueries.push(searchQuery);
-
-    //         await updateQueryFilms();
-
-    //     }
-
-
-    // });
-
+  
     document.getElementById('searchQueries').addEventListener('click', function (event) {
         // Check if the clicked element is a close button
         if (event.target.classList.contains('btn-close')) {
