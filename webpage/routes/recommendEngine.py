@@ -1,5 +1,10 @@
+# general
 import numpy as np
 import pandas as pd
+import mysql.connector
+import json
+
+# ML
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.metrics.pairwise import linear_kernel
 from sklearn.preprocessing import MinMaxScaler
@@ -7,11 +12,23 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import warnings
 warnings.filterwarnings("ignore")
 
+# initalising dataset
+import requests as req
+import gzip
+import concurrent.futures
+from tmdb_calls import doBatch
+from multiprocessing import Manager
+from io import BytesIO
 import mysql.connector
-import json
+from sqlalchemy import create_engine
+from langdetect import detect
+
+# flask server
 from flask import Flask, jsonify, request
 from flask_caching import Cache
 from flask_cors import CORS
+import schedule
+import time
 
 config = {         
     "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
@@ -20,8 +37,244 @@ config = {
 
 app = Flask(__name__)
 app.config.from_mapping(config)
-cache = Cache(app)
-CORS(app) 
+cache = Cache(app) #allow caching for fast storage
+CORS(app) #allow request to be made from other ports
+
+
+# ensure no duplicate cast members
+def remove_duplicates(names):
+    if isinstance(names, str):
+        unique_names = list(set(names.split(',')))
+        return ', '.join(unique_names)
+    else:
+        return names
+
+# langdetec check if film title is in english
+def is_english(text):
+    try:
+        lang = detect(text)
+        return lang == 'en'
+    except:
+        return False
+    
+#export film data to mysql
+def save_mySQL(data):
+
+    # MySQL connection configuration
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Leicester69lol",
+        database="users"
+    )
+
+    # Cursor object to execute SQL queries
+    mycursor = mydb.cursor()
+
+    # Table name in the database
+    table_name = "all_films"
+
+    # Define the SQL query to delete all records from the table
+    delete_query = "DELETE FROM {}".format(table_name)
+
+    # Execute the delete query
+    mycursor.execute(delete_query)
+    mydb.commit()
+
+    engine = create_engine("mysql+mysqlconnector://root:Leicester69lol@localhost/users")
+
+    data.to_sql('all_films', con=engine, if_exists='replace', index=False)
+
+# download, process and filter IMDB non-commercial dataset, save to mysql db
+def INITIALISE_FILM_DATASET():
+
+    print('Downloading tables...')
+
+    #get film datasets ~ 10-30mins
+
+    #set urls
+    url_title_basics = 'https://datasets.imdbws.com/title.basics.tsv.gz' #film name, year, runtime, genres
+    url_crew = 'https://datasets.imdbws.com/title.principals.tsv.gz' #actors, actresses, cinematographers, directors (redundant)
+    url_ratings = 'https://datasets.imdbws.com/title.ratings.tsv.gz' #ratings for films (not all)
+    url_names = 'https://datasets.imdbws.com/name.basics.tsv.gz' #link table for names against nconst
+    url_langs = 'https://datasets.imdbws.com/title.akas.tsv.gz' #link table for names against nconst
+
+    #download from url
+    res_title_basics = req.get(url_title_basics).content
+    res_crew = req.get(url_crew).content
+    res_ratings = req.get(url_ratings).content
+    res_names = req.get(url_names).content
+    res_lang = req.get(url_langs).content
+
+    #decompress
+    title_basics_gzip = gzip.decompress(res_title_basics)
+    crew_basics_gzip = gzip.decompress(res_crew)
+    title_ratings_gzip = gzip.decompress(res_ratings)
+    names_gzip = gzip.decompress(res_names)
+    title_langs_gzip = gzip.decompress(res_lang)
+
+    #read csv into dataframes
+    titles = pd.read_csv(BytesIO(title_basics_gzip), delimiter='\t',low_memory=False)
+    crew = pd.read_csv(BytesIO(crew_basics_gzip), delimiter='\t',low_memory=False)
+    ratings = pd.read_csv(BytesIO(title_ratings_gzip), delimiter='\t',low_memory=False)
+    names = pd.read_csv(BytesIO(names_gzip), delimiter='\t',low_memory=False)
+    langs = pd.read_csv(BytesIO(title_langs_gzip), delimiter='\t',low_memory=False)
+
+
+    print('Cleaning data...')
+
+    #first data clean
+
+    # #filter only english films
+    desired_langs = ['en']
+    filtered_langs = langs[langs['language'].isin(desired_langs)]
+    tconsts_filtered_langs = filtered_langs['titleId'].tolist()
+    desired_regions = ['CA', 'US', 'GB', 'IE', 'AU', 'NZ']
+    filtered_regions = langs[langs['region'].isin(desired_regions)]
+    tconsts_filtered_regions = filtered_regions['titleId'].tolist()
+
+    #remove unsuitable titles
+    titles = titles[titles['titleType'] == 'movie']
+    titles = titles[titles['genres'] != r'\N']
+    titles['isAdult'] = pd.to_numeric(titles['isAdult'], errors='coerce')
+    titles = titles[titles['isAdult'] == 0 ]
+    titles = titles[(titles['startYear'] >= '1955') & (titles['startYear'] != '\\N')]
+    titles = titles[(titles['tconst'].isin(tconsts_filtered_langs) & (titles['tconst'].isin(tconsts_filtered_regions)))]
+
+    #get tconsts for remaining non-film rows, and remove corresponding non-film rows
+    film_tconsts = titles['tconst'].tolist()
+    crew = crew[crew['tconst'].isin(film_tconsts)]
+    ratings = ratings[ratings['tconst'].isin(film_tconsts)]
+
+    #set columns to remove from dataset
+    remove_from_titles = ['originalTitle', 'endYear', 'titleType', 'isAdult']
+    remove_from_crew = ['ordering','job','characters']
+    remove_from_ratings = ['numVotes']
+    remove_from_names = ['birthYear', 'deathYear', 'primaryProfession', 'knownForTitles']
+
+    #remove unneeded columns
+    titles = titles.drop(columns=remove_from_titles)
+    crew = crew.drop(columns=remove_from_crew)
+    ratings = ratings.drop(columns=remove_from_ratings)
+    names = names.drop(columns=remove_from_names)
+
+    print('Merging tables...')
+
+    #merge relational tables
+
+    crew_data = crew.copy()
+
+    #merge crew data with names table to get respective names rather than nconst
+    crew_data['nconst'] = crew_data['nconst'].str.split(', ')
+    crew_data = crew_data.explode('nconst')
+    crew_data = pd.merge(crew_data, names, on='nconst', how='left')
+    crew_data = crew_data.pivot_table(
+        index=['tconst'],
+        columns=['category'],
+        values=['primaryName'],
+        aggfunc=lambda x: ', '.join(str(item) for item in x),
+    ).reset_index()
+
+
+    #format and restructure columns before merging
+    crew_data.columns = ['_'.join(col).strip() for col in crew_data.columns.values]
+    crew_data.columns = [col.replace('primaryName_', '') for col in crew_data.columns]
+    crew_data = crew_data.rename(columns={'tconst_': 'tconst'})
+    columns_to_keep = ['tconst', 'actor', 'actress', 'cinematographer', 'composer', 'director', 'editor', 'producer', 'writer']
+    crew_data = crew_data[columns_to_keep]
+
+    #merge film and cast datasets for one complete table
+    film_data = pd.merge(titles, ratings, on='tconst', how='left')
+    film_data = pd.merge(film_data, crew_data, on='tconst', how='left')
+
+    print('Further cleaning data...')
+
+    # second data clean, drop data sparse rows
+
+    columns_check = ['director', 'cinematographer', 'editor', 'writer', 'composer', 'producer']
+    film_data = film_data[film_data[columns_check].isna().sum(axis=1) == 0] #don't allow films with any missing data
+    film_data = film_data.dropna(subset=['actor', 'actress', 'runtimeMinutes', 'averageRating', 'genres'])
+
+    # double-check for null columns
+    film_data = film_data[film_data['runtimeMinutes'] != '\\N']
+    film_data = film_data[film_data['startYear'] != '\\N']
+    film_data = film_data[film_data['averageRating'] != '\\N']
+
+    # combine actor and actress into 1 column ~ 10 cast member (can reduce)
+    film_data['cast'] = film_data['actor'] + ', ' + film_data['actress']
+    film_data.drop(['actor', 'actress'], axis=1, inplace=True)
+    film_data['cast'] = film_data['cast'].apply(remove_duplicates) # double-check for duplicate cast members from merging
+
+    # remove data-sparse films
+    print('EDL testing...')
+
+    # check titles are in english (filter out MFL films release in West or mis-labelled)
+    english_titles = film_data['primaryTitle'].apply(is_english)
+    film_data = film_data[english_titles]
+
+    #add columns for plot and poster path
+    film_data['plot'] = np.nan
+    film_data['poster'] = np.nan
+
+
+    print('Films: ' + str(len(film_data)))
+
+
+    print('Fetching plot summaries and posters...')
+
+    # get film plot and poster with tmdb api ~ inconsistent runtime (<2Hrs)
+
+    #call api/details for each film with multiprocessing and mutlithreading
+    if __name__ == '__main__':
+
+        manager = Manager()
+        shared_data = manager.Namespace() #allow data to be shared with external function
+        agg_list = []
+
+        batch_size = 1000
+        sleep_time = 3
+
+        num_batches = (len(film_data) // batch_size) + 1
+
+        with concurrent.futures.ProcessPoolExecutor(8) as process_executor:
+
+            for i in range(num_batches):
+
+                start_index = i * batch_size
+                end_index = (i + 1) * batch_size
+                
+                shared_data.film_data = film_data.iloc[start_index:end_index]
+
+                future = process_executor.submit(doBatch, shared_data)
+
+                concurrent.futures.wait([future])
+
+                agg_list.append(shared_data.film_data)
+
+                print(f"Batch {i+1}/{num_batches} completed")
+                    
+        film_data = pd.concat(agg_list, ignore_index=True)
+
+    # #remove films with no plot
+    film_data = film_data.dropna(subset=['plot', 'poster'])
+
+    final_order = ['tconst','primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes', 'startYear', 'cast', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer', 'poster']
+    film_data = film_data[final_order]
+
+    print('Exporting to sql...')
+
+    #shuffle order
+    film_data = film_data.sample(frac=1)
+
+    # export film data to sql db
+    save_mySQL(film_data)
+
+
+    print('Exporting to json...')
+
+    film_data.to_json('webpage/films.json' ,orient="records")
+
+    print('Films saved to database!')
 
 
 # load whole films dataset from db
@@ -625,10 +878,24 @@ def search_general():
     else:
         return jsonify({'films': []})
 
+@app.route('/dataset', methods=['POST'])
+def dataset():
+    INITIALISE_FILM_DATASET()
+    print('Done')
 
+
+schedule.every(5).seconds.do(INITIALISE_FILM_DATASET)
 
 if __name__ == "__main__":
     app.run(debug=True, port=8081)
+
+    # import threading
+    # threading.Thread(target=app.run, kwargs={'debug': True, 'port': 5000}).start()
+  
+    # Run the scheduler in the main thread
+    while True:
+        schedule.run_pending()
+        # time.sleep(1)
 
 
 

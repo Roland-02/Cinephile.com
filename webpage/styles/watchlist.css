@@ -8,7 +8,6 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-
   text-align: center;
   overflow-y: auto;
   scroll-behavior: smooth;
@@ -17,13 +16,13 @@
 
 .poster-wrapper {
   width: 16%;
-  height: auto;
+  height: 50%;
   margin: 7px;
 }
 
 .film-poster {
   width: 100%;
-  height: auto;
+  height: 100%;
   margin: 0;
   padding: 0;
 
