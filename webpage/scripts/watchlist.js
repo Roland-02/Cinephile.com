@@ -1,3 +1,4 @@
+
 async function getWatchlist(user_id) {
     try {
         const response = await axios.get(`http://127.0.0.1:8081/get_user_watchlist?user_id=${user_id}`)
@@ -10,7 +11,6 @@ async function getWatchlist(user_id) {
     }
 };
 
-
 async function refreshFilms(user_id) {
     try {
         const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
@@ -19,7 +19,7 @@ async function refreshFilms(user_id) {
         console.error('Error shuffling films')
     }
 
-}
+};
 
 
 window.onload = async function () {

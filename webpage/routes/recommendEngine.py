@@ -626,10 +626,6 @@ def search_general():
         return jsonify({'films': []})
 
 
-@app.route('/filterCategory', methods=['GET'])
-def filter_category():
-    print()
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=8081)

@@ -8,11 +8,11 @@ router.use('/routes', filmsRouter);
 
 router.get(['/', '/search'], async function (req, res) {
     try {
-
+        const queryName = req.query.query;
         res.render('search', {
             title: 'Express',
-            session: { email: req.cookies.sessionEmail, id: req.cookies.sessionID }
-
+            session: { email: req.cookies.sessionEmail, id: req.cookies.sessionID },
+            query: queryName
         });
 
     } catch (error) {

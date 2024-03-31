@@ -1,3 +1,18 @@
+
+
+
+async function refreshFilms(user_id) {
+    try {
+        const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
+        return response.data
+    } catch (error) {
+        console.error('Error shuffling films')
+    }
+
+};
+
+
+
 async function getSearchFilms(query, page = 1) {
 
     try {
@@ -9,18 +24,7 @@ async function getSearchFilms(query, page = 1) {
         console.error('Error sending queries:', error);
     }
 
-}
-
-
-async function refreshFilms(user_id) {
-    try {
-        const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
-        return response.data
-    } catch (error) {
-        console.error('Error shuffling films')
-    }
-
-}
+};
 
 
 
@@ -32,6 +36,15 @@ window.onload = async function () {
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
     var scrollPage = 1;
     var allQueries = [];
+
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryName = urlParams.get('query');
+
+    if(queryName && queryName.trim() !== ''){
+        await handleFormSubmission(queryName)
+    }
+    console.log(queryName)
 
 
     async function updateQueryFilms(page = 1) {
@@ -103,24 +116,41 @@ window.onload = async function () {
 
     posterContainer.addEventListener('scroll', loadMoreFilms);
 
-    // Function to handle form submission
+    async function handleFormSubmission(query) {
+        if (!(query === "")) {
+            document.getElementById('searchInput').value = "";
+            await displaySearchQuery(query);
+            allQueries.push(query);
+            await updateQueryFilms();
+        }
+    }
+
+    // Add event listener to the search form
     searchForm.addEventListener('submit', async function (event) {
         event.preventDefault(); // Prevent default form submission behavior
-
         var searchQuery = document.getElementById('searchInput').value.trim();
-
-        if (!(searchQuery === "")) {
-
-            document.getElementById('searchInput').value = "";
-            await displaySearchQuery(searchQuery);
-            allQueries.push(searchQuery);
-
-            await updateQueryFilms();
-
-        }
-
-
+        await handleFormSubmission(searchQuery);
     });
+
+
+    // Function to handle form submission
+    // searchForm.addEventListener('submit', async function (event) {
+    //     event.preventDefault(); // Prevent default form submission behavior
+
+    //     var searchQuery = document.getElementById('searchInput').value.trim();
+
+    //     if (!(searchQuery === "")) {
+
+    //         document.getElementById('searchInput').value = "";
+    //         await displaySearchQuery(searchQuery);
+    //         allQueries.push(searchQuery);
+
+    //         await updateQueryFilms();
+
+    //     }
+
+
+    // });
 
     document.getElementById('searchQueries').addEventListener('click', function (event) {
         // Check if the clicked element is a close button
@@ -131,16 +161,16 @@ window.onload = async function () {
     });
 
 
-        // click title bar to refresh - shuffle films, reset counter, reload page
-        document.getElementById('page_title').addEventListener('click', async function () {
-            const shuffle = await refreshFilms(user_id)
-            localStorage.setItem('counter', 0);
-            localStorage.setItem('currentIndex', 0);
-            window.location.href = '/';
-    
-        });
-    
-    
+    // click title bar to refresh - shuffle films, reset counter, reload page
+    document.getElementById('page_title').addEventListener('click', async function () {
+        const shuffle = await refreshFilms(user_id)
+        localStorage.setItem('counter', 0);
+        localStorage.setItem('currentIndex', 0);
+        window.location.href = '/';
+
+    });
+
+
 
 }
 
