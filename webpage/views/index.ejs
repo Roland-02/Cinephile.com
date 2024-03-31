@@ -128,7 +128,7 @@
                                         <option>Drama</option>
                                         <option>Action</option>
                                         <option>Comedy</option>
-                                        <option>Sci-fi</option>
+                                        <option>Sci-Fi</option>
                                         <option>Fantasy</option>
                                         <option>Romance</option>
                                         <option>Family</option>
@@ -366,6 +366,47 @@
 
                 });
             };
+
+
+            // $('#filterOptions').on('submit', function (event) {
+            //     event.preventDefault(); // Prevent default form submission
+
+            //     // Get selected filter options
+            //     var filterRating = $('#filterRating').val();
+            //     var filterGenre = $('#filterGenre').val();
+            //     var filterRuntime = $('#filterRuntime').val();
+            //     var filterYear = $('#filterYear').val();
+
+            //     // Construct filter object
+            //     var filter = {
+            //         rating: filterRating,
+            //         genre: filterGenre,
+            //         runtime: filterRuntime,
+            //         year: filterYear
+            //     };
+
+            //     // Send filter object to backend route using AJAX
+            //     axios({
+            //         method: 'get',
+            //         url: '/filter',
+            //         params: { filter: filter } // Send filter as query parameters
+            //     })
+            //         .then(function (response) {
+            //             console.log('Filter applied successfully');
+            //         })
+            //         .catch(function (error) {
+            //             console.error('Error:', error);
+            //             // Handle error response
+            //         });
+            //             // window.location.reload();
+            //     window.location.href = '/';
+
+            //     $(this).hide();
+            //     $("#filter-filled").hide();
+            //     $("#filter-blank").show();
+
+            // }); 
+
 
         });
 
