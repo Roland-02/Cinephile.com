@@ -44,7 +44,7 @@ CORS(app) #allow request to be made from other ports
 # ensure no duplicate cast members
 def remove_duplicates(names):
     if isinstance(names, str):
-        unique_names = list(set(names.split(',')))
+        unique_names = set(name.strip() for name in names.split(','))
         return ', '.join(unique_names)
     else:
         return names
@@ -275,7 +275,6 @@ def INITIALISE_FILM_DATASET():
     film_data.to_json('webpage/films.json' ,orient="records")
 
     print('Films saved to database!')
-
 
 # load whole films dataset from db
 def loadAllFilms():
@@ -878,24 +877,19 @@ def search_general():
     else:
         return jsonify({'films': []})
 
-@app.route('/dataset', methods=['POST'])
-def dataset():
-    INITIALISE_FILM_DATASET()
-    print('Done')
 
-
-schedule.every(5).seconds.do(INITIALISE_FILM_DATASET)
+schedule.every(2).weeks.do(INITIALISE_FILM_DATASET) #run intialise dataset every fortnite - add new films
 
 if __name__ == "__main__":
     app.run(debug=True, port=8081)
 
-    # import threading
-    # threading.Thread(target=app.run, kwargs={'debug': True, 'port': 5000}).start()
+    import threading
+    threading.Thread(target=app.run, kwargs={'debug': True, 'port': 5000}).start()
   
     # Run the scheduler in the main thread
     while True:
         schedule.run_pending()
-        # time.sleep(1)
+        
 
 
 

@@ -35,7 +35,7 @@ async function cacheRecommendedFilms(user_id) {
 };
 
 
-async function startEngineAndProfileUpdate(user_id) {
+async function updateProfileLoadFilms(user_id) {
     try {
         console.log('Loading profile');
         await updateProfileAndVectors(user_id);
@@ -92,7 +92,7 @@ router.post('/', async (req, res) => {
                         res.cookie('sessionEmail', email); // Store email in a cookie
                         res.cookie('sessionID', user_id);
 
-                        await startEngineAndProfileUpdate(user_id);
+                        await updateProfileLoadFilms(user_id);
 
                         return res.redirect('index');
                     }
