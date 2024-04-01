@@ -30,12 +30,14 @@ window.onload = async function () {
 
     var films = await getWatchlist(user_id);
 
-    if (films) {
+    if (films.length > 0) {
         await displayWatchlist(films);
 
     } else {
-        postersBox.innerHTML = `<p style="text-align: center; font-size: 20px">...</p>`;
+        postersBox.innerHTML = `<img class="notFound" src="./images/NotFound_Rocketman.png" alt="Watchlist is empty">`;
+
     }
+
 
     async function displayWatchlist(films) {
         content = '';

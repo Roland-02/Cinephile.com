@@ -1,8 +1,22 @@
 //HANDLE FILM INFO RENDERING ON FRONTEND, CAROUSEL NAVIGATION
+
+async function updateProfile(user_id) {
+    try {
+        // Fetch films data from the API
+        const response = await axios.post(`http://127.0.0.1:8081/update_profile_and_vectors?user_id=${user_id}`);
+        console.log(response.data.message)
+    } catch (error) {
+        console.error('Error fetching films:', error);
+    }
+};
+
+
+
 async function cacheRecommendedFilms(user_id) {
     try {
         // Fetch films data from the API
         const response = await axios.post(`http://127.0.0.1:8081/cache_recommend_pack?user_id=${user_id}`);
+        console.log(response.data.message)
     } catch (error) {
         console.error('Error fetching films:', error);
     }
@@ -22,7 +36,6 @@ async function getRecommendedFilmsBatch(user_id, category, page) {
 
 async function getLikedStaff(user_id) {
     try {
-
         const response = await axios.get(`http://127.0.0.1:8081/get_liked_staff?user_id=${user_id}`)
         const liked_cast = response.data.liked_cast;
         const liked_crew = response.data.liked_crew;
@@ -66,27 +79,24 @@ window.onload = async function () {
     var liked_cast;
     var liked_crew;
 
-    // Check if combined films are in the cache
+    if (refreshProfile === 'true') { //user has interacted with film, reload profile
+        await updateProfile(user_id);
+        await cacheRecommendedFilms(user_id);
+        console.log('refreshed profile and films')
+    }
+
     var combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
-    
-    // check if recommendations are in cache
     if (combined_films !== '-') {
         await displayFilmsFromCache(combined_films, user_id); // Films are in cache, display them
 
     } else {
+        console.log('profile empty')
+        combinedScroll.innerHTML = `<img class="notFound" src="./images/NotFound_Sailor.png" alt="No films found">`;
+        plotScroll.innerHTML = `<img class="notFound" src="./images/NotFound_Paragliding.png" alt="No films found">`;
+        castScroll.innerHTML = `<img class="notFound" src="./images/NotFound_Surfing.png" alt="No films found">`;
+        genreScroll.innerHTML = `<img class="notFound" src="./images/NotFound_CouchRain.png" alt="No films found">`;
+        crewScroll.innerHTML = `<img class="notFound" src="./images/NotFound_Gardener.png" alt="No films found">`;
 
-        // Films are not in cache, fetch and cache them
-        await cacheRecommendedFilms(user_id);
-        combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
-       
-        if (combined_films === '-') {
-            // User profile is empty, there are no recommendations
-            console.log('profile is empty');
-
-        } else {
-            // User profile is not empty, recommendations are now in cache
-            await displayFilmsFromCache(combined_films, user_id);
-        }
 
     }
 
@@ -168,21 +178,36 @@ window.onload = async function () {
             const formatted_genre = film.genres.split(',').map(genre => genre.trim()).join(', ')
             content += `<p class="film-genre">${formatted_genre}</p>`
 
-            let names = film.cast.split(','); // Split the cast string into individual names
-            let castContent = ''; // Initialize a variable to store the HTML content for cast
-            for (let i = 0; i < names.length; i++) {
-                let name = names[i].trim(); // Remove any leading/trailing spaces
-                let bold = liked_cast.includes(name) ? 'myPeople' : '';
-                castContent += `<span class="${bold}">${name}</span>`;
-                // Add a comma if it's not the last name
-                if (i < names.length - 1) {
+            
+            let thisFilmCast = film.cast.split(',').map(name => name.trim()); // Split the cast string into individual names and trim each name
+            let likedNamesIncl = thisFilmCast.filter(name => liked_cast.includes(name)); // Filter out only the liked names
+            let castContent = '';
+
+            // Add liked names first
+            for (let i = 0; i < Math.min(likedNamesIncl.length, 6); i++) {
+                let name = likedNamesIncl[i];
+                castContent += `<span class="myPeople">${name}</span>`;
+                if (i < Math.min(likedNamesIncl.length, 6)) {
                     castContent += ', ';
                 }
             }
+
+            // Add remaining names if needed
+            if (likedNamesIncl.length < 6) {
+                let remainingNames = thisFilmCast.filter(name => !likedNamesIncl.includes(name)).slice(0, 5 - likedNamesIncl.length);
+                for (let name of remainingNames) {
+                    castContent += `<span>${name}</span>`;
+                    if (name !== remainingNames[remainingNames.length - 1]) {
+                        castContent += ', ';
+                    }
+                }
+            }
+
             content += `<p class="film-cast">${castContent}</p>`;
 
             const formatted_similarity = Math.round(film.similarity * 100)
-            content += `<p class="film-similarity">${formatted_similarity}%</p> </i>`
+            content += `<p class="film-similarity">${formatted_similarity}%</p>`
+            content += `</div>`
             content += `</div>`
             content += `</div>`
 
@@ -374,16 +399,16 @@ window.onload = async function () {
     crewScroll.addEventListener('scroll', loadMoreCrewFilms);
 
 
-        // click title bar to refresh - shuffle films, reset counter, reload page
-        document.getElementById('page_title').addEventListener('click', async function () {
-            const shuffle = await refreshFilms(user_id)
-            localStorage.setItem('counter', 0);
-            localStorage.setItem('currentIndex', 0);
-            window.location.href = '/';
-    
-        });
-    
-    
+    // click title bar to refresh - shuffle films, reset counter, reload page
+    document.getElementById('page_title').addEventListener('click', async function () {
+        const shuffle = await refreshFilms(user_id)
+        localStorage.setItem('counter', 0);
+        localStorage.setItem('currentIndex', 0);
+        window.location.href = '/';
+
+    });
+
+
 
 };
 

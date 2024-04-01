@@ -69,7 +69,6 @@ window.onload = async function () {
             var cast = stats.cast;
             var crew = stats.crew;
             var genre = stats.genre;
-            console.log(genre)
 
             castBox.innerHTML = await displayStats(cast);
             crewBox.innerHTML = await displayStats(crew);
@@ -78,10 +77,10 @@ window.onload = async function () {
         }
 
     } else {
-        postersBox.innerHTML = `<p style="text-align: center; font-size: 20px">...</p>`
-        castBox.innerHTML = `<p style="text-align: left; font-size: 20px">...</p>`
-        crewBox.innerHTML = `<p style="text-align: left; font-size: 20px">...</p>`
-        genreBox.innerHTML = `<p style="text-align: left; font-size: 20px">...</p>`
+        postersBox.innerHTML = `<img class="notFound" src="./images/NotFound_FlyingBirdWoman.png" alt="No films found">`;
+        castBox.innerHTML = `<p></p>`;
+        crewBox.innerHTML = `<p></p>`;
+        genreBox.innerHTML = `<p></p>`;
         console.log('no films')
     }
 
@@ -93,10 +92,10 @@ window.onload = async function () {
 
         films.forEach(function (film) {
             if (film.poster) {
-                content += `<img class="film-poster clickable" data-id="${film.tconst}" src="${baseImagePath + film.poster}" alt="${film.title}">`;
+                content += `<img class="film-poster clickable-film" data-id="${film.tconst}" src="${baseImagePath + film.poster}" alt="${film.title}">`;
 
             } else {
-                content += `<img class="film-poster clickable" data-id="${film.tconst}" src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
+                content += `<img class="film-poster clickable-film" data-id="${film.tconst}" src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
             }
         });
 

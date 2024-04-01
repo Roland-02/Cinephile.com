@@ -87,6 +87,16 @@ li {
 }
 
 
-.clickable {
+.clickable, .clickable-film {
     cursor: pointer;
   }
+
+  .notFound{
+    height: 100%;
+    width: 100%;
+}
+
+.notFound-ctg{
+    height: 100%;
+    width: 50%;
+}

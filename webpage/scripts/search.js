@@ -49,7 +49,8 @@ window.onload = async function () {
             await displaySearchFilms(films)
         } else {
             console.log('no films')
-            posterContainer.innerHTML = `<p>.....</p>`
+            posterContainer.innerHTML = `<img class="notFound" src="./images/NotFound_Spacemen.png" alt="No films found">`;
+
         }
     };
 

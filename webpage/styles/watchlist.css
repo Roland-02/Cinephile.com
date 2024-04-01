@@ -25,7 +25,6 @@
   height: 100%;
   margin: 0;
   padding: 0;
-
 }
 
 .caption {
@@ -86,4 +85,12 @@ figcaption {
   }
 }
 
-/* END watch
+/* END watch */
+
+
+
+
+.notFound{
+  height: 100%;
+  width: 70%;
+}
