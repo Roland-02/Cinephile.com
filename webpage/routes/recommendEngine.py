@@ -28,7 +28,7 @@ from flask import Flask, jsonify, request
 from flask_caching import Cache
 from flask_cors import CORS
 import schedule
-import time
+import threading
 
 config = {         
     "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
@@ -596,7 +596,6 @@ def most_common_names(df, top_n=10):
     return top_n_names.index.tolist()
 
 data = loadAllFilms()
-
 attributes = ['primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes','cast' ,'startYear', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer']
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
 data['soup'] = data.apply(lambda x: create_soup(x, attributes), axis=1)
@@ -883,7 +882,6 @@ schedule.every(2).weeks.do(INITIALISE_FILM_DATASET) #run intialise dataset every
 if __name__ == "__main__":
     app.run(debug=True, port=8081)
 
-    import threading 
     threading.Thread(target=app.run, kwargs={'debug': True, 'port': 5000}).start()
   
     # Run the scheduler in the main thread

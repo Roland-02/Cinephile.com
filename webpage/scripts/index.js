@@ -50,7 +50,6 @@ async function getFilmsLength() {
         console.error('Error:', error);
         return null;
     }
-    return films
 }
 
 //number of films loaded into frontend at a time - .env
@@ -63,7 +62,6 @@ window.onload = async function () {
     const filmsLength = await getFilmsLength();
     LAST_INDEX = filmsLength;
     FILTERED = false;
-    // console.log(LAST_INDEX)
 
     //initialise html elements
     const filmInfo = document.getElementById('film-info');
