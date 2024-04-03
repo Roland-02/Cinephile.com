@@ -49,7 +49,7 @@ window.onload = async function () {
             await displaySearchFilms(films)
         } else {
             console.log('no films')
-            posterContainer.innerHTML = `<img class="notFound" src="./images/NotFound_Spacemen.png" alt="No films found">`;
+            posterContainer.innerHTML = ``;
 
         }
     };
@@ -71,7 +71,7 @@ window.onload = async function () {
             `;
         });
         posterContainer.innerHTML = content;
-    }
+    };
 
 
     // Function to display the search query
@@ -84,7 +84,7 @@ window.onload = async function () {
         // Append the HTML content to the searchQueries container
         document.getElementById('searchQueries').innerHTML += content;
 
-    }
+    };
 
 
     async function loadMoreFilms() {

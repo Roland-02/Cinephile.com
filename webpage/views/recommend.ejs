@@ -76,96 +76,34 @@
 
     <!-- page content -->
     <div class="container">
-        <div class="row">
+        <div class="row justify-content-center align-items-center">
 
-            <!-- MIXED RECOMMENDED FILM CARDS REEL -->
-            <div class="col-lg-6 col-md-6 col-sm-12">
-
-                <div class="main-title">based on your profile</div>
-
-                <div class="container scroll-container border-top-bottom-rounded">
-                    <div class="bulk-scrollbox" id="combined_box" data-id="<%= session.id %>" data-bs-spy="scroll">
-                        <div class="spinner" style="display: block;"></div>
-                        <!-- FILM CARDS SPAWNED HERE -->
-
-                    </div>
-
+            <div class="col-lg-6 col-md-6">
+                <div id="showMe">
+                    <label for="showMeOptions" class="h3 form-label m-2">filter: </label>
+                    <select id="showMeOptions" class="form-select">
+                        <option value="combined" selected>All</option>
+                        <optgroup label="based on your favourite...">
+                            <option value="plot">Storylines</option>
+                            <option value="cast">Cast</option>
+                            <option value="crew">Crew</option>
+                            <option value="genre">Genre</option>
+                        </optgroup>
+                    </select>
                 </div>
             </div>
-            <!-- END MIXED FILMS CARDS REEL -->
-
-            <!-- REC FILMS CATEGORIES -->
-            <div class="col-lg-6 col-md-6 col-sm-12">
-
-                <div class="main-title">based on your favourite features</div>
-                <div class="container m-0 p-0 ">
-
-                    <!-- plot and cast category boxes row -->
-                    <div class="row d-flex justify-content-center m-0">
-
-                        <div class="col">
-                            <!-- plot cateogry scroll box -->
-                            <div class="secondary-title">storylines</div>
-                            <div class="group-scrollbox border-top-bottom-rounded" id="plot_box" data-bs-spy="scroll">
-                                <div class="spinner" style="display: block;"></div>
-
-                                <!-- plot film card -->
-                                <!-- END plot film card -->
-                            </div>
-                            <!-- END plot cateogry scroll box -->
-                        </div>
-
-                        <div class="col">
-                            <!-- cast category scroll box -->
-                            <div class="secondary-title">actors</div>
-                            <div class="group-scrollbox border-top-bottom-rounded" id="cast_box" data-bs-spy="scroll">
-                                <div class="spinner" style="display: block;"></div>
-
-                                <!-- cast film card -->
-                                <!-- END cast film card -->
-                            </div>
-                            <!-- END cast category scroll box -->
-                        </div>
-
-                    </div>
-
-                    <!-- genre and crew category boxes row -->
-                    <div class="row d-flex justify-content-center m-0">
-                        <!-- cast category scroll box -->
-                        <div class="col">
-                            <div class="secondary-title mt-2">production crews</div>
-                            <div class="group-scrollbox border-top-bottom-rounded" id="crew_box" data-bs-spy="scroll">
-                                <div class="spinner" style="display: block;"></div>
-                                <!-- crew film card -->
-                                <!-- END crew film card -->
-                            </div>
-                        </div>
-                        <!-- END crew category scroll box -->
-
-                        <div class="col">
-                            <!-- genre cateogry scroll box -->
-                            <div class="secondary-title mt-2">genres</div>
-                            <div class="group-scrollbox border-top-bottom-rounded" id="genre_box" data-bs-spy="scroll">
-                                <div class="spinner" style="display: block;"></div>
-                                <!-- genre film card -->
-                                <!-- END genre film card -->
-                            </div>
-                            <!-- END genre category scroll box -->
-
-                        </div>
 
 
-
-                    </div>
-                    <!-- END genre and crew category boxes row -->
-
-                </div>
-
+            <div id="filmsContainer" class="films-container m-1" data-id="<%= session.id %>">
+                <!-- FILM CARDS SPAWNED HERE -->
             </div>
+
 
         </div>
 
     </div>
+
+
     <!-- END page content -->
 
 </body>

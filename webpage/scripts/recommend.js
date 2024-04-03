@@ -10,8 +10,6 @@ async function updateProfile(user_id) {
     }
 };
 
-
-
 async function cacheRecommendedFilms(user_id) {
     try {
         // Fetch films data from the API
@@ -47,7 +45,6 @@ async function getLikedStaff(user_id) {
     }
 };
 
-
 async function refreshFilms(user_id) {
     try {
         const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
@@ -61,77 +58,155 @@ async function refreshFilms(user_id) {
 
 window.onload = async function () {
 
-    //initialise html elements
-    const combinedScroll = document.getElementById('combined_box');
-    const plotScroll = document.getElementById('plot_box');
-    const castScroll = document.getElementById('cast_box');
-    const genreScroll = document.getElementById('genre_box');
-    const crewScroll = document.getElementById('crew_box');
-    const user_id = combinedScroll.getAttribute('data-id');
+    const filmContainer = document.getElementById('filmsContainer');
+    const user_id = filmContainer.getAttribute('data-id');
+    const baseImagePath = 'https://image.tmdb.org/t/p/w500';
+    const spinner = document.querySelector('.spinner'); //loading spinner
 
-    var combinedScrollPosition = 1;
-    var plotScrollPosition = 1;
-    var castScrollPosition = 1;
-    var genreScrollPosition = 1;
-    var crewScrollPosition = 1;
+    var scrollPage = 1;
 
-    var likedStaff;
     var liked_cast;
-    var liked_crew;
+    var liked_crew
+
+    let option;
 
     if (refreshProfile === 'true') { //user has interacted with film, reload profile
         await updateProfile(user_id);
         await cacheRecommendedFilms(user_id);
-        console.log('refreshed profile and films')
     }
 
     var combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
     if (combined_films !== '-') {
-        await displayFilmsFromCache(combined_films, user_id); // Films are in cache, display them
+        document.getElementById('showMeOptions').disabled = false;
+
+        filmContainer.innerHTML = `<div class="spinner"></div>`
+
+        await initialiseStaff(user_id);
+        option = 'combined';
+        filmContainer.innerHTML = ''
+
+        await displayFilms(combined_films);
 
     } else {
-        console.log('profile empty')
-        combinedScroll.innerHTML = `<img class="notFound" src="./images/NotFound_Sailor.png" alt="No films found">`;
-        plotScroll.innerHTML = `<img class="notFound" src="./images/NotFound_Paragliding.png" alt="No films found">`;
-        castScroll.innerHTML = `<img class="notFound" src="./images/NotFound_Surfing.png" alt="No films found">`;
-        genreScroll.innerHTML = `<img class="notFound" src="./images/NotFound_CouchRain.png" alt="No films found">`;
-        crewScroll.innerHTML = `<img class="notFound" src="./images/NotFound_Gardener.png" alt="No films found">`;
-
+        filmContainer.innerHTML = `<img class="notFound" src="./images/NotFound_Sailor.png" alt="No films found">`;
+        document.getElementById('showMeOptions').disabled = true;
 
     }
 
-
     // Function to display films from cache
-    async function displayFilmsFromCache(films, user_id) {
-        likedStaff = await getLikedStaff(user_id);
+    async function initialiseStaff(user_id) {
+        let likedStaff = await getLikedStaff(user_id);
         liked_cast = likedStaff.liked_cast;
         liked_crew = likedStaff.liked_crew;
-        await displayRecommendedFilms(films);
     };
 
 
-    async function displayRecommendedFilms(films) {
-        if (films.length > 0) {
-            combinedScroll.innerHTML = await displayCombinedFilms(films);
+    async function displayFilms(films) {
+        let content = '';
 
-            var plot_films = await getRecommendedFilmsBatch(user_id, 'plot', 1);
-            plotScroll.innerHTML = await displayGenrePlotFilms(plot_films, 'plot');
+        films.forEach(function (film) {
+            // format similarity
+            const formatted_similarity = Math.round(film.similarity * 100);
 
-            var cast_films = await getRecommendedFilmsBatch(user_id, 'cast', 1);
-            castScroll.innerHTML = await displayCastCrewFilms(cast_films, 'cast');
+            // format runtime
+            const hours = Math.floor(film.runtimeMinutes / 60);
+            const minutes = film.runtimeMinutes % 60;
+            let time = ''
+            if (hours > 0 && minutes > 0) {
+                time = `${hours}h ${minutes}m`;
 
-            var genre_films = await getRecommendedFilmsBatch(user_id, 'genre', 1);
-            genreScroll.innerHTML = await displayGenrePlotFilms(genre_films, 'genres');
+            } else if (hours > 0) {
+                time = `${hours}h`;
 
-            var crew_films = await getRecommendedFilmsBatch(user_id, 'crew', 1);
-            crewScroll.innerHTML = await displayCastCrewFilms(crew_films, 'crew');
-        } else {
-            combinedScroll.innerHTML = `<span> Your profile is empty. </span>`;
-        }
+            } else if (minutes > 0) {
+                time = `${minutes}m`;;
+            }
+
+            //format cast
+            let thisFilmCast = film.cast.split(',').map(name => name.trim()); // Split the cast string into individual names and trim each name
+            let filmLikedCast = thisFilmCast.filter(name => liked_cast.includes(name)); // Filter out only the liked names
+
+            //format crew
+            const fields = [];
+            if (film.director) fields.push(film.director);
+            if (film.producer) fields.push(film.producer);
+            if (film.cinematographer) fields.push(film.cinematographer);
+            if (film.composer) fields.push(film.composer);
+            if (film.editor) fields.push(film.editor);
+            const crewString = fields.join(', ');
+
+            let thisFilmCrew = crewString.split(','); // Split the crew string into individual names
+            let filmLikedCrew = thisFilmCrew.filter(name => liked_crew.includes(name));
+
+
+            content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}">
+                        <figcaption class="caption">`
+
+            if (option === 'combined') {
+                content += `<p class="film-similarity" style="text-align:center;">${formatted_similarity}% match</p>`
+
+            }
+
+            content += `<p>Released: <strong>${film.startYear}</strong></p>
+                            <p>Runtime: <strong>${time}</strong></p>
+                            <p>Rating: <strong>${film.averageRating}</strong></p>
+                            <p>Genre: <strong>${film.genres}</strong></p>`
+
+            if (filmLikedCast.length > 0 && option != 'plot') {
+                let castString = "";
+                filmLikedCast.forEach(function (castName, index) {
+                    // Add comma if the name is not the last one in the array
+                    if (index < filmLikedCast.length - 1) {
+                        castString += `<span>${castName}, </span>`;
+                    } else {
+                        castString += `<span>${castName}</span>`;
+                    }
+                });
+                content += `<p class="film-cast">cast: <strong>${castString}</strong></p>`;
+            }
+
+            if (filmLikedCrew.length > 0 && option != 'plot') {
+                let crewString = "";
+                filmLikedCrew.forEach(function (crewName, index) {
+                    // Add comma if the name is not the last one in the array
+                    if (index < filmLikedCrew.length - 1) {
+                        crewString += `<span>${crewName}, </span>`;
+                    } else {
+                        crewString += `<span>${crewName}</span>`;
+                    }
+                });
+                content += `<p class="film-crew">crew: <strong>${crewString}</strong></p>`;
+            }
+
+            content += `<p>${film.plot}</p>                    
+                        </figcaption>
+                    <img class="film-poster" src="${baseImagePath + film.poster}" alt="${film.title}">  
+                    </figure>`;
+
+        });
+
+        filmContainer.innerHTML += content;
     };
 
 
-    async function displayCombinedFilms(films) {
+    // change filter option
+    document.getElementById('showMeOptions').addEventListener('change', async function (event) {
+        option = event.target.value;
+        filmContainer.setAttribute('current-option', option)
+        filmContainer.scrollTop = 0;
+
+        filmContainer.innerHTML = `<div class="spinner"></div>`
+
+        scrollPage = 1;
+        let films = await getRecommendedFilmsBatch(user_id, option, scrollPage)
+
+        filmContainer.innerHTML = ''
+        await displayFilms(films);
+
+    });
+
+
+    async function displaFilms(films) {
 
         var content = "";
 
@@ -178,7 +253,7 @@ window.onload = async function () {
             const formatted_genre = film.genres.split(',').map(genre => genre.trim()).join(', ')
             content += `<p class="film-genre">${formatted_genre}</p>`
 
-            
+
             let thisFilmCast = film.cast.split(',').map(name => name.trim()); // Split the cast string into individual names and trim each name
             let likedNamesIncl = thisFilmCast.filter(name => liked_cast.includes(name)); // Filter out only the liked names
             let castContent = '';
@@ -218,185 +293,30 @@ window.onload = async function () {
     };
 
 
-    async function displayGenrePlotFilms(films, category) {
 
-        var content = "";
-
-        films.forEach(function (film) {
-
-            content += `<div class="small-film-card card-body ${category}-card clickable" data-id="${film.tconst}">`
-            content += `<div class="small-film-details">`
-            content += `<h3 class="small-film-title">${film.primaryTitle}</h3>`; // Use a smaller font size class
-            content += `<p class="small-film-${category}">${film[category]}</p>`;
-            content += `</div> </div>`;
-        });
-        content += `</div>`;
-
-        return content
-    };
-
-
-    async function displayCastCrewFilms(films, category) {
-        let content = "";
-
-        films.forEach(function (film) {
-            content += `<div class="small-film-card card-body ${category}-card clickable" data-id="${film.tconst}">`;
-            content += `<div class="small-film-details">`;
-
-            // Check if the film title is too long
-            content += `<h3 class="small-film-title">${film.primaryTitle}</h3>`; // Use a smaller font size class
-            content += `<p class="small-film-${category}">`;
-
-            if (category === 'crew') {
-                const fields = [];
-                if (film.director) fields.push(film.director);
-                if (film.producer) fields.push(film.producer);
-                if (film.cinematographer) fields.push(film.cinematographer);
-                if (film.composer) fields.push(film.composer);
-                if (film.editor) fields.push(film.editor);
-                const crewString = fields.join(', ');
-
-                const names = crewString.split(','); // Split the crew string into individual names
-                let crewContent = '';
-                names.forEach(function (name) {
-                    const trimmedName = name.trim(); // Remove any leading/trailing spaces
-                    const bold = liked_crew.includes(trimmedName) ? 'myPeople' : '';
-                    crewContent += `<span class="${bold}">${trimmedName}</span>, `;
-                });
-
-                content += crewContent;
-            } else {
-                const names = film.cast.split(','); // Split the cast string into individual names
-                let castContent = '';
-                names.forEach(function (name) {
-                    const trimmedName = name.trim(); // Remove any leading/trailing spaces
-                    const bold = liked_cast.includes(trimmedName) ? 'myPeople' : '';
-                    castContent += `<span class="${bold}">${trimmedName}</span>, `;
-                });
-                // Remove the trailing comma and space
-                castContent = castContent.slice(0, -2);
-
-                content += castContent;
-            }
-
-            content += `</p>`;
-            content += `</div> </div>`;
-        });
-
-        return content;
-    };
-
-
-    async function loadMoreCombinedFilms() {
-        filmScroll = this;
-
-        // Check if the user has scrolled to the bottom of the scroll box
-        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
-
-
-            // Call getCombinedRecommended to fetch the next batch of films
-            combinedScrollPosition++;
-            const films = await getRecommendedFilmsBatch(user_id, 'combined', combinedScrollPosition);
-
-            // Append the newly fetched films to the scroll box
-            if (films.length > 0) {
-                filmScroll.innerHTML += await displayCombinedFilms(films);
-            }
-
-        }
-
-    };
-
-
-    async function loadMorePlotFilms() {
+    async function loadMoreFilms() {
         const filmScroll = this;
 
         // Check if the user has scrolled to the bottom of the scroll box
-        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
+        if (filmContainer.scrollTop + filmContainer.clientHeight >= filmContainer.scrollHeight - 2) {
             // Increment the scroll position
-            plotScrollPosition++;
+            scrollPage++;
 
             // Call getRecommendedBatch to fetch the next batch of films
-            const films = await getRecommendedFilmsBatch(user_id, 'plot', plotScrollPosition);
+            const films = await getRecommendedFilmsBatch(user_id, option, scrollPage);
 
             // Append the newly fetched films to the scroll box
             if (films.length > 0) {
-                filmScroll.innerHTML += await displayGenrePlotFilms(films, 'plot');
+                await displayFilms(films);
             }
+
         }
-
-        return plotScrollPosition;
-    };
+    }
 
 
-    async function loadMoreCastFilms() {
-        const filmScroll = this;
 
-        // Check if the user has scrolled to the bottom of the scroll box
-        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
-            // Increment the scroll position
-            castScrollPosition++;
+    filmContainer.addEventListener('scroll', loadMoreFilms);
 
-            // Call getRecommendedBatch to fetch the next batch of films
-            const films = await getRecommendedFilmsBatch(user_id, 'cast', castScrollPosition);
-
-            // Append the newly fetched films to the scroll box
-            if (films.length > 0) {
-                filmScroll.innerHTML += await displayCastCrewFilms(films, 'cast');
-            }
-        }
-
-        return castScrollPosition;
-    };
-
-
-    async function loadMoreGenreFilms() {
-        const filmScroll = this;
-
-        // Check if the user has scrolled to the bottom of the scroll box
-        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
-            // Increment the scroll position
-            genreScrollPosition++;
-
-            // Call getRecommendedBatch to fetch the next batch of films
-            const films = await getRecommendedFilmsBatch(user_id, 'genre', genreScrollPosition);
-
-            // Append the newly fetched films to the scroll box
-            if (films.length > 0) {
-                filmScroll.innerHTML += await displayGenrePlotFilms(films, 'genres');
-            }
-        }
-
-        return genreScrollPosition;
-    };
-
-
-    async function loadMoreCrewFilms() {
-        const filmScroll = this;
-
-        // Check if the user has scrolled to the bottom of the scroll box
-        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
-            // Increment the scroll position
-            crewScrollPosition++;
-
-            // Call getRecommendedBatch to fetch the next batch of films
-            const films = await getRecommendedFilmsBatch(user_id, 'crew', crewScrollPosition);
-
-            // Append the newly fetched films to the scroll box
-            if (films.length > 0) {
-                filmScroll.innerHTML += await displayCastCrewFilms(films, 'crew');
-            }
-        }
-
-        return crewScrollPosition;
-    };
-
-
-    combinedScroll.addEventListener('scroll', loadMoreCombinedFilms);
-    plotScroll.addEventListener('scroll', loadMorePlotFilms);
-    castScroll.addEventListener('scroll', loadMoreCastFilms);
-    genreScroll.addEventListener('scroll', loadMoreGenreFilms);
-    crewScroll.addEventListener('scroll', loadMoreCrewFilms);
 
 
     // click title bar to refresh - shuffle films, reset counter, reload page

@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import mysql.connector
 import json
+from collections import Counter
 
 # ML
 from sklearn.metrics.pairwise import euclidean_distances
@@ -595,6 +596,25 @@ def most_common_names(df, top_n=10):
     top_n_names = name_counts.head(top_n)
     return top_n_names.index.tolist()
 
+# return user's top 5 main genres
+def top_5_genres(genres_series):
+    # Initialize an empty Counter to store genre counts
+    genre_counts = Counter()
+    
+    # Iterate over each genre string in the series
+    for genre_string in genres_series:
+        if isinstance(genre_string, str):
+            # Split the genre string into individual genres
+            individual_genres = [genre.strip() for genre in genre_string.split(',')]
+            
+            # Update the genre counts
+            genre_counts.update(individual_genres)
+    
+    # Get the top 5 most common genres
+    top_5 = genre_counts.most_common(5)
+    
+    return top_5
+
 data = loadAllFilms()
 attributes = ['primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes','cast' ,'startYear', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer']
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
@@ -836,14 +856,10 @@ def get_fav_cast_route():
 
         top_cast = most_common_names(liked_cast)
         top_crew = most_common_names(liked_crew)
-        
-        # Count occurrences of each unique genre string
-        genre_counts = liked_genre['genres'].value_counts()
-        genre_counts_df = genre_counts.reset_index()
-        genre_counts_df.columns = ['Genres', 'Count']
-        sorted_genre_counts_df = genre_counts_df.sort_values(by='Count', ascending=False)
-        top_genres = sorted_genre_counts_df.head(5)
-        top_genres_dict = top_genres.to_dict(orient='records')
+        top_genres = top_5_genres(liked_genre['genres'])
+
+        # Convert the result to a dictionary
+        top_genres_dict = [{'Genres': genre, 'Count': count} for genre, count in top_genres]
 
         return jsonify({"message": True, "cast": top_cast, "crew": top_crew, "genre": top_genres_dict})
 
