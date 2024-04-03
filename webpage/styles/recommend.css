@@ -96,12 +96,14 @@ figcaption {
 
 
 .spinner {
-    border: 4px solid rgba(255, 247, 247, 0.1);
+    border: 8px solid rgba(255, 247, 247, 0.1);
     border-left-color: #3498db;
     border-radius: 50%;
+    margin: 10px;
     width: 100px;
     height: 100px;
     animation: spin 1s linear infinite;
+    position:static;
 }
 
 @keyframes spin {
@@ -114,3 +116,14 @@ figcaption {
     }
 }
 
+
+
+.loading-msg{
+    margin: 10px;
+    font-size: 18px;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+}

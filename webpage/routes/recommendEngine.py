@@ -465,7 +465,6 @@ def get_user_profile(user_id):
     lovedFilms = get_loved_films(user_id)
     likedAtt = get_liked_attributes(user_id)
     likedCast = get_liked_cast(user_id)
-    watchlist = get_watchlist(user_id)
 
     # merge liked cast with liked attribute table
     likedCast_grouped = likedCast.groupby('tconst')['name'].apply(lambda x: ', '.join(x.dropna())).reset_index()
@@ -811,6 +810,20 @@ def get_loved_route():
     loved_films = get_loved_films(user_id)
     loved_films_dict = loved_films.to_dict(orient='records')
     return jsonify({"films": loved_films_dict})
+
+
+@app.route('/get_liked_films', methods=['GET'])
+def get_liked_route():
+    user_id = request.args.get("user_id")
+    user_profile = get_user_profile(user_id)
+    liked_films_attr = user_profile[0]
+    liked_films_attr = liked_films_attr[liked_films_attr['likeage'] != 1]
+    liked_films = liked_films_attr.merge(data[['tconst', 'poster']], on='tconst', how='left')
+    liked_films = liked_films[['tconst', 'poster']]
+    liked_films_dict = liked_films.to_dict(orient='records')
+    return jsonify({"films": liked_films_dict})
+
+
 
 
 @app.route('/get_user_watchlist', methods=['GET'])

@@ -70,8 +70,13 @@ window.onload = async function () {
 
     let option;
 
-    if (refreshProfile === 'true') { //user has interacted with film, reload profile
+    if (refreshProfile) { //user has interacted with film, reload profile
+        filmContainer.innerHTML = `<div class="loading-msg">`
+        filmContainer.innerHTML += `<p><strong>Updating profile...</strong></p>`
+        filmContainer.innerHTML += `<div class="spinner"></div>`
         await updateProfile(user_id);
+        filmContainer.innerHTML += `<p><strong>Getting films...</strong></p> </div> </div>`
+    
         await cacheRecommendedFilms(user_id);
     }
 

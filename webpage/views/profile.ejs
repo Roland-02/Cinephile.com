@@ -81,12 +81,35 @@
             <!-- favourite film posters -->
             <div class="col-lg-6 col-md-6 col-sm-12">
 
-                <div class="main-title">your films</div>
-
                 <div class="container">
-                    <div class="poster-container" id="loved-films" data-id="<%= session.id %>" data-bs-spy="scroll">
-                        <div class="spinner" style="display: block;"></div>
-                        <!-- FILM CARDS SPAWNED HERE -->
+
+                    <div class="flip-card">
+                        <div class="flip-card-inner" id="flip-card-inner">
+
+                            <div class="flip-card-front">
+                                <div class="main-title" style="cursor: pointer;">my favourites</div>
+
+                                <div class="poster-container" id="loved-films" data-id="<%= session.id %>"
+                                    data-bs-spy="scroll">
+                                    <div class="spinner" style="display: block;"></div>
+                                    <!-- LOVED FILM CARDS SPAWNED HERE -->
+                                </div>
+
+                            </div>
+
+                            <div class="flip-card-back">
+                                <div class="main-title point" style="cursor: pointer;">my likes</div>
+
+                                <div class="poster-container" id="liked-films" data-bs-spy="scroll">
+                                    <div class="spinner" style="display: block;"></div>
+                                    <!-- LIKED FILM CARDS SPAWNED HERE -->
+                                </div>
+                            </div>
+
+                        </div>
+
+
+
 
                     </div>
 
@@ -97,7 +120,7 @@
             <!-- REC FILMS CATEGORIES -->
             <div class="col-lg-6 col-md-6 col-sm-12">
 
-                <div class="main-title">your top...</div>
+                <div class="main-title">my analytics</div>
                 <div class="container d-flex flex-column m-15 p-10">
 
                     <!-- plot and cast category boxes row -->
@@ -149,8 +172,8 @@
 
     <script>
 
-     // click on film card to open in index
-     $(document).on('click', '.clickable-film', async function () {
+        // click on film card to open in index
+        $(document).on('click', '.clickable-film', async function () {
             const tconst = $(this).data('id');
             const response = await axios.get(`http://localhost:8080/openClickedFilm?tconst=${tconst}`);
             let savedCounter = response.data.counter;
@@ -160,7 +183,7 @@
             window.location.href = '/index';
         });
 
-      
+
     </script>
 
 
