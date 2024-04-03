@@ -2,28 +2,28 @@
 async function getLovedFilms(user_id) {
     try {
         const response = await axios.get(`http://127.0.0.1:8081/get_loved_films?user_id=${user_id}`)
-        const lovedFilms = response.data.films;
-        return lovedFilms;
+        const films = response.data.films;
+        return films;
 
     } catch (error) {
         console.error('Error getting films batch', error);
         return null;
     }
 
-
 };
 
-
-async function refreshFilms(user_id) {
+async function getLikedFilms(user_id) {
     try {
-        const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
-        return response.data
+        const response = await axios.get(`http://127.0.0.1:8081/get_liked_films?user_id=${user_id}`)
+        const films = response.data.films;
+        return films;
+
     } catch (error) {
-        console.error('Error shuffling films')
+        console.error('Error getting films batch', error);
+        return null;
     }
 
-}
-
+};
 
 async function getProfileStats(user_id) {
     try {
@@ -47,34 +47,50 @@ async function getProfileStats(user_id) {
 
 };
 
+async function refreshFilms(user_id) {
+    try {
+        const response = await axios.post(`http://localhost:8080/shuffleFilms?user_id=${user_id}`);
+        return response.data
+    } catch (error) {
+        console.error('Error shuffling films')
+    }
+
+};
 
 window.onload = async function () {
 
     const postersBox = document.getElementById('loved-films');
+    const likedPostersBox = document.getElementById('liked-films');
+
     const castBox = document.getElementById('cast-box');
     const crewBox = document.getElementById('crew-box');
     const genreBox = document.getElementById('genre-box');
 
+    const flipCard = document.getElementById('flip-card-inner');
+    // const flipTitle = document.querySelector('main-title');
+
     const user_id = postersBox.getAttribute('data-id');
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
+    // let filmsPack = await getLovedFilms(user_id);
     var films = await getLovedFilms(user_id);
+    var likedFilms = await getLikedFilms(user_id);
 
     //initial update
     if (films.length > 0) {
         await displayLovedFilmPosters(films);
 
         var stats = await getProfileStats(user_id)
-        if (stats) {
-            var cast = stats.cast;
-            var crew = stats.crew;
-            var genre = stats.genre;
+        var cast = stats.cast;
+        var crew = stats.crew;
+        var genre = stats.genre;
 
-            castBox.innerHTML = await displayStats(cast);
-            crewBox.innerHTML = await displayStats(crew);
-            await displayGenreChart(genre); //display genre pie chart
+        castBox.innerHTML = await displayStats(cast);
+        crewBox.innerHTML = await displayStats(crew);
+        await displayGenreChart(genre); //display genre pie chart
 
-        }
+        await displayLikedFilmPosters(likedFilms);
+
 
     } else {
         postersBox.innerHTML = `<img class="notFound" src="./images/NotFound_FlyingBirdWoman.png" alt="No films found">`;
@@ -85,10 +101,10 @@ window.onload = async function () {
     }
 
 
+
     //Function to update the displayed film
     async function displayLovedFilmPosters(films) {
         content = '';
-
 
         films.forEach(function (film) {
             if (film.poster) {
@@ -100,6 +116,30 @@ window.onload = async function () {
         });
 
         postersBox.innerHTML = content;
+
+    };
+
+    document.querySelectorAll('.main-title').forEach(function (element) {
+        element.addEventListener('click', async function (event) {
+            flipCard.classList.toggle('flipped');
+        });
+
+    });
+
+    //Function to update the displayed film
+    async function displayLikedFilmPosters(films) {
+        content = '';
+
+        films.forEach(function (film) {
+            if (film.poster) {
+                content += `<img class="film-poster clickable-film" data-id="${film.tconst}" src="${baseImagePath + film.poster}" alt="${film.title}">`;
+
+            } else {
+                content += `<img class="film-poster clickable-film" data-id="${film.tconst}" src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
+            }
+        });
+
+        likedPostersBox.innerHTML = content;
 
     };
 
@@ -190,8 +230,8 @@ window.onload = async function () {
     }
 
 
-    document.querySelectorAll('.clickable').forEach(function(element) {
-        element.addEventListener('click', async function(event) {
+    document.querySelectorAll('.clickable').forEach(function (element) {
+        element.addEventListener('click', async function (event) {
             try {
                 const queryName = element.dataset.id;
                 window.location.href = `http://localhost:8080/search?query=${queryName}`
@@ -200,7 +240,7 @@ window.onload = async function () {
                 console.error('Error:', error);
             }
         });
-    });    
+    });
 
 
     // click title bar to refresh - shuffle films, reset counter, reload page
