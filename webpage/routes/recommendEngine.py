@@ -3,9 +3,8 @@ import numpy as np
 import pandas as pd
 import mysql.connector
 import json
-from collections import Counter
 
-# ML
+# ml
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.metrics.pairwise import linear_kernel
 from sklearn.preprocessing import MinMaxScaler
@@ -14,15 +13,16 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # initalising dataset
-import requests as req
 import gzip
+import requests as req
+import mysql.connector
 import concurrent.futures
+from io import BytesIO
 from tmdb_calls import doBatch
 from multiprocessing import Manager
-from io import BytesIO
-import mysql.connector
 from sqlalchemy import create_engine
 from langdetect import detect
+from collections import Counter
 
 # flask server
 from flask import Flask, jsonify, request
@@ -619,6 +619,7 @@ attributes = ['primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
 data['soup'] = data.apply(lambda x: create_soup(x, attributes), axis=1)
 
+
 @app.route('/update_profile_and_vectors', methods=['POST'])
 def initialise_profile_route():
     user_id = request.args.get("user_id") 
@@ -822,8 +823,6 @@ def get_liked_route():
     liked_films = liked_films[['tconst', 'poster']]
     liked_films_dict = liked_films.to_dict(orient='records')
     return jsonify({"films": liked_films_dict})
-
-
 
 
 @app.route('/get_user_watchlist', methods=['GET'])

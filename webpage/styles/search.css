@@ -28,7 +28,7 @@
 /* Film poster */
 
 .poster-container {
-    height: 80vh;
+    height: 70vh;
     width: 100%;
     margin: 10px;
 
@@ -42,7 +42,7 @@
 
 .poster-wrapper {
     width: 18%;
-    height: 59%;
+    height: 60%;
     margin: 7px;
 
 }

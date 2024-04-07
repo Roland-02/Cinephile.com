@@ -119,12 +119,6 @@ window.onload = async function () {
 
     };
 
-    document.querySelectorAll('.main-title').forEach(function (element) {
-        element.addEventListener('click', async function (event) {
-            flipCard.classList.toggle('flipped');
-        });
-
-    });
 
     //Function to update the displayed film
     async function displayLikedFilmPosters(films) {
@@ -229,6 +223,12 @@ window.onload = async function () {
 
     }
 
+    document.querySelectorAll('.main-title').forEach(function (element) {
+        element.addEventListener('click', async function (event) {
+            flipCard.classList.toggle('flipped');
+        });
+
+    });
 
     document.querySelectorAll('.clickable').forEach(function (element) {
         element.addEventListener('click', async function (event) {
@@ -241,7 +241,6 @@ window.onload = async function () {
             }
         });
     });
-
 
     // click title bar to refresh - shuffle films, reset counter, reload page
     document.getElementById('page_title').addEventListener('click', async function () {
