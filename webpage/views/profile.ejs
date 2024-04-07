@@ -88,32 +88,26 @@
 
                             <div class="flip-card-front">
                                 <div class="main-title" style="cursor: pointer;">my favourites</div>
-
-                                <div class="poster-container" id="loved-films" data-id="<%= session.id %>"
-                                    data-bs-spy="scroll">
+                                <div class="poster-container" id="loved-films" data-id="<%= session.id %>" data-bs-spy="scroll">
                                     <div class="spinner" style="display: block;"></div>
                                     <!-- LOVED FILM CARDS SPAWNED HERE -->
                                 </div>
-
                             </div>
 
                             <div class="flip-card-back">
-                                <div class="main-title point" style="cursor: pointer;">my likes</div>
-
-                                <div class="poster-container" id="liked-films" data-bs-spy="scroll">
+                                <div class="main-title" style="cursor: pointer;">my likes</div>
+                                <div class="poster-container" id="liked-films" data-id="<%= session.id %>" data-bs-spy="scroll">
                                     <div class="spinner" style="display: block;"></div>
                                     <!-- LIKED FILM CARDS SPAWNED HERE -->
                                 </div>
                             </div>
-
+                            
                         </div>
-
-
-
 
                     </div>
 
                 </div>
+
             </div>
             <!-- END favourite film posters -->
 
