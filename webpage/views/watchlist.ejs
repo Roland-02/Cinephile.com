@@ -20,62 +20,62 @@
 
 <body>
 
-    <!-- Nav bar -->
-    <div class="py-1 text-center bg-white border-bottom">
-        <div class="container">
-            <div class="row align-items-center justify-content-between">
+   <!-- Nav bar -->
+   <div class="nav-bar py-1 bg-white border-bottom">
+    <div class="container d-flex justify-content-center align-items-center text-center">
 
-                <!-- Left elements -->
-                <div class="col-lg-4 col-md-6 col-sm-12">
-                    <% if (session && session.email) { %>
-                        <!-- sign in button -->
-                        <form action="/signout" method="POST">
-                            <button type="submit" class="border rounded nav-link d-inline-block">
-                                <p class="btn mb-0">Sign out</p>
-                            </button>
-                        </form>
+        <!-- Left elements -->
+        <div class="col">
+            <% if (session && session.email) { %>
+                <!-- sign in button -->
+                <form action="/signout" method="POST">
+                    <button type="submit" id="signoutBtn" class="border rounded nav-link d-inline-block">
+                        <p class="btn mb-0">Sign out</p>
+                    </button>
+                </form>
 
-                        <% } else { %>
-                            <!-- sign up and sign in buttons -->
-                            <a href="/createAccount" class="border rounded nav-link d-inline-block">
-                                <p class="btn d-md-block mb-0">Sign up</p>
-                            </a>
-                            <a href="/login" class="border rounded nav-link d-inline-block">
-                                <p class="btn d-md-block mb-0">Sign in</p>
-                            </a>
-                            <% } %>
-                </div>
-
-                <!-- Centered title -->
-                <div class="col-lg-4 col-md-6 col-sm-12" id="page_title" style="cursor: pointer;">
-                    <h1>C I N E P H I L E</h1>
-                </div>
-
-                <!-- Right elements -->
-                <div class="col-lg-4 col-md-12 col-sm-12 text-end">
-                    <% if (session && session.email) { %>
-                        <a href="/search" class="border rounded nav-link d-inline-block menu-btn">
-                            <p class="btn btn-sm d-md-block mb-0">Search</p>
-                        </a>
-                        <a href="/recommend" class="border rounded nav-link d-inline-block menu-btn">
-                            <p class="btn btn-sm d-md-block mb-0">Recommend</p>
-                        </a>
-                        <a href="/profile" class="border rounded nav-link d-inline-block menu-btn">
-                            <p class="btn btn-sm d-md-block mb-0">My films</p>
-                        </a>
-                        <a href="/watchlist" class="border rounded nav-link d-inline-block menu-btn">
-                            <p class="btn btn-sm d-md-block mb-0">Watchlist</p>
-                        </a>
-                        <% } %>
-                </div>
-            </div>
+                <% } else { %>
+                    <!-- sign up and sign in buttons -->
+                    <a href="/createAccount" class="border rounded nav-link d-inline-block">
+                        <p class="btn d-md-block mb-0">Sign up</p>
+                    </a>
+                    <a href="/login" class="border rounded nav-link d-inline-block">
+                        <p class="btn d-md-block mb-0">Sign in</p>
+                    </a>
+                    <% } %>
         </div>
+
+        <!-- Centered title -->
+        <div class="col" id="page_title" style="cursor: pointer;">
+            <h1>C I N E P H I L E</h1>
+        </div>
+
+        <!-- Right elements -->
+        <div class="col text-end">
+            <% if (session && session.email) { %>
+                <a href="/search" class="border rounded nav-link d-inline-block menu-btn">
+                    <p class="btn btn-sm d-md-block mb-0">Search</p>
+                </a>
+                <a href="/recommend" class="border rounded nav-link d-inline-block menu-btn">
+                    <p class="btn btn-sm d-md-block mb-0">Recommend</p>
+                </a>
+                <a href="/profile" class="border rounded nav-link d-inline-block menu-btn">
+                    <p class="btn btn-sm d-md-block mb-0">My films</p>
+                </a>
+                <a href="/watchlist" class="border rounded nav-link d-inline-block menu-btn" style="background-color: orange;">
+                    <p class="btn btn-sm d-md-block mb-0">Watchlist</p>
+                </a>
+                <% } %>
+        </div>
+
     </div>
-    <!-- END nav bar -->
+
+</div>
+<!-- END nav bar -->
 
 
     <!-- page content -->
-    <div class="container">
+    <div class="container" style="padding-top: 60px;">
         <div class="row justify-content-center">
             <div class="col-12 col-md-8" style="width:100%;">
                 <div id="watchlist-films" class="poster-container" data-id="<%= session.id %>">
@@ -85,6 +85,10 @@
             </div>
         </div>
     </div>
+
+    <button id="backToTopBtn" class="btn btn-secondary" style="display: none;">Back to Top</button>
+
+
     <!-- END page content -->
 
 </body>
@@ -103,6 +107,26 @@
             localStorage.setItem('counter', savedCounter);
             localStorage.setItem('currentIndex', savedIndex);
             window.location.href = '/index';
+        });
+
+        
+        $(document).ready(function () {
+            // Monitor scroll event
+            $(window).scroll(function () {
+                // If user scrolled more than 300 pixels down, show the button
+                if ($(this).scrollTop() > 500) {
+                    $('#backToTopBtn').fadeIn();
+                } else {
+                    // Otherwise, hide the button
+                    $('#backToTopBtn').fadeOut();
+                }
+            });
+
+            // Add click event handler to scroll back to top
+            $('#backToTopBtn').click(function () {
+                $('html, body').animate({ scrollTop: 0 }, 'fast');
+                return false;
+            });
         });
 
     </script>

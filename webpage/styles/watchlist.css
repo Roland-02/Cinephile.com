@@ -1,22 +1,61 @@
-/* watchlist films posters */
-
-.poster-container {
-  height: 85vh;
+/* nav bar */
+.nav-bar {
+  position: fixed;
+  top: 0;
   width: 100%;
-  margin: 20px;
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+  z-index: 1000;
+}
 
+@media screen and (max-width: 991px) {
+  #page_title, 
+  #signoutBtn { 
+    display: none;
+  }
+}
+
+.menu-btn {
+  width:auto;
+  height:auto;
+  margin:2px;
+  padding: 2px;
+  border-left: solid 2px black;
+}
+
+/* END nav bar */
+
+#backToTopBtn {
+  position: fixed;
+  background-color: white;
+  color: black;
+  width: 300px;
+  top: 65px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+
+#backToTopBtn:hover {
+  opacity: 1; /* Change opacity to 1 on hover */
+}
+
+
+/* watchlist films posters */
+.poster-container {
+  margin: 20px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   text-align: center;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-
 }
 
 .poster-wrapper {
-  width: 16%;
-  height: 50%;
+  width: 17%;
+  height: 65%;
   margin: 7px;
 }
 
