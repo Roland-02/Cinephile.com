@@ -41,7 +41,6 @@ window.onload = async function () {
 
 
     async function updateQueryFilms(page = 1) {
-        console.log(allQueries)
         var concatenatedQueries = allQueries.join(', ');
 
         var films = await getSearchFilms(concatenatedQueries, page);
@@ -87,15 +86,7 @@ window.onload = async function () {
     };
 
 
-    async function loadMoreFilms() {
-        let filmScroll = this;
 
-        if (filmScroll.scrollTop + filmScroll.clientHeight >= filmScroll.scrollHeight - 2) {
-            scrollPage++;
-            console.log(scrollPage)
-            await updateQueryFilms(scrollPage)
-        }
-    }
 
     async function deleteQuery(button) {
         var alertBox = button.parentElement;
@@ -104,7 +95,6 @@ window.onload = async function () {
 
         allQueries = allQueries.filter(item => item !== query)
 
-        console.log(allQueries)
 
         // clear url
 
@@ -112,11 +102,21 @@ window.onload = async function () {
 
         await updateQueryFilms();
 
-
-
     };
 
-    posterContainer.addEventListener('scroll', loadMoreFilms);
+
+    window.addEventListener('scroll', async function() {
+        // Calculate the distance between the bottom of the page and the current scroll position
+        let distanceToBottom = document.documentElement.offsetHeight - (window.scrollY + window.innerHeight);
+    
+        if (distanceToBottom <= 10) {
+            // Load more films
+            scrollPage++;
+            await updateQueryFilms(scrollPage);
+        }
+    });
+    
+
 
     async function handleFormSubmission(query) {
         if (!(query === "")) {

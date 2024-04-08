@@ -119,7 +119,6 @@ window.onload = async function () {
 
         }
 
-        // console.log(films)
 
 
         if (1 === 1) {
@@ -215,7 +214,7 @@ window.onload = async function () {
             content += `<div class="col-lg col-md col-sm-12 py-3">
                         <div class="h5 text-center">CAST</div>
                         <div class="container px-1">
-                            <div class="d-flex justify-content-center">`;
+                            <div class="d-flex justify-content-center" style="flex-wrap: wrap">`;
 
 
             for (const actor of cast) {

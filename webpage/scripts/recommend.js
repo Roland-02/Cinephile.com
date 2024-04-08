@@ -77,7 +77,7 @@ window.onload = async function () {
         filmContainer.innerHTML += `<div class="spinner"></div>`
         await updateProfile(user_id);
         filmContainer.innerHTML += `<p><strong>Getting films...</strong></p> </div> </div>`
-    
+
         await cacheRecommendedFilms(user_id);
     }
 
@@ -211,11 +211,12 @@ window.onload = async function () {
 
     });
 
+    
+    window.addEventListener('scroll', async function () {
+        // Calculate the distance between the bottom of the page and the current scroll position
+        let distanceToBottom = document.documentElement.offsetHeight - (window.scrollY + window.innerHeight);
 
-    async function loadMoreFilms() {
-        // Check if the user has scrolled to the bottom of the scroll box
-        if (filmContainer.scrollTop + filmContainer.clientHeight >= filmContainer.scrollHeight - 2) {
-            // Increment the scroll position
+        if (distanceToBottom <= 10) {
             scrollPage++;
 
             // Call getRecommendedBatch to fetch the next batch of films
@@ -225,14 +226,8 @@ window.onload = async function () {
             if (films.length > 0) {
                 await displayFilms(films);
             }
-
         }
-    }
-
-
-
-    filmContainer.addEventListener('scroll', loadMoreFilms);
-
+    });
 
 
     // click title bar to refresh - shuffle films, reset counter, reload page

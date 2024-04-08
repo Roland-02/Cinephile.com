@@ -1,3 +1,35 @@
+/* nav bar */
+.nav-bar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: white;
+    border-bottom: 1px solid #ddd;
+    /* Add a bottom border for styling */
+    z-index: 1000;
+    /* Ensure navbar stays on top of other content */
+}
+
+@media screen and (max-width: 991px) {
+
+    #page_title,
+    /* Hide the title */
+    #signoutBtn {
+        /* Hide the sign-out button */
+        display: none;
+    }
+}
+
+.menu-btn {
+    width: auto;
+    height: auto;
+    margin: 2px;
+    padding: 2px;
+    border-left: solid 2px black;
+}
+
+/* END nav bar */
+
 .search-container {
     display: flex;
     justify-content: center;
@@ -8,6 +40,24 @@
 
 .form-outline input[type=search] {
     text-align: left;
+}
+
+#backToTopBtn {
+    position: fixed;
+    background-color: white;
+    color: black;
+    width: 300px;
+    top: 65px;
+    left: 50%; /* Position the left edge of the button at the horizontal center */
+    transform: translateX(-50%);
+    z-index: 1000;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+
+#backToTopBtn:hover {
+    opacity: 1; /* Change opacity to 1 on hover */
 }
 
 #searchQueries {
@@ -26,23 +76,18 @@
 /* END queries */
 
 /* Film poster */
-
 .poster-container {
-    height: 70vh;
-    width: 100%;
-    margin: 10px;
-
+    margin: 5px;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    overflow-y: scroll;
-    scroll-behavior: smooth;
+
 }
 
 .poster-wrapper {
-    width: 18%;
-    height: 60%;
+    width: 17%;
+    height: 65%;
     margin: 7px;
 
 }
@@ -98,7 +143,7 @@ figcaption {
 }
 
 
-.notFound{
+.notFound {
     height: 100%;
     width: 60%;
 }

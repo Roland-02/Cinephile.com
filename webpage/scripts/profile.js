@@ -100,8 +100,6 @@ window.onload = async function () {
         console.log('no films')
     }
 
-
-
     //Function to update the displayed film
     async function displayLovedFilmPosters(films) {
         content = '';
@@ -118,7 +116,6 @@ window.onload = async function () {
         postersBox.innerHTML = content;
 
     };
-
 
     //Function to update the displayed film
     async function displayLikedFilmPosters(films) {
@@ -222,14 +219,14 @@ window.onload = async function () {
         });
 
     }
-
+    
     document.querySelectorAll('.main-title').forEach(function (element) {
         element.addEventListener('click', async function (event) {
             flipCard.classList.toggle('flipped');
         });
 
     });
-
+  
     document.querySelectorAll('.clickable').forEach(function (element) {
         element.addEventListener('click', async function (event) {
             try {
