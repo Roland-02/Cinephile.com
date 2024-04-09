@@ -33,7 +33,7 @@ import threading
 
 config = {         
     "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
-    "CACHE_DEFAULT_TIMEOUT": 86400 #1 hours
+    "CACHE_DEFAULT_TIMEOUT": 2073600 #1 day
 }
 
 app = Flask(__name__)
@@ -85,6 +85,36 @@ def save_mySQL(data):
     engine = create_engine("mysql+mysqlconnector://root:Leicester69lol@localhost/users")
 
     data.to_sql('all_films', con=engine, if_exists='replace', index=False)
+
+#export recommended film interaction data to mysql
+def save_interaction(user_id, tconst, position, similarity):
+
+    # MySQL connection configuration
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Leicester69lol",
+        database="users"
+    )
+
+    mycursor = mydb.cursor()
+
+    table_name = "user_recommended_interaction"
+
+    # Check if the given user_id and tconst combination already exists
+    select_query = "SELECT * FROM {} WHERE user_id = %s AND tconst = %s".format(table_name)
+    mycursor.execute(select_query, (user_id, tconst))
+    existing_row = mycursor.fetchone()
+
+    if existing_row:
+        delete_query = "DELETE FROM {} WHERE user_id = %s AND tconst = %s".format(table_name)
+        mycursor.execute(delete_query, (user_id, tconst))
+        
+
+    # Insert the new interaction record
+    insert_query = "INSERT INTO {} (user_id, tconst, position, similarity) VALUES (%s, %s, %s, %s)".format(table_name)
+    mycursor.execute(insert_query, (user_id, tconst, position, similarity))
+    mydb.commit()
 
 # download, process and filter IMDB non-commercial dataset, save to mysql db
 def INITIALISE_FILM_DATASET():
@@ -729,23 +759,23 @@ def bulk_recommend_route():
             lovedFilms = get_loved_films(user_id)
             
             # combined recommendations 
-            combined_recommended = get_combined_recommendations(user_profile_groups, similarity_vectors, lovedFilms)
+            combined_recommended = get_combined_recommendations(user_profile_groups, similarity_vectors, user_profile_df)
             combined_recommended_dict = combined_recommended.to_dict(orient='records')
 
             #plot recommendations
-            plot_recommended = get_similar_films(similarity_vectors['plot'], lovedFilms)
+            plot_recommended = get_similar_films(similarity_vectors['plot'], user_profile_df)
             plot_recommended_dict = plot_recommended.to_dict(orient='records')
 
             #cast recommendations
-            cast_recommended = get_similar_films(similarity_vectors['cast'], lovedFilms)
+            cast_recommended = get_similar_films(similarity_vectors['cast'], user_profile_df)
             cast_recommended_dict = cast_recommended.to_dict(orient='records')
 
             #genre recommendations
-            genre_recommended = get_similar_films(similarity_vectors['genre'], lovedFilms)
+            genre_recommended = get_similar_films(similarity_vectors['genre'], user_profile_df)
             genre_recommended_dict = genre_recommended.to_dict(orient='records')
 
             #crew recommendations
-            crew_recommended = get_similar_films(similarity_vectors['crew'], lovedFilms)
+            crew_recommended = get_similar_films(similarity_vectors['crew'], user_profile_df)
             crew_recommended_dict = crew_recommended.to_dict(orient='records')
 
             #save recommendations to cache
@@ -903,6 +933,17 @@ def search_general():
         return jsonify({'films': paginated_films_dict})
     else:
         return jsonify({'films': []})
+
+
+@app.route('/save_recommended_interaction', methods=['POST'])
+def interaction():
+    user_id = request.args.get("user_id")
+    tconst = request.args.get("tconst")
+    position = request.args.get("position")
+    similarity = request.args.get("sim")
+    save_interaction(user_id, tconst, position, similarity)
+    return jsonify({"message":"interaction stored successfully"})
+
 
 
 schedule.every(2).weeks.do(INITIALISE_FILM_DATASET) #run intialise dataset every fortnite - add new films

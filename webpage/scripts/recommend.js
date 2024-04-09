@@ -144,8 +144,9 @@ window.onload = async function () {
             let thisFilmCrew = crewString.split(','); // Split the crew string into individual names
             let filmLikedCrew = thisFilmCrew.filter(name => liked_crew.includes(name));
 
-
-            content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}">
+            const index = films.findIndex(item => item.tconst === film.tconst);
+            let similarityValue = isNaN(formatted_similarity) ? 0 : formatted_similarity;
+            content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}" data-index="${index}" data-similarity="${similarityValue}">
                         <figcaption class="caption">`
 
             if (option === 'combined') {

@@ -119,15 +119,20 @@
         // click on film card to open in index
         $(document).on('click', '.clickable', async function () {
             const tconst = $(this).data('id');
+            const position = $(this).data('index');
+            const similarity = $(this).data('similarity')
             const response = await axios.get(`http://localhost:8080/openClickedFilm?tconst=${tconst}`);
+            const storeInteraction = await axios.post(`http://127.0.0.1:8081/save_recommended_interaction?user_id=<%= session.id %>&tconst=${tconst}&position=${position}&sim=${similarity}`)
+            console.log(storeInteraction.data.message)
             let savedCounter = response.data.counter;
             let savedIndex = response.data.currentIndex;
+
             localStorage.setItem('counter', savedCounter);
             localStorage.setItem('currentIndex', savedIndex);
             window.location.href = '/index';
         });
 
-        
+        // back to top button for scroll
         $(document).ready(function () {
             // Monitor scroll event
             $(window).scroll(function () {
