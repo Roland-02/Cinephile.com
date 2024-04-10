@@ -149,9 +149,9 @@ window.onload = async function () {
             content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}" data-index="${index}" data-similarity="${similarityValue}">
                         <figcaption class="caption">`
 
-            if (option === 'content' || option === 'collab') {
+            // if (option === 'content' || option === 'collab') {
                 content += `<p class="film-similarity" style="text-align:center;">${formatted_similarity}% match</p>`
-            }
+            // }
 
             content += `<p>Released: <strong>${film.startYear}</strong></p>
                             <p>Runtime: <strong>${time}</strong></p>
