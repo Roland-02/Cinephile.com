@@ -869,8 +869,8 @@ def bulk_recommend_route():
             cache.set(f'user_content_recommended{user_id}', json.dumps({}))
             cache.set(f'user_plot_recommended{user_id}', json.dumps({}))
             cache.set(f'user_cast_recommended{user_id}', json.dumps({}))
-            cache.set(f'user_genre_recommended{user_id}', json.dumps({}))
             cache.set(f'user_crew_recommended{user_id}', json.dumps({}))
+            cache.set(f'user_collab_recommended{user_id}', json.dumps({}))
 
             return jsonify({"message": "Profile empty, empty recommendations cached"})
     
@@ -904,31 +904,29 @@ def bulk_recommend_route():
                 'meta': np.array(similarity_vectors_data['meta'])
             }
 
-            
+    
             # content recommendations 
             content_recommended = get_content_recommendations(user_profile_groups, similarity_vectors, user_profile_df)
             content_recommended_dict = content_recommended.to_dict(orient='records')
+            similarity_dict = dict(zip(content_recommended['tconst'], content_recommended['similarity']))
 
             #plot recommendations
             plot_recommended = get_similar_films(similarity_vectors['plot'], user_profile_df)
+            plot_recommended['similarity'] = plot_recommended['tconst'].map(similarity_dict)
             plot_recommended_dict = plot_recommended.to_dict(orient='records')
 
             #cast recommendations
             cast_recommended = get_similar_films(similarity_vectors['cast'], user_profile_df)
+            cast_recommended['similarity'] = cast_recommended['tconst'].map(similarity_dict)
             cast_recommended_dict = cast_recommended.to_dict(orient='records')
-
-            #genre recommendations
-            genre_recommended = get_similar_films(similarity_vectors['genre'], user_profile_df)
-            genre_recommended_dict = genre_recommended.to_dict(orient='records')
 
             #crew recommendations
             crew_recommended = get_similar_films(similarity_vectors['crew'], user_profile_df)
+            crew_recommended['similarity'] = crew_recommended['tconst'].map(similarity_dict)
             crew_recommended_dict = crew_recommended.to_dict(orient='records')
 
-
             # get recommendations based on collaborative filtering
-            collab_films = generate_collaborative_recommendations(57)
-            similarity_dict = dict(zip(content_recommended['tconst'], content_recommended['similarity']))
+            collab_films = generate_collaborative_recommendations(user_id)
             collab_films['similarity'] = collab_films['tconst'].map(similarity_dict)
             collab_recommended_dict = collab_films.to_dict(orient='records')
 
@@ -938,7 +936,6 @@ def bulk_recommend_route():
             cache.set(f'user_collab_recommended{user_id}', json.dumps(collab_recommended_dict))
             cache.set(f'user_plot_recommended{user_id}', json.dumps(plot_recommended_dict))
             cache.set(f'user_cast_recommended{user_id}', json.dumps(cast_recommended_dict))
-            cache.set(f'user_genre_recommended{user_id}', json.dumps(genre_recommended_dict))
             cache.set(f'user_crew_recommended{user_id}', json.dumps(crew_recommended_dict))
 
             return jsonify({"message": "Recommendations stored in cache"})
