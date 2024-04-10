@@ -89,15 +89,20 @@ window.onload = async function () {
         crewBox.innerHTML = await displayStats(crew);
         await displayGenreChart(genre); //display genre pie chart
 
-        await displayLikedFilmPosters(likedFilms);
-
-
     } else {
         postersBox.innerHTML = `<img class="notFound" src="./images/NotFound_FlyingBirdWoman.png" alt="No films found">`;
         castBox.innerHTML = `<p></p>`;
         crewBox.innerHTML = `<p></p>`;
         genreBox.innerHTML = `<p></p>`;
         console.log('no films')
+    }
+
+    if(likedFilms.length > 0){    
+        await displayLikedFilmPosters(likedFilms);
+        
+    }else{
+        likedPostersBox.innerHTML = `<img class="notFound" src="./images/NotFound_FlyingBirdWoman.png" alt="No films found">`;
+        
     }
 
     //Function to update the displayed film

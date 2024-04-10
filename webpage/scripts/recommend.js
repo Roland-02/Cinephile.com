@@ -81,17 +81,17 @@ window.onload = async function () {
         await cacheRecommendedFilms(user_id);
     }
 
-    var combined_films = await getRecommendedFilmsBatch(user_id, 'combined', 1);
-    if (combined_films !== '-') {
+    var content_films = await getRecommendedFilmsBatch(user_id, 'content', 1);
+    if (content_films !== '-') {
         document.getElementById('showMeOptions').disabled = false;
 
         filmContainer.innerHTML = `<div class="spinner"></div>`
 
         await initialiseStaff(user_id);
-        option = 'combined';
+        option = 'content';
         filmContainer.innerHTML = ''
 
-        await displayFilms(combined_films);
+        await displayFilms(content_films);
 
     } else {
         filmContainer.innerHTML = `<img class="notFound" src="./images/NotFound_Sailor.png" alt="No films found">`;
@@ -149,9 +149,8 @@ window.onload = async function () {
             content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}" data-index="${index}" data-similarity="${similarityValue}">
                         <figcaption class="caption">`
 
-            if (option === 'combined') {
+            if (option === 'content' || option === 'collab') {
                 content += `<p class="film-similarity" style="text-align:center;">${formatted_similarity}% match</p>`
-
             }
 
             content += `<p>Released: <strong>${film.startYear}</strong></p>

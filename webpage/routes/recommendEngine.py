@@ -9,6 +9,9 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.metrics.pairwise import linear_kernel
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
+from surprise import Reader, SVD, Dataset, accuracy
+from surprise.model_selection import GridSearchCV, cross_validate
+
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -586,8 +589,8 @@ def get_similar_films(vector, exclude):
 
     return filtered_recommendations
 
-# function to calculate combined recommendations
-def get_combined_recommendations(user_profile_groups, similarity_vectors, exclude_films):
+# function to calculate content recommendations
+def get_content_recommendations(user_profile_groups, similarity_vectors, exclude_films):
 
     weighted_scores = {}
     
@@ -601,10 +604,10 @@ def get_combined_recommendations(user_profile_groups, similarity_vectors, exclud
         weighted_scores[group] = weighted_similarity
 
      # combine weighted similarity scores across all groups
-    combined_scores = np.sum(list(weighted_scores.values()), axis=0)
+    content_scores = np.sum(list(weighted_scores.values()), axis=0)
 
     # calculate mean similarity scores
-    mean_similarity = np.mean(combined_scores, axis=1)
+    mean_similarity = np.mean(content_scores, axis=1)
 
     # sort the mean similarity scores and retrieve the top N indices
     sorted_indices = np.argsort(mean_similarity)[::-1]
@@ -643,6 +646,151 @@ def top_5_genres(genres_series):
     top_5 = genre_counts.most_common(5)
     
     return top_5
+
+# COLLABORATIVE FILTERING RECOMMENDATIONS
+
+# get all user ids from db
+def get_user_ids():
+    # Establish a connection to the MySQL database
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Leicester69lol",
+        database="users"
+    )
+
+    # Create a cursor object to execute SQL queries
+    mycursor = mydb.cursor()
+
+    # SQL query to select all user IDs from the user_login table
+    sql_query = "SELECT user_id FROM user_login"
+
+    # Execute the SQL query
+    mycursor.execute(sql_query)
+
+    # Fetch all rows of the result
+    rows = mycursor.fetchall()
+
+    # Extract user IDs from the fetched rows
+    user_ids = [row[0] for row in rows]
+
+    # Close the cursor and database connection
+    mycursor.close()
+    mydb.close()
+
+    return user_ids
+
+# get interaction data between recommended films and users from db
+def get_recommended_interaction_data():
+    # MySQL connection configuration
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Leicester69lol",
+        database="users"
+    )
+
+    # Cursor object to execute SQL queries
+    mycursor = mydb.cursor()
+
+    # Table name in the database
+    table_name = "user_recommended_interaction"
+
+    # Define the SQL query to select interaction data for the given user_id
+    select_query = "SELECT * FROM {}".format(table_name)
+
+    # Execute the select query with user_id parameter
+    mycursor.execute(select_query)
+
+    # Fetch all rows of the result
+    interaction_data = mycursor.fetchall()
+
+    # Create a DataFrame from the fetched data
+    df = pd.DataFrame(interaction_data, columns=["user_id", "tconst", "position", "similarity"])
+
+    # Close the database connection
+    mydb.close()
+
+    return df
+
+# collate user profiles into just user_ids, tconsts and rating
+def create_user_ratings_df():
+    users = get_user_ids()
+    all_user_feedback = []
+
+    for user_id in users:
+        user_id = int(user_id)
+
+        watchlist = get_watchlist(user_id)    
+        user_profile_pkg = get_user_profile(user_id)
+        user_profile = user_profile_pkg[0]
+        
+        user_feedback_temp = user_profile[['tconst', 'likeage']] #pd.merge(interacted_films[interacted_films['user_id'] == user_id], user_profile[['tconst', 'likeage']], on='tconst', how='left')
+        user_feedback_temp['user_id'] = user_id
+
+        # Set likeage to 0.5 for films in the watchlist
+        watchlist_tconsts = watchlist['tconst']
+        user_feedback_temp.loc[user_feedback_temp['tconst'].isin(watchlist_tconsts), 'likeage'] = 0.5
+
+        # Append the user feedback to the list
+        all_user_feedback.append(user_feedback_temp)
+
+    user_feedback = pd.concat(all_user_feedback, ignore_index=True)
+    user_feedback.fillna(0, inplace=True)
+    order = ['user_id', 'tconst', 'likeage']
+    user_feedback = user_feedback[order]
+    user_feedback.rename(columns={'likeage': 'rating'}, inplace=True)
+
+    return user_feedback
+
+# collaboratove model - matrix factorisation with svd, model testing/training and cross-validation
+def refresh_collab_model():
+    # collate every user's films ratings
+    user_feedback = create_user_ratings_df()
+    #create pivot table of user's film ratings to each film in dataset
+    user_films_ratings = user_feedback.pivot_table(index='user_id', columns='tconst', values='rating') 
+
+    reader = Reader(rating_scale=(0, 1)) # scale ratings
+    feedback_data = Dataset.load_from_df(user_feedback[['user_id', 'tconst', 'rating']], reader) # load data to model
+
+    # collaborative modelling
+
+    trainset = feedback_data.build_full_trainset() #train on full dataset for production
+    svd_model = SVD() #initlaise svd model
+    svd_model.fit(trainset)
+    predictions = svd_model.test(trainset.build_testset())
+    accuracy.rmse(predictions) #Root-Mean-Square-Error output accuracy of predictions - should increase as number of users increases
+
+    # cross-validate results
+    cross_validate(svd_model, feedback_data, measures=['RMSE', 'MAE'], cv=5, verbose=True)
+
+    # fine-tuning model with GridSearch
+    param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005]}
+    gs = GridSearchCV(SVD, param_grid, measures=['rmse', 'mae'], cv=3, n_jobs=-1, joblib_verbose=True)
+    gs.fit(feedback_data)
+    gs.best_score['rmse']
+    svd_model = SVD(**gs.best_params['rmse'])
+
+    # final model prediction
+    trainset = feedback_data.build_full_trainset()
+    svd_model.fit(trainset)
+    return svd_model
+
+# generate film recommendations based
+def generate_collaborative_recommendations(user_id):
+    get_profile = get_user_profile(user_id)
+    user_profile = get_profile[0]
+    svd_model = refresh_collab_model()
+
+    items_to_rate = [item for item in data['tconst'] if item not in user_profile['tconst'].values]
+    # Generate predictions for the user
+    predictions = [svd_model.predict(uid=user_id, iid=item) for item in items_to_rate]
+    sorted_predictions = sorted(predictions, key=lambda x: x.est, reverse=True)
+    top_N_recommendations = [prediction.iid for prediction in sorted_predictions[:]]
+    recommended_films_df = data[data['tconst'].isin(top_N_recommendations)]
+
+    return recommended_films_df
+
 
 data = loadAllFilms()
 attributes = ['primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes','cast' ,'startYear', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer']
@@ -718,7 +866,7 @@ def bulk_recommend_route():
         if(user_profile_df.empty):
 
             # save recommendations to cache
-            cache.set(f'user_combined_recommended{user_id}', json.dumps({}))
+            cache.set(f'user_content_recommended{user_id}', json.dumps({}))
             cache.set(f'user_plot_recommended{user_id}', json.dumps({}))
             cache.set(f'user_cast_recommended{user_id}', json.dumps({}))
             cache.set(f'user_genre_recommended{user_id}', json.dumps({}))
@@ -756,11 +904,10 @@ def bulk_recommend_route():
                 'meta': np.array(similarity_vectors_data['meta'])
             }
 
-            lovedFilms = get_loved_films(user_id)
             
-            # combined recommendations 
-            combined_recommended = get_combined_recommendations(user_profile_groups, similarity_vectors, user_profile_df)
-            combined_recommended_dict = combined_recommended.to_dict(orient='records')
+            # content recommendations 
+            content_recommended = get_content_recommendations(user_profile_groups, similarity_vectors, user_profile_df)
+            content_recommended_dict = content_recommended.to_dict(orient='records')
 
             #plot recommendations
             plot_recommended = get_similar_films(similarity_vectors['plot'], user_profile_df)
@@ -778,8 +925,17 @@ def bulk_recommend_route():
             crew_recommended = get_similar_films(similarity_vectors['crew'], user_profile_df)
             crew_recommended_dict = crew_recommended.to_dict(orient='records')
 
+
+            # get recommendations based on collaborative filtering
+            collab_films = generate_collaborative_recommendations(57)
+            similarity_dict = dict(zip(content_recommended['tconst'], content_recommended['similarity']))
+            collab_films['similarity'] = collab_films['tconst'].map(similarity_dict)
+            collab_recommended_dict = collab_films.to_dict(orient='records')
+
+
             #save recommendations to cache
-            cache.set(f'user_combined_recommended{user_id}', json.dumps(combined_recommended_dict))
+            cache.set(f'user_content_recommended{user_id}', json.dumps(content_recommended_dict))
+            cache.set(f'user_collab_recommended{user_id}', json.dumps(collab_recommended_dict))
             cache.set(f'user_plot_recommended{user_id}', json.dumps(plot_recommended_dict))
             cache.set(f'user_cast_recommended{user_id}', json.dumps(cast_recommended_dict))
             cache.set(f'user_genre_recommended{user_id}', json.dumps(genre_recommended_dict))
@@ -945,6 +1101,9 @@ def interaction():
     return jsonify({"message":"interaction stored successfully"})
 
 
+@app.route('/get_model_stats', methods=['POST'])
+def get_model_stats():
+    return 1
 
 schedule.every(2).weeks.do(INITIALISE_FILM_DATASET) #run intialise dataset every fortnite - add new films
 
