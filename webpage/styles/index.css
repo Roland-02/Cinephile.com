@@ -33,6 +33,10 @@
   border-left: solid 2px black;
 }
 
+#filterOptions {
+  z-index: 9999; /* Adjust the z-index value as needed */
+}
+
 /* END nav bar */
 
 #film-poster {
