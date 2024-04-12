@@ -9,6 +9,7 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.metrics.pairwise import linear_kernel
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -38,9 +39,9 @@ config = {
 
 app = Flask(__name__)
 app.config.from_mapping(config)
+tfidf_vectorizer = TfidfVectorizer()
 cache = Cache(app) #allow caching for fast storage
 CORS(app) #allow request to be made from other ports
-
 
 # ensure no duplicate cast members
 def remove_duplicates(names):
@@ -613,9 +614,9 @@ def get_content_recommendations(user_profile_groups, similarity_vectors, exclude
 
     sorted_films['similarity'] = mean_similarity[sorted_indices] / 5
 
-    filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(exclude_films['tconst'])]
+    # filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(exclude_films['tconst'])]
 
-    return filtered_recommendations
+    return sorted_films
 
 # return most recurring names in input data
 def most_common_names(df, top_n=10):
@@ -644,85 +645,9 @@ def top_5_genres(genres_series):
     
     return top_5
 
-# RECOMMENDATIONS EVALUATION
+# RECOMMENDATIONS EVALUATION METRICS
 
-# get content based recommendations without filtering previously liked films
-def recommend_content_films_unfiltered(user_id):
-    # get update user profile and loved films
-
-    user_id = str(user_id)
-    get_profile = get_user_profile(user_id)
-    user_profile = get_profile[0]
-
-    # get groups of liked attributes
-    grouped_likes = collate_liked_groups(user_profile)
-    liked_plot = grouped_likes[0]
-    liked_cast = grouped_likes[1]
-    liked_crew = grouped_likes[2]
-    liked_genre = grouped_likes[3]
-    liked_meta = grouped_likes[4]
-
-    # Define the list of features excluding 'likeage'
-    plot_features = [col for col in liked_plot.columns if col != 'likeage']
-    crew_features = [col for col in liked_crew.columns if col != 'likeage']
-    cast_features = [col for col in liked_cast.columns if col != 'likeage']
-    genre_features = [col for col in liked_genre.columns if col != 'likeage']
-    meta_features = [col for col in liked_meta.columns if col != 'likeage']
-
-    # Call the function with the selected columns
-    plot_matrix = create_similarity_vector(data[plot_features], liked_plot[plot_features])
-    crew_matrix = create_similarity_vector(data[crew_features], liked_crew[crew_features])
-    cast_matrix = create_similarity_vector(data[cast_features], liked_cast[cast_features])
-    genre_matrix = create_similarity_vector(data[genre_features], liked_genre[genre_features])
-    meta_matrix = create_euclidean_vector(data[meta_features], liked_meta[meta_features])
-
-    # Similarity vectors for each group
-    similarity_vectors = {
-        'plot': plot_matrix,
-        'cast': cast_matrix,
-        'crew': crew_matrix,
-        'genre': genre_matrix,
-        'meta': meta_matrix
-    }
-
-    user_profile_groups = {
-        'plot': liked_plot,
-        'cast': liked_cast,
-        'crew': liked_crew,
-        'genre': liked_genre,
-        'meta': liked_meta
-    }
-
-    weighted_scores = {}
-    
-    # scale similarity score in respective vector based on likeage of feature
-    for group, attributes in user_profile_groups.items():
-        similarity_vector = similarity_vectors[group]
-        likeage_array = np.array(list(attributes['likeage'].tolist()))
-
-        # assign weights to recommendations based on ratings
-        weighted_similarity = similarity_vector * likeage_array
-
-        # dictionary of groups and weighted similarity vectors 
-        weighted_scores[group] = weighted_similarity
-
-     # combine weighted similarity scores across all groups
-    combined_scores = np.sum(list(weighted_scores.values()), axis=0)
-
-    # calculate mean similarity scores
-    mean_similarity = np.mean(combined_scores, axis=1)
-
-    # sort the mean similarity scores and retrieve the top N indices
-    sorted_indices = np.argsort(mean_similarity)[::-1]
-
-    sorted_films = data.iloc[sorted_indices]
-
-    sorted_films['similarity'] = mean_similarity[sorted_indices] / 5
-
-
-    return sorted_films
-
-# concatenation of previous function - for evaluation metrics
+# repeat of get_conent_recommendations - for evaluation metrics
 def recommend_content_films(user_id):
     # get update user profile and loved films
 
@@ -795,9 +720,9 @@ def recommend_content_films(user_id):
 
     sorted_films['similarity'] = mean_similarity[sorted_indices] / 5
 
-    filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(user_profile['tconst'])]
+    filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(user_profile['tconst'])] #NOT FILTERING RIGHT NOW
 
-    return filtered_recommendations
+    return sorted_films
 
 # return all user_ids from db
 def get_user_ids():
@@ -973,11 +898,74 @@ def generate_hit_rate_stats():
 
     return rates
 
+# GENRE CLUSTERING
+
+# Train kmeans based on every unique genre
+def train_kmeans():
+    optimal_k = 20  #from elbow curve
+    kmeans = KMeans(n_clusters=optimal_k, init='k-means++', random_state=42)
+    genres_data = sorted(data['genres'].unique())
+    tfidf_matrix = tfidf_vectorizer.fit_transform(genres_data)
+    kmeans.fit(tfidf_matrix)
+
+    return kmeans
+
+# return array of predicted cluster labels for each film in dataset
+def initialise_clusters():
+    rec_genres = sorted(data['genres'])
+    allFilms_genre_tfidf = tfidf_vectorizer.transform(rec_genres)
+    allFilms_cluster_labels = kmeans.predict(allFilms_genre_tfidf)
+    return allFilms_cluster_labels
+
+# return df films by genre cluster similarity
+def recommend_genre_clusters(user_profile, recommendedFilms):
+
+    grouped_likes = collate_liked_groups(user_profile)
+    liked_genres = grouped_likes[3]
+    genres_data = sorted(liked_genres['genres'].unique())
+
+    if(len(genres_data) > 1):
+
+        user_genres_tfidf = tfidf_vectorizer.transform(genres_data)
+        user_clusters_labels = kmeans.predict(user_genres_tfidf)
+
+        # centroids of user clusters
+        user_centroids = kmeans.cluster_centers_[user_clusters_labels]
+
+        # centroids of recommended films clusters
+        recommended_centroids = kmeans.cluster_centers_[allFilms_cluster_labels]
+
+        similarity_matrix = linear_kernel(user_centroids, recommended_centroids)
+
+        mean_similarity = np.mean(similarity_matrix, axis=0)
+
+        # Add mean similarity as a new column in the recommendedFilms DataFrame
+        recommendedFilms['mean_cluster_similarity'] = mean_similarity
+
+        recommendedFilms['combined_similarity'] = (recommendedFilms['similarity'] + recommendedFilms['mean_cluster_similarity']) /2
+
+        # Sort recommended films by cluster similarity (mean_similarity) in descending order
+        recommendedFilms = recommendedFilms.sort_values(by='combined_similarity', ascending=False)
+
+        # filter out films already in user profiles
+        filtered_recommendations = recommendedFilms[~recommendedFilms['tconst'].isin(user_profile['tconst'])]
+
+
+        # Reset index
+        filtered_recommendations.reset_index(drop=True, inplace=True)
+
+        return filtered_recommendations
+    
+    else:
+        return "Profile too sparse for genre recommendation"
+
 
 data = loadAllFilms()
 attributes = ['primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes','cast' ,'startYear', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer']
 data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
 data['soup'] = data.apply(lambda x: create_soup(x, attributes), axis=1)
+kmeans = train_kmeans()
+allFilms_cluster_labels = initialise_clusters()
 
 
 @app.route('/update_profile_and_vectors', methods=['POST'])
@@ -1054,7 +1042,7 @@ def bulk_recommend_route():
                 cache.set(f'user_plot_recommended{user_id}', json.dumps({}))
                 cache.set(f'user_cast_recommended{user_id}', json.dumps({}))
                 cache.set(f'user_crew_recommended{user_id}', json.dumps({}))
-                # cache.set(f'user_collab_recommended{user_id}', json.dumps({}))
+                cache.set(f'user_genre_recommended{user_id}', json.dumps({}))
 
                 return jsonify({"message": "Profile empty, empty recommendations cached"})
         
@@ -1087,12 +1075,12 @@ def bulk_recommend_route():
                     'genre': np.array(similarity_vectors_data['genre']),
                     'meta': np.array(similarity_vectors_data['meta'])
                 }
-
-        
+     
                 # content recommendations 
                 content_recommended = get_content_recommendations(user_profile_groups, similarity_vectors, user_profile_df)
-                content_recommended_dict = content_recommended.to_dict(orient='records')
-                similarity_dict = dict(zip(content_recommended['tconst'], content_recommended['similarity']))
+                content_recommended_filtered = content_recommended[~content_recommended['tconst'].isin(user_profile_df['tconst'])]
+                content_recommended_dict = content_recommended_filtered.to_dict(orient='records')
+                similarity_dict = dict(zip(content_recommended_filtered['tconst'], content_recommended_filtered['similarity']))
 
                 #plot recommendations
                 plot_recommended = get_similar_films(similarity_vectors['plot'], user_profile_df)
@@ -1109,17 +1097,16 @@ def bulk_recommend_route():
                 crew_recommended['similarity'] = crew_recommended['tconst'].map(similarity_dict)
                 crew_recommended_dict = crew_recommended.to_dict(orient='records')
 
-                # get recommendations based on collaborative filtering
-                # collab_films = generate_collaborative_recommendations(user_id)
-                # collab_films['similarity'] = collab_films['tconst'].map(similarity_dict)
-                # collab_recommended_dict = collab_films.to_dict(orient='records')
+                # genre recommendations from clusters
+                genre_recommended = recommend_genre_clusters(user_profile_df, content_recommended)
+                genre_recommended_dict = genre_recommended.to_dict(orient='records')
 
                 #save recommendations to cache
                 cache.set(f'user_content_recommended{user_id}', json.dumps(content_recommended_dict))
-                # cache.set(f'user_collab_recommended{user_id}', json.dumps(collab_recommended_dict))
                 cache.set(f'user_plot_recommended{user_id}', json.dumps(plot_recommended_dict))
                 cache.set(f'user_cast_recommended{user_id}', json.dumps(cast_recommended_dict))
                 cache.set(f'user_crew_recommended{user_id}', json.dumps(crew_recommended_dict))
+                cache.set(f'user_genre_recommended{user_id}', json.dumps(genre_recommended_dict))
 
                 return jsonify({"message": "Recommendations stored in cache"})
             
@@ -1129,7 +1116,7 @@ def bulk_recommend_route():
             cache.set(f'user_plot_recommended{user_id}', json.dumps({}))
             cache.set(f'user_cast_recommended{user_id}', json.dumps({}))
             cache.set(f'user_crew_recommended{user_id}', json.dumps({}))
-            # cache.set(f'user_collab_recommended{user_id}', json.dumps({}))
+            cache.set(f'user_genre_recommended{user_id}', json.dumps({}))
 
             return jsonify({"message": "Profile empty, empty recommendations cached"})
     else:
@@ -1310,7 +1297,7 @@ def get_model_stats():
 
     user_films = {}
     for user_id in users:
-        recommended = recommend_content_films_unfiltered(user_id)
+        recommended = recommend_content_films(user_id)
         user_films[user_id] = recommended
 
     precision = calculate_precision_at_k(user_interactions, user_films, 10) * 100
