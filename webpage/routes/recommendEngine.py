@@ -9,8 +9,6 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.metrics.pairwise import linear_kernel
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
-from surprise import Reader, SVD, Dataset, accuracy
-from surprise.model_selection import GridSearchCV, cross_validate
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -646,149 +644,334 @@ def top_5_genres(genres_series):
     
     return top_5
 
-# COLLABORATIVE FILTERING RECOMMENDATIONS
+# RECOMMENDATIONS EVALUATION
 
-# get all user ids from db
-# def get_user_ids():
-#     # Establish a connection to the MySQL database
-#     mydb = mysql.connector.connect(
-#         host="localhost",
-#         user="root",
-#         password="Leicester69lol",
-#         database="users"
-#     )
+# get content based recommendations without filtering previously liked films
+def recommend_content_films_unfiltered(user_id):
+    # get update user profile and loved films
 
-#     # Create a cursor object to execute SQL queries
-#     mycursor = mydb.cursor()
+    user_id = str(user_id)
+    get_profile = get_user_profile(user_id)
+    user_profile = get_profile[0]
 
-#     # SQL query to select all user IDs from the user_login table
-#     sql_query = "SELECT user_id FROM user_login"
+    # get groups of liked attributes
+    grouped_likes = collate_liked_groups(user_profile)
+    liked_plot = grouped_likes[0]
+    liked_cast = grouped_likes[1]
+    liked_crew = grouped_likes[2]
+    liked_genre = grouped_likes[3]
+    liked_meta = grouped_likes[4]
 
-#     # Execute the SQL query
-#     mycursor.execute(sql_query)
+    # Define the list of features excluding 'likeage'
+    plot_features = [col for col in liked_plot.columns if col != 'likeage']
+    crew_features = [col for col in liked_crew.columns if col != 'likeage']
+    cast_features = [col for col in liked_cast.columns if col != 'likeage']
+    genre_features = [col for col in liked_genre.columns if col != 'likeage']
+    meta_features = [col for col in liked_meta.columns if col != 'likeage']
 
-#     # Fetch all rows of the result
-#     rows = mycursor.fetchall()
+    # Call the function with the selected columns
+    plot_matrix = create_similarity_vector(data[plot_features], liked_plot[plot_features])
+    crew_matrix = create_similarity_vector(data[crew_features], liked_crew[crew_features])
+    cast_matrix = create_similarity_vector(data[cast_features], liked_cast[cast_features])
+    genre_matrix = create_similarity_vector(data[genre_features], liked_genre[genre_features])
+    meta_matrix = create_euclidean_vector(data[meta_features], liked_meta[meta_features])
 
-#     # Extract user IDs from the fetched rows
-#     user_ids = [row[0] for row in rows]
+    # Similarity vectors for each group
+    similarity_vectors = {
+        'plot': plot_matrix,
+        'cast': cast_matrix,
+        'crew': crew_matrix,
+        'genre': genre_matrix,
+        'meta': meta_matrix
+    }
 
-#     # Close the cursor and database connection
-#     mycursor.close()
-#     mydb.close()
+    user_profile_groups = {
+        'plot': liked_plot,
+        'cast': liked_cast,
+        'crew': liked_crew,
+        'genre': liked_genre,
+        'meta': liked_meta
+    }
 
-#     return user_ids
+    weighted_scores = {}
+    
+    # scale similarity score in respective vector based on likeage of feature
+    for group, attributes in user_profile_groups.items():
+        similarity_vector = similarity_vectors[group]
+        likeage_array = np.array(list(attributes['likeage'].tolist()))
 
-# # get interaction data between recommended films and users from db
-# def get_recommended_interaction_data():
-#     # MySQL connection configuration
-#     mydb = mysql.connector.connect(
-#         host="localhost",
-#         user="root",
-#         password="Leicester69lol",
-#         database="users"
-#     )
+        # assign weights to recommendations based on ratings
+        weighted_similarity = similarity_vector * likeage_array
 
-#     # Cursor object to execute SQL queries
-#     mycursor = mydb.cursor()
+        # dictionary of groups and weighted similarity vectors 
+        weighted_scores[group] = weighted_similarity
 
-#     # Table name in the database
-#     table_name = "user_recommended_interaction"
+     # combine weighted similarity scores across all groups
+    combined_scores = np.sum(list(weighted_scores.values()), axis=0)
 
-#     # Define the SQL query to select interaction data for the given user_id
-#     select_query = "SELECT * FROM {}".format(table_name)
+    # calculate mean similarity scores
+    mean_similarity = np.mean(combined_scores, axis=1)
 
-#     # Execute the select query with user_id parameter
-#     mycursor.execute(select_query)
+    # sort the mean similarity scores and retrieve the top N indices
+    sorted_indices = np.argsort(mean_similarity)[::-1]
 
-#     # Fetch all rows of the result
-#     interaction_data = mycursor.fetchall()
+    sorted_films = data.iloc[sorted_indices]
 
-#     # Create a DataFrame from the fetched data
-#     df = pd.DataFrame(interaction_data, columns=["user_id", "tconst", "position", "similarity"])
+    sorted_films['similarity'] = mean_similarity[sorted_indices] / 5
 
-#     # Close the database connection
-#     mydb.close()
 
-#     return df
+    return sorted_films
 
-# # collate user profiles into just user_ids, tconsts and rating
-# def create_user_ratings_df():
-#     users = get_user_ids()
-#     all_user_feedback = []
+# concatenation of previous function - for evaluation metrics
+def recommend_content_films(user_id):
+    # get update user profile and loved films
 
-#     for user_id in users:
-#         user_id = int(user_id)
+    user_id = str(user_id)
+    get_profile = get_user_profile(user_id)
+    user_profile = get_profile[0]
 
-#         watchlist = get_watchlist(user_id)    
-#         user_profile_pkg = get_user_profile(user_id)
-#         user_profile = user_profile_pkg[0]
+    # get groups of liked attributes
+    grouped_likes = collate_liked_groups(user_profile)
+    liked_plot = grouped_likes[0]
+    liked_cast = grouped_likes[1]
+    liked_crew = grouped_likes[2]
+    liked_genre = grouped_likes[3]
+    liked_meta = grouped_likes[4]
+
+    # Define the list of features excluding 'likeage'
+    plot_features = [col for col in liked_plot.columns if col != 'likeage']
+    crew_features = [col for col in liked_crew.columns if col != 'likeage']
+    cast_features = [col for col in liked_cast.columns if col != 'likeage']
+    genre_features = [col for col in liked_genre.columns if col != 'likeage']
+    meta_features = [col for col in liked_meta.columns if col != 'likeage']
+
+    # Call the function with the selected columns
+    plot_matrix = create_similarity_vector(data[plot_features], liked_plot[plot_features])
+    crew_matrix = create_similarity_vector(data[crew_features], liked_crew[crew_features])
+    cast_matrix = create_similarity_vector(data[cast_features], liked_cast[cast_features])
+    genre_matrix = create_similarity_vector(data[genre_features], liked_genre[genre_features])
+    meta_matrix = create_euclidean_vector(data[meta_features], liked_meta[meta_features])
+
+    # Similarity vectors for each group
+    similarity_vectors = {
+        'plot': plot_matrix,
+        'cast': cast_matrix,
+        'crew': crew_matrix,
+        'genre': genre_matrix,
+        'meta': meta_matrix
+    }
+
+    user_profile_groups = {
+        'plot': liked_plot,
+        'cast': liked_cast,
+        'crew': liked_crew,
+        'genre': liked_genre,
+        'meta': liked_meta
+    }
+
+    weighted_scores = {}
+    
+    # scale similarity score in respective vector based on likeage of feature
+    for group, attributes in user_profile_groups.items():
+        similarity_vector = similarity_vectors[group]
+        likeage_array = np.array(list(attributes['likeage'].tolist()))
+
+        # assign weights to recommendations based on ratings
+        weighted_similarity = similarity_vector * likeage_array
+
+        # dictionary of groups and weighted similarity vectors 
+        weighted_scores[group] = weighted_similarity
+
+     # combine weighted similarity scores across all groups
+    combined_scores = np.sum(list(weighted_scores.values()), axis=0)
+
+    # calculate mean similarity scores
+    mean_similarity = np.mean(combined_scores, axis=1)
+
+    # sort the mean similarity scores and retrieve the top N indices
+    sorted_indices = np.argsort(mean_similarity)[::-1]
+
+    sorted_films = data.iloc[sorted_indices]
+
+    sorted_films['similarity'] = mean_similarity[sorted_indices] / 5
+
+    filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(user_profile['tconst'])]
+
+    return filtered_recommendations
+
+# return all user_ids from db
+def get_user_ids():
+    # Establish a connection to the MySQL database
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Leicester69lol",
+        database="users"
+    )
+
+    # Create a cursor object to execute SQL queries
+    mycursor = mydb.cursor()
+
+    # SQL query to select all user IDs from the user_login table
+    sql_query = "SELECT user_id FROM user_login"
+
+    # Execute the SQL query
+    mycursor.execute(sql_query)
+
+    # Fetch all rows of the result
+    rows = mycursor.fetchall()
+
+    # Extract user IDs from the fetched rows
+    user_ids = [row[0] for row in rows]
+
+    # Close the cursor and database connection
+    mycursor.close()
+    mydb.close()
+
+    return user_ids
+
+# get interaction data between user and recommended films
+def get_recommended_interaction_data():
+    # MySQL connection configuration
+    mydb = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Leicester69lol",
+        database="users"
+    )
+
+    # Cursor object to execute SQL queries
+    mycursor = mydb.cursor()
+
+    # Table name in the database
+    table_name = "user_recommended_interaction"
+
+    # Define the SQL query to select interaction data for the given user_id
+    select_query = "SELECT * FROM {}".format(table_name)
+
+    # Execute the select query with user_id parameter
+    mycursor.execute(select_query)
+
+    # Fetch all rows of the result
+    interaction_data = mycursor.fetchall()
+
+    # Create a DataFrame from the fetched data
+    df = pd.DataFrame(interaction_data, columns=["user_id", "tconst", "position", "similarity"])
+
+    # Close the database connection
+    mydb.close()
+
+    return df
+
+# create df of user film ratings based on db data
+def create_user_ratings_df():
+    users = get_user_ids()
+    all_user_feedback = []
+
+    for user_id in users:
+        user_id = int(user_id)
+
+        watchlist = get_watchlist(user_id)    
+        user_profile_pkg = get_user_profile(user_id)
+        user_profile = user_profile_pkg[0]
         
-#         user_feedback_temp = user_profile[['tconst', 'likeage']] #pd.merge(interacted_films[interacted_films['user_id'] == user_id], user_profile[['tconst', 'likeage']], on='tconst', how='left')
-#         user_feedback_temp['user_id'] = user_id
+        user_feedback_temp = user_profile[['tconst', 'likeage']] #pd.merge(interacted_films[interacted_films['user_id'] == user_id], user_profile[['tconst', 'likeage']], on='tconst', how='left')
+        user_feedback_temp['user_id'] = user_id
 
-#         # Set likeage to 0.5 for films in the watchlist
-#         watchlist_tconsts = watchlist['tconst']
-#         user_feedback_temp.loc[user_feedback_temp['tconst'].isin(watchlist_tconsts), 'likeage'] = 0.5
+        # Set likeage to 0.5 for films in the watchlist
+        watchlist_tconsts = watchlist['tconst']
+        user_feedback_temp.loc[user_feedback_temp['tconst'].isin(watchlist_tconsts), 'likeage'] = 0.5
 
-#         # Append the user feedback to the list
-#         all_user_feedback.append(user_feedback_temp)
+        # Append the user feedback to the list
+        all_user_feedback.append(user_feedback_temp)
 
-#     user_feedback = pd.concat(all_user_feedback, ignore_index=True)
-#     user_feedback.fillna(0, inplace=True)
-#     order = ['user_id', 'tconst', 'likeage']
-#     user_feedback = user_feedback[order]
-#     user_feedback.rename(columns={'likeage': 'rating'}, inplace=True)
+    user_feedback = pd.concat(all_user_feedback, ignore_index=True)
+    user_feedback.fillna(0, inplace=True)
+    order = ['user_id', 'tconst', 'likeage']
+    user_feedback = user_feedback[order]
+    user_feedback.rename(columns={'likeage': 'rating'}, inplace=True)
 
-#     return user_feedback
+    return user_feedback
 
-# # collaboratove model - matrix factorisation with svd, model testing/training and cross-validation
-# def refresh_collab_model():
-#     # collate every user's films ratings
-#     user_feedback = create_user_ratings_df()
-#     #create pivot table of user's film ratings to each film in dataset
-#     user_films_ratings = user_feedback.pivot_table(index='user_id', columns='tconst', values='rating') 
+# count occurrences of A in B
+def count_occurrences(A, B):
+    tally = 0
+    for item in B:
+        if item in A:
+            tally += 1
+    return tally
 
-#     reader = Reader(rating_scale=(0, 1)) # scale ratings
-#     feedback_data = Dataset.load_from_df(user_feedback[['user_id', 'tconst', 'rating']], reader) # load data to model
+# return precision of recommendations at k (0-1)
+def calculate_precision_at_k(user_interactions, recommended_films, k):
+    total_precision = 0
+    num_users = len(user_interactions)
+    
+    for user_id, user_interacted_films in user_interactions.items():
+        
+        # get recommended films for the user
+        recommended_top_k = recommended_films.get(user_id, [])['tconst'][:k]
 
-#     # collaborative modelling
+        # count how many relevant items appear in top-k recommended films
+        num_true_positives = count_occurrences(user_interacted_films, recommended_top_k)
+        
+        # calculate precision for users
+        precision_at_k = num_true_positives / k if k > 0 else 0
+        
+        # accumulate precision for all users
+        total_precision += precision_at_k
+    
+    # average precision across all users
+    average_precision_at_k = total_precision / num_users
+    return average_precision_at_k
 
-#     trainset = feedback_data.build_full_trainset() #train on full dataset for production
-#     svd_model = SVD() #initlaise svd model
-#     svd_model.fit(trainset)
-#     predictions = svd_model.test(trainset.build_testset())
-#     accuracy.rmse(predictions) #Root-Mean-Square-Error output accuracy of predictions - should increase as number of users increases
+# return recall of recommendations at k (0-1)
+def calculate_recall_at_k(user_interactions, recommended_films, k):
+    total_recall = 0
+    num_users = len(user_interactions)
+    
+    for user_id, user_interacted_films in user_interactions.items():
+        num_user_films = len(user_interacted_films)
 
-#     # cross-validate results
-#     cross_validate(svd_model, feedback_data, measures=['RMSE', 'MAE'], cv=5, verbose=True)
+        # get recommended films for the user
+        recommended_top_k = recommended_films.get(user_id, [])['tconst'][:k]
+        
+        # count how many relevant items appear in top-k recommended films
+        num_true_positives = count_occurrences(user_interacted_films, recommended_top_k)
+        
+        # calculate recall for user
+        recall_at_n = num_true_positives / num_user_films if num_user_films > 0 else 0
+        
+        # accumulate recall for all users
+        total_recall += recall_at_n
+    
+    # average recall across all users
+    average_recall_at_n = total_recall / num_users
+    return average_recall_at_n
 
-#     # fine-tuning model with GridSearch
-#     param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005]}
-#     gs = GridSearchCV(SVD, param_grid, measures=['rmse', 'mae'], cv=3, n_jobs=-1, joblib_verbose=True)
-#     gs.fit(feedback_data)
-#     gs.best_score['rmse']
-#     svd_model = SVD(**gs.best_params['rmse'])
+# perform single hit rate calculation
+def calculate_hit_rate(df, n):
+    top_n = df[df['position'] <= n]
+    hit_rate = len(top_n) / len(df)
+    return hit_rate
 
-#     # final model prediction
-#     trainset = feedback_data.build_full_trainset()
-#     svd_model.fit(trainset)
-#     return svd_model
+# return hit rate of recommendations (list of 0-1 values for top10, top25 and top50)
+def generate_hit_rate_stats():
+    users = get_user_ids()
+    recommended_interaction_data = get_recommended_interaction_data()
+    rates = []
+    for i in [10, 25, 50]:
+        hit_rate = 0
+        user_len = 0
+        for user_id in users:
+            user_interaction = recommended_interaction_data[recommended_interaction_data['user_id'] == user_id]
+            if(len(user_interaction) > 0):
+                user_len += 1
+                hit_rate += calculate_hit_rate(user_interaction, i)
 
-# # generate film recommendations based
-# def generate_collaborative_recommendations(user_id):
-#     get_profile = get_user_profile(user_id)
-#     user_profile = get_profile[0]
-#     svd_model = refresh_collab_model()
+        hit_rate = hit_rate / user_len
+        rates.append(hit_rate)
 
-#     items_to_rate = [item for item in data['tconst'] if item not in user_profile['tconst'].values]
-#     # Generate predictions for the user
-#     predictions = [svd_model.predict(uid=user_id, iid=item) for item in items_to_rate]
-#     sorted_predictions = sorted(predictions, key=lambda x: x.est, reverse=True)
-#     top_N_recommendations = [prediction.iid for prediction in sorted_predictions[:]]
-#     recommended_films_df = data[data['tconst'].isin(top_N_recommendations)]
-
-#     return recommended_films_df
+    return rates
 
 
 data = loadAllFilms()
@@ -953,9 +1136,6 @@ def bulk_recommend_route():
         return jsonify({"message": "User not found"})
 
 
-
-            
-
 @app.route('/get_batch', methods=['GET'])
 def get_batch_route():
 
@@ -1113,10 +1293,41 @@ def interaction():
     return jsonify({"message":"interaction stored successfully"})
 
 
-@app.route('/get_model_stats', methods=['POST'])
+@app.route('/recommender_performance', methods=['GET'])
 def get_model_stats():
-    # output hit rate, precision-k, recall-k, etc
-    return 1
+    # output hit rate, precision-k, recall-k
+    all_interactions = create_user_ratings_df()
+    users = all_interactions['user_id'].unique()
+    user_interactions = {}
+    for index, row in all_interactions.iterrows():
+        user_id = row['user_id']
+        tconst = row['tconst']
+        
+        if user_id in user_interactions:
+            user_interactions[user_id].append(tconst)
+        else:
+            user_interactions[user_id] = [tconst]
+
+    user_films = {}
+    for user_id in users:
+        recommended = recommend_content_films_unfiltered(user_id)
+        user_films[user_id] = recommended
+
+    precision = calculate_precision_at_k(user_interactions, user_films, 10) * 100
+    recall = calculate_recall_at_k(user_interactions, user_films, 10) * 100
+    f1 = (2 * precision * recall) / (precision + recall) * 100
+    hit_rate = generate_hit_rate_stats()
+    hit_rate_top10 = hit_rate[0] * 100
+    hit_rate_top25 = hit_rate[1] * 100
+    hit_rate_top50 = hit_rate[2] * 100
+
+    return jsonify({"Average Precision@10" : f"{precision:.2f}%", 
+                    "Average Recall@10" : f"{recall:.2f}%",
+                    "Average F1@10" : f"{recall:.2f}%",
+                    "Hit-rate at Top-10" : f"{hit_rate_top10:.2f}%", 
+                    "Hit-rate at Top-25" : f"{hit_rate_top25:.2f}%",
+                    "Hit-rate at Top-50" : f"{hit_rate_top50:.2f}%"})
+
 
 schedule.every(2).weeks.do(INITIALISE_FILM_DATASET) #run intialise dataset every fortnite - add new films
 
