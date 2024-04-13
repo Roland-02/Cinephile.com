@@ -81,6 +81,7 @@ window.onload = async function () {
         await cacheRecommendedFilms(user_id);
     }
 
+
     var content_films = await getRecommendedFilmsBatch(user_id, 'content', 1);
     if (content_films !== '-') {
         document.getElementById('showMeOptions').disabled = false;
