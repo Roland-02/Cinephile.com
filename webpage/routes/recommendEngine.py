@@ -945,7 +945,7 @@ def recommend_genre_clusters(user_profile, recommendedFilms):
         recommendedFilms['combined_similarity'] = (recommendedFilms['similarity'] + recommendedFilms['mean_cluster_similarity']) /2
 
         # Sort recommended films by cluster similarity (mean_similarity) in descending order
-        recommendedFilms = recommendedFilms.sort_values(by='combined_similarity', ascending=False)
+        recommendedFilms = recommendedFilms.sort_values(by='mean_cluster_similarity', ascending=False)
 
         # filter out films already in user profiles
         filtered_recommendations = recommendedFilms[~recommendedFilms['tconst'].isin(user_profile['tconst'])]

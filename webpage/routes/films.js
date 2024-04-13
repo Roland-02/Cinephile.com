@@ -32,6 +32,8 @@ router.get('/indexPageFilms', async (req, res) => {
 });
 
 
+
+
 router.get('/filteredPageFilms', async (req, res) => {
   try{
 
