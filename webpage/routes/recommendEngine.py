@@ -957,7 +957,8 @@ def recommend_genre_clusters(user_profile, recommendedFilms):
         return filtered_recommendations
     
     else:
-        return "Profile too sparse for genre recommendation"
+        x = pd.DataFrame()
+        return x
 
 
 data = loadAllFilms()
