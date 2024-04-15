@@ -253,7 +253,7 @@ window.onload = async function () {
             var cinematographer = films[currentIndex].cinematographer || null;
             likeable = cinematographer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
+            content += `<div id="_filmCamera" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">CAMERA</div>`;
 
             var cinematographerNames = cinematographer.split(','); // Split the director names by comma
@@ -268,7 +268,7 @@ window.onload = async function () {
             var writer = films[currentIndex].writer || null;
             likeable = writer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
+            content += `<div id="_filmWriter" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">WRITER</div>`;
 
             var writerNames = writer.split(','); // Split the director names by comma
@@ -291,7 +291,7 @@ window.onload = async function () {
             var producer = films[currentIndex].producer || null;
             likeable = producer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
+            content += `<div id="_filmProducer" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">PRODUCER</div>`;
 
             var producerNames = producer.split(','); // Split the director names by comma
@@ -306,7 +306,7 @@ window.onload = async function () {
             var editor = films[currentIndex].editor || null;
             likeable = editor != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
+            content += `<div id="_filmEditor" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">EDITOR</div>`;
 
             var editorNames = editor.split(','); // Split the director names by comma
@@ -321,7 +321,7 @@ window.onload = async function () {
             var composer = films[currentIndex].composer || null;
             likeable = composer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
+            content += `<div id="_filmComposer" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
                     <div class="h5 mb-2 border-bottom">COMPOSER</div>`;
 
             var composerNames = composer.split(','); // Split the director names by comma
