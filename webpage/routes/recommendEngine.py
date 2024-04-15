@@ -262,10 +262,7 @@ def INITIALISE_FILM_DATASET():
         manager = Manager()
         shared_data = manager.Namespace() #allow data to be shared with external function
         agg_list = []
-
         batch_size = 1000
-        sleep_time = 3
-
         num_batches = (len(film_data) // batch_size) + 1
 
         with concurrent.futures.ProcessPoolExecutor(8) as process_executor:
@@ -555,14 +552,15 @@ def collate_liked_groups(user_profile):
 # cosine similarity vector with tf-idf between films in row and column
 def create_similarity_vector(row, column):
     tfidf = TfidfVectorizer(stop_words='english')
-    row_soup_temp = row.apply(lambda x: create_soup(x, row.columns), axis=1)
-    row_soup = row_soup_temp.fillna('')
-    row_matrix = tfidf.fit_transform(row_soup)
 
     column_soup_temp = column.apply(lambda x: create_soup(x, column.columns), axis=1)
     column_soup = column_soup_temp.fillna('')
-    column_matrix = tfidf.transform(column_soup)
-
+    column_matrix = tfidf.fit_transform(column_soup)
+    
+    row_soup_temp = row.apply(lambda x: create_soup(x, row.columns), axis=1)
+    row_soup = row_soup_temp.fillna('')
+    row_matrix = tfidf.transform(row_soup)
+   
     return linear_kernel(row_matrix, column_matrix)
 
 # euclidean distance vector for numerical attributes of film
@@ -588,7 +586,7 @@ def get_similar_films(vector, exclude):
     return filtered_recommendations
 
 # function to calculate content recommendations
-def get_content_recommendations(user_profile_groups, similarity_vectors, exclude_films):
+def get_content_recommendations(user_profile_groups, similarity_vectors):
 
     weighted_scores = {}
     
@@ -904,7 +902,7 @@ def generate_hit_rate_stats():
 def train_kmeans():
     optimal_k = 20  #from elbow curve
     kmeans = KMeans(n_clusters=optimal_k, init='k-means++', random_state=42)
-    genres_data = sorted(data['genres'].unique())
+    genres_data = data['genres'].unique()
     tfidf_matrix = tfidf_vectorizer.fit_transform(genres_data)
     kmeans.fit(tfidf_matrix)
 
@@ -912,7 +910,7 @@ def train_kmeans():
 
 # return array of predicted cluster labels for each film in dataset
 def initialise_clusters():
-    rec_genres = sorted(data['genres'])
+    rec_genres = data['genres']
     allFilms_genre_tfidf = tfidf_vectorizer.transform(rec_genres)
     allFilms_cluster_labels = kmeans.predict(allFilms_genre_tfidf)
     return allFilms_cluster_labels
@@ -922,7 +920,11 @@ def recommend_genre_clusters(user_profile, recommendedFilms):
 
     grouped_likes = collate_liked_groups(user_profile)
     liked_genres = grouped_likes[3]
-    genres_data = sorted(liked_genres['genres'].unique())
+    liked_genres.replace([None], np.nan, inplace=True)
+    liked_genres.dropna(subset=['genres'], how='all', inplace=True)
+    liked_genres.reset_index(drop=True, inplace=True)
+    genres_data = liked_genres['genres'].unique()
+    genres_data = liked_genres['genres'].unique()
 
     if(len(genres_data) > 1):
 
@@ -1078,7 +1080,7 @@ def bulk_recommend_route():
                 }
      
                 # content recommendations 
-                content_recommended = get_content_recommendations(user_profile_groups, similarity_vectors, user_profile_df)
+                content_recommended = get_content_recommendations(user_profile_groups, similarity_vectors)
                 content_recommended_filtered = content_recommended[~content_recommended['tconst'].isin(user_profile_df['tconst'])]
                 content_recommended_dict = content_recommended_filtered.to_dict(orient='records')
                 similarity_dict = dict(zip(content_recommended_filtered['tconst'], content_recommended_filtered['similarity']))
@@ -1133,6 +1135,7 @@ def get_batch_route():
     batch_size = 25
 
     films_json = cache.get(f'user_{category}_recommended{user_id}')
+    
     if(films_json is not None):
 
         films_data = json.loads(films_json)
