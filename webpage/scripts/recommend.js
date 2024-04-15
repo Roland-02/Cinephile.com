@@ -66,7 +66,7 @@ window.onload = async function () {
     var scrollPage = 1;
 
     var liked_cast;
-    var liked_crew
+    var liked_crew;
 
     let option;
 
