@@ -298,11 +298,6 @@ def INITIALISE_FILM_DATASET():
     # export film data to sql db
     save_mySQL(film_data)
 
-
-    print('Exporting to json...')
-
-    film_data.to_json('webpage/films.json' ,orient="records")
-
     print('Films saved to database!')
 
 # load whole films dataset from db
@@ -900,7 +895,7 @@ def generate_hit_rate_stats():
 
 # Train kmeans based on every unique genre
 def train_kmeans():
-    optimal_k = 20  #from elbow curve
+    optimal_k = 100  #from elbow curve
     kmeans = KMeans(n_clusters=optimal_k, init='k-means++', random_state=42)
     genres_data = data['genres'].unique()
     tfidf_matrix = tfidf_vectorizer.fit_transform(genres_data)

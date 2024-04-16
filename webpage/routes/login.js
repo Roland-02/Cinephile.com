@@ -8,7 +8,6 @@ var bcrypt = require('bcrypt');
 const axios = require('axios');
 
 
-
 async function updateProfileAndVectors(userId) {
     await axios.post(`http://127.0.0.1:8081/update_profile_and_vectors?user_id=${userId}`, {
     })
