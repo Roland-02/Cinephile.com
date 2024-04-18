@@ -9,7 +9,6 @@ let filteredFilms = [];
 
 
 
-
 router.get('/indexPageFilms', async (req, res) => {
   try {
     await allFilmsPromise; //wait until allFilms has loaded
@@ -30,8 +29,6 @@ router.get('/indexPageFilms', async (req, res) => {
   }
 
 });
-
-
 
 
 router.get('/filteredPageFilms', async (req, res) => {
@@ -254,6 +251,7 @@ function loadFilmsDB() {
     });
   });
 }
+
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {

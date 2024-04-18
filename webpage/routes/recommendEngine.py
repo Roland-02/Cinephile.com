@@ -6,7 +6,7 @@ import json
 
 # ml
 from sklearn.metrics.pairwise import euclidean_distances
-from sklearn.metrics.pairwise import linear_kernel
+from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
@@ -19,11 +19,11 @@ import requests as req
 import mysql.connector
 import concurrent.futures
 from io import BytesIO
+from collections import Counter
 from tmdb_calls import doBatch
-from multiprocessing import Manager
 from sqlalchemy import create_engine
 from langdetect import detect
-from collections import Counter
+from multiprocessing import Manager
 
 # flask server
 from flask import Flask, jsonify, request
@@ -59,7 +59,7 @@ def is_english(text):
     except:
         return False
     
-#export film data to mysql
+# export film data to mysql
 def save_mySQL(data):
 
     # MySQL connection configuration
@@ -87,7 +87,7 @@ def save_mySQL(data):
 
     data.to_sql('all_films', con=engine, if_exists='replace', index=False)
 
-#export recommended film interaction data to mysql
+# export recommended film interaction data to mysql
 def save_interaction(user_id, tconst, position, similarity):
 
     # MySQL connection configuration
@@ -556,7 +556,7 @@ def create_similarity_vector(row, column):
     row_soup = row_soup_temp.fillna('')
     row_matrix = tfidf.transform(row_soup)
    
-    return linear_kernel(row_matrix, column_matrix)
+    return cosine_similarity(row_matrix, column_matrix)
 
 # euclidean distance vector for numerical attributes of film
 def create_euclidean_vector(row, column):
@@ -919,7 +919,6 @@ def recommend_genre_clusters(user_profile, recommendedFilms):
     liked_genres.dropna(subset=['genres'], how='all', inplace=True)
     liked_genres.reset_index(drop=True, inplace=True)
     genres_data = liked_genres['genres'].unique()
-    genres_data = liked_genres['genres'].unique()
 
     if(len(genres_data) > 1):
 
@@ -932,7 +931,7 @@ def recommend_genre_clusters(user_profile, recommendedFilms):
         # centroids of recommended films clusters
         recommended_centroids = kmeans.cluster_centers_[allFilms_cluster_labels]
 
-        similarity_matrix = linear_kernel(user_centroids, recommended_centroids)
+        similarity_matrix = cosine_similarity(user_centroids, recommended_centroids)
 
         mean_similarity = np.mean(similarity_matrix, axis=0)
 
@@ -946,7 +945,6 @@ def recommend_genre_clusters(user_profile, recommendedFilms):
 
         # filter out films already in user profiles
         filtered_recommendations = recommendedFilms[~recommendedFilms['tconst'].isin(user_profile['tconst'])]
-
 
         # Reset index
         filtered_recommendations.reset_index(drop=True, inplace=True)
@@ -1325,8 +1323,6 @@ if __name__ == "__main__":
     # Run the scheduler in the main thread
     while True:
         schedule.run_pending()
-
-
 
 
 
