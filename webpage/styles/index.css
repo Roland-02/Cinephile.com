@@ -7,6 +7,7 @@
   border-bottom: 1px solid #ddd; /* Add a bottom border for styling */
   z-index: 1000; /* Ensure navbar stays on top of other content */
 }
+
 @media screen and (max-width: 991px) {
   #page_title { /* Hide the title */
     display: none;
@@ -23,7 +24,6 @@
     display: none; /* Hide the signout button */
   }
 }
-
 
 .menu-btn {
   width:auto;
@@ -50,7 +50,6 @@
   height: 100%;
   object-fit: contain;
 }
-
 
 .likeable {
   cursor: pointer;
@@ -79,15 +78,10 @@
   flex-direction: column;
 }
 
-
-
 .error-label {
   color: red;
   font-size: 15px;
 }
-
-
-
 
 .loading-spinner {
   position: absolute;

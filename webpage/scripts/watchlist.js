@@ -43,11 +43,28 @@ window.onload = async function () {
         content = '';
 
         films.forEach(function (film) {
+
+            // format runtime
+            const hours = Math.floor(film.runtimeMinutes / 60);
+            const minutes = film.runtimeMinutes % 60;
+            let time = ''
+            if (hours > 0 && minutes > 0) {
+                time = `${hours}h ${minutes}m`;
+
+            } else if (hours > 0) {
+                time = `${hours}h`;
+
+            } else if (minutes > 0) {
+                time = `${minutes}m`;;
+            }
+
             content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}">
                     <figcaption class="caption">
-                        <p>Released: ${film.startYear}</p>
-                        <p>Genre: ${film.genres}</p>
-                        <p>${film.plot}</p>                    
+                        <p>Released: <strong> ${film.startYear} </strong></p>
+                        <p>Runtime: <strong>${time}</strong></p>
+                        <p>Rating: <strong>${film.averageRating}</strong></p>
+                        <p>Genre: <strong> ${film.genres} </strong></p>
+                        <p>${film.plot}</p>               
                     </figcaption>
                     <img class="film-poster" src="${baseImagePath + film.poster}" alt="${film.title}">  
                     </figure>`;

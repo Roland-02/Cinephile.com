@@ -895,7 +895,7 @@ def generate_hit_rate_stats():
 
 # Train kmeans based on every unique genre
 def train_kmeans():
-    optimal_k = 100  #from elbow curve
+    optimal_k = 85  #from elbow and silhouette
     kmeans = KMeans(n_clusters=optimal_k, init='k-means++', random_state=42)
     genres_data = data['genres'].unique()
     tfidf_matrix = tfidf_vectorizer.fit_transform(genres_data)
@@ -1307,13 +1307,14 @@ def get_model_stats():
 
     return jsonify({"Average Precision@10" : f"{precision:.2f}%", 
                     "Average Recall@10" : f"{recall:.2f}%",
-                    "Average F1@10" : f"{recall:.2f}%",
+                    "Average F1@10" : f"{f1:.2f}%",
                     "Hit-rate at Top-10" : f"{hit_rate_top10:.2f}%", 
                     "Hit-rate at Top-25" : f"{hit_rate_top25:.2f}%",
                     "Hit-rate at Top-50" : f"{hit_rate_top50:.2f}%"})
 
 
 schedule.every(2).weeks.do(INITIALISE_FILM_DATASET) #run intialise dataset every fortnite - add new films
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=8081)
@@ -1323,7 +1324,3 @@ if __name__ == "__main__":
     # Run the scheduler in the main thread
     while True:
         schedule.run_pending()
-
-
-
-
