@@ -16,7 +16,6 @@ warnings.filterwarnings("ignore")
 # initalising dataset
 import gzip
 import requests as req
-import mysql.connector
 import concurrent.futures
 from io import BytesIO
 from collections import Counter

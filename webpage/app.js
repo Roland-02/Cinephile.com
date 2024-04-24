@@ -6,6 +6,10 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const { spawn } = require('child_process');
+const cors = require('cors');
+
+
+// Enable CORS for all origins
 
 //set the view engine to ejs specify the views directory
 app.set('view engine', 'ejs');
@@ -16,6 +20,7 @@ app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 app.use(cookieParser());
+app.use(cors());
 
 //allow additional files to be read
 app.use('/styles', express.static(path.join(__dirname, 'styles'), { type: 'application/css' }));
