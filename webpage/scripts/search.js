@@ -30,20 +30,21 @@ window.onload = async function () {
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
     var scrollPage = 1;
     var allQueries = [];
+    var films;
 
 
     const urlParams = new URLSearchParams(window.location.search);
     const queryName = urlParams.get('query');
 
-    if(queryName && queryName.trim() !== ''){
+    if (queryName && queryName.trim() !== '') {
         await handleFormSubmission(queryName)
     }
 
-
+    window.films = films;
     async function updateQueryFilms(page = 1) {
         var concatenatedQueries = allQueries.join(', ');
 
-        var films = await getSearchFilms(concatenatedQueries, page);
+        films = await getSearchFilms(concatenatedQueries, page);
         if (films.length > 0) {
             await displaySearchFilms(films)
         } else {
@@ -60,9 +61,9 @@ window.onload = async function () {
         films.forEach(function (film) {
             content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}">
                 <figcaption class="caption">
-                    <p>Released: ${film.startYear}</p>
-                    <p>Genre: ${film.genres}</p>
-                    <p>Starring: ${film.cast}</p>
+                    <p>Released: <strong> ${film.startYear} </strong> </p>
+                    <p>Genre: <strong> ${film.genres} </strong> </p>
+                    <p>Starring: <strong> ${film.cast} </strong> </p>
                     <p>${film.plot}</p>                    
                 </figcaption>
                 <img class="film-poster" src="${baseImagePath}${film.poster}" alt="${film.primaryTitle}">
@@ -70,6 +71,40 @@ window.onload = async function () {
             `;
         });
         posterContainer.innerHTML = content;
+
+        // add event listener so film opens on index page when clicked
+        document.querySelectorAll('.clickable').forEach(function (element) {
+            element.addEventListener('click', async function () {
+
+                try {
+                    const tconst = this.dataset.id;
+
+                    // Find the index of the film in the allFilms dataset
+                    const filmIndex = films.findIndex(film => film.tconst === tconst);
+
+                    // Calculate the page number to which the film belongs
+                    const page = Math.floor(filmIndex / 100) + 1;
+
+                    // Calculate the currentIndex within the page
+                    const startIndex = (page - 1) * 100;
+                    const currentIndex = filmIndex - startIndex;
+
+                    // Calculate the counter
+                    const counter = filmIndex;
+
+                    localStorage.setItem('counter', counter);
+                    localStorage.setItem('currentIndex', currentIndex);
+                    localStorage.setItem('films-source', JSON.stringify(films))
+                    window.location.href = '/index';
+
+                } catch (error) {
+                    console.error('Error:', error);
+
+                };
+
+            });
+        });
+
     };
 
 
@@ -86,8 +121,6 @@ window.onload = async function () {
     };
 
 
-
-
     async function deleteQuery(button) {
         var alertBox = button.parentElement;
         var query = alertBox.textContent.trim();
@@ -95,28 +128,12 @@ window.onload = async function () {
 
         allQueries = allQueries.filter(item => item !== query)
 
-
         // clear url
-
         window.history.pushState({}, document.title, window.location.pathname);
 
         await updateQueryFilms();
 
     };
-
-
-    window.addEventListener('scroll', async function() {
-        // Calculate the distance between the bottom of the page and the current scroll position
-        let distanceToBottom = document.documentElement.offsetHeight - (window.scrollY + window.innerHeight);
-    
-        if (distanceToBottom <= 10) {
-            // Load more films
-            scrollPage++;
-            await updateQueryFilms(scrollPage);
-        }
-    });
-    
-
 
     async function handleFormSubmission(query) {
         if (!(query === "")) {
@@ -134,8 +151,6 @@ window.onload = async function () {
         await handleFormSubmission(searchQuery);
     });
 
-
-  
     document.getElementById('searchQueries').addEventListener('click', function (event) {
         // Check if the clicked element is a close button
         if (event.target.classList.contains('btn-close')) {
@@ -144,12 +159,23 @@ window.onload = async function () {
         }
     });
 
+    window.addEventListener('scroll', async function () {
+        // Calculate the distance between the bottom of the page and the current scroll position
+        let distanceToBottom = document.documentElement.offsetHeight - (window.scrollY + window.innerHeight);
 
-    // click title bar to refresh - shuffle films, reset counter, reload page
+        if (distanceToBottom <= 10) {
+            // Load more films
+            scrollPage++;
+            await updateQueryFilms(scrollPage);
+        }
+    });
+
+
     document.getElementById('page_title').addEventListener('click', async function () {
         const shuffle = await refreshFilms(user_id)
         localStorage.setItem('counter', 0);
         localStorage.setItem('currentIndex', 0);
+        localStorage.removeItem('films-source');
         window.location.href = '/';
 
     });

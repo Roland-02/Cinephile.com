@@ -68,7 +68,9 @@ window.onload = async function () {
     var liked_cast;
     var liked_crew;
 
-    let option;
+    var option;
+    var films;
+    var index = 0;
 
     console.log(refreshProfile)
     if (refreshProfile === 'true') { //user has interacted with film, reload profile
@@ -82,8 +84,8 @@ window.onload = async function () {
     }
 
 
-    var content_films = await getRecommendedFilmsBatch(user_id, 'content', 1);
-    if (content_films !== '-') {
+    films = await getRecommendedFilmsBatch(user_id, 'content', 1);
+    if (films !== '-') {
         document.getElementById('showMeOptions').disabled = false;
 
         filmContainer.innerHTML = `<div class="spinner"></div>`
@@ -92,7 +94,7 @@ window.onload = async function () {
         option = 'content';
         filmContainer.innerHTML = ''
 
-        await displayFilms(content_films);
+        await displayFilms(films);
 
     } else {
         filmContainer.innerHTML = `<img class="notFound" src="./images/NotFound_Sailor.png" alt="No films found">`;
@@ -100,7 +102,8 @@ window.onload = async function () {
 
     }
 
-    // Function to display films from cache
+    
+    // load liked cast and crew
     async function initialiseStaff(user_id) {
         let likedStaff = await getLikedStaff(user_id);
         liked_cast = likedStaff.liked_cast;
@@ -108,6 +111,7 @@ window.onload = async function () {
     };
 
 
+    // dynamically load film elements - poster, info etc
     async function displayFilms(films) {
         let content = '';
 
@@ -145,13 +149,13 @@ window.onload = async function () {
             let thisFilmCrew = crewString.split(','); // Split the crew string into individual names
             let filmLikedCrew = thisFilmCrew.filter(name => liked_crew.includes(name));
 
-            const index = films.findIndex(item => item.tconst === film.tconst);
+            const position = films.findIndex(item => item.tconst === film.tconst) + index;
             let similarityValue = isNaN(formatted_similarity) ? 0 : formatted_similarity;
-            content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}" data-index="${index}" data-similarity="${similarityValue}">
+            content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}" data-index="${position}" data-similarity="${similarityValue}">
                         <figcaption class="caption">`
 
             // if (option === 'content' || option === 'collab') {
-                content += `<p class="film-similarity" style="text-align:center;">${formatted_similarity}% match</p>`
+            content += `<p class="film-similarity" style="text-align:center;">${formatted_similarity}% match</p>`
             // }
 
             content += `<p>Released: <strong>${film.startYear}</strong></p>
@@ -191,8 +195,45 @@ window.onload = async function () {
                     </figure>`;
 
         });
-
+        index += films.length;
         filmContainer.innerHTML += content;
+
+        // add event listener to open film when clicked
+        document.querySelectorAll('.clickable').forEach(function (element) {
+            element.addEventListener('click', async function () {
+                try {
+                    const tconst = this.dataset.id;
+                    const position = this.dataset.index;
+                    const similarity = this.dataset.similarity;
+                    const storeInteraction = await axios.post(`http://127.0.0.1:8081/save_recommended_interaction?user_id=${user_id}&tconst=${tconst}&position=${position}&sim=${similarity}`)
+
+                    // Find the index of the film in the allFilms dataset
+                    const filmIndex = films.findIndex(film => film.tconst === tconst);
+
+                    // Calculate the page number to which the film belongs
+                    const page = Math.floor(filmIndex / 100) + 1;
+
+                    // Calculate the currentIndex within the page
+                    const startIndex = (page - 1) * 100;
+                    const currentIndex = filmIndex - startIndex;
+
+                    // Calculate the counter
+                    const counter = filmIndex;
+
+                    localStorage.setItem('counter', counter);
+                    localStorage.setItem('currentIndex', currentIndex);
+                    localStorage.setItem('films-source', JSON.stringify(films))
+                    window.location.href = '/index';
+
+                } catch (error) {
+                    console.error('Error:', error);
+
+                };
+
+            });
+        });
+
+
     };
 
 
@@ -205,14 +246,15 @@ window.onload = async function () {
         filmContainer.innerHTML = `<div class="spinner"></div>`
 
         scrollPage = 1;
-        let films = await getRecommendedFilmsBatch(user_id, option, scrollPage)
+        films = await getRecommendedFilmsBatch(user_id, option, scrollPage)
 
         filmContainer.innerHTML = ''
         await displayFilms(films);
 
     });
 
-    
+
+    // load next batch of films when scroll reaches the bottom
     window.addEventListener('scroll', async function () {
         // Calculate the distance between the bottom of the page and the current scroll position
         let distanceToBottom = document.documentElement.offsetHeight - (window.scrollY + window.innerHeight);
@@ -236,6 +278,7 @@ window.onload = async function () {
         const shuffle = await refreshFilms(user_id)
         localStorage.setItem('counter', 0);
         localStorage.setItem('currentIndex', 0);
+        localStorage.removeItem('films-source');
         window.location.href = '/';
 
     });

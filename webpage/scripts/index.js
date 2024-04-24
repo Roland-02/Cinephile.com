@@ -56,7 +56,7 @@ async function getFilmsLength() {
 const MAX_LOAD = 100;
 let LAST_INDEX = 0;
 let FILTERED = false;
-
+var outsideSource = false;
 window.onload = async function () {
 
     const filmsLength = await getFilmsLength();
@@ -69,12 +69,15 @@ window.onload = async function () {
     const prevButton = document.getElementById('prev-btn');
     const nextButton = document.getElementById('next-btn');
 
+
     //track position in current load
     var currentIndex = 0;
     //track position in whole db
     var counter = 0;
     //stop processes overlapping
     var isClickLocked = false;
+
+    var films;
 
     //initialize counter and currentIndex with saved values
     var savedCounter = localStorage.getItem('counter');
@@ -84,7 +87,20 @@ window.onload = async function () {
         currentIndex = parseInt(savedIndex);
     }
 
-    var films = await getFilms(counter); //read in new load batch
+    
+    if(localStorage.getItem('films-source')){
+        films_cache = localStorage.getItem('films-source');
+        films = JSON.parse(films_cache);
+        LAST_INDEX = films.length;
+        outsideSource = true;
+        console.log(films)
+
+    }else{
+        outsideSource = false;
+        films = await getFilms(counter); //read in new load batch
+    }
+
+
 
     //for getting film poster jpegs
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
@@ -108,7 +124,10 @@ window.onload = async function () {
 
         //load in next batch of films
         if ((currentIndex % MAX_LOAD) == 0) {
-            films = await getFilms(counter); //read in new load batch
+
+            if(!outsideSource){
+                films = await getFilms(counter); //read in new load batch
+            }
 
             if (counter % MAX_LOAD == 0) {
                 currentIndex = 0; //first position in new load batch
@@ -400,8 +419,6 @@ window.onload = async function () {
         document.getElementById('filter-blank').style.display = 'block';
     });
 
-
-
     //handle next film action
     const handleNextAction = async () => {
         if (!isClickLocked) {
@@ -470,12 +487,13 @@ window.onload = async function () {
 
     });
 
-
     // click title bar to refresh - shuffle films, reset counter, reload page
     document.getElementById('page_title').addEventListener('click', async function () {
         const shuffle = await refreshFilms(user_id)
         localStorage.setItem('counter', 0);
         localStorage.setItem('currentIndex', 0);
+        localStorage.removeItem('films-source');
+        localStorage.removeItem('marker');
         window.location.href = '/';
 
     });

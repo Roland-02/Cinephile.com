@@ -1179,10 +1179,9 @@ def get_loved_route():
 def get_liked_route():
     user_id = request.args.get("user_id")
     user_profile = get_user_profile(user_id)
-    liked_films_attr = user_profile[0]
-    liked_films_attr = liked_films_attr[liked_films_attr['likeage'] != 1]
-    liked_films = liked_films_attr.merge(data[['tconst', 'poster']], on='tconst', how='left')
-    liked_films = liked_films[['tconst', 'poster']]
+    liked_films_attr = user_profile[0] 
+    liked_films_tconsts = liked_films_attr[liked_films_attr['likeage'] != 1]['tconst']
+    liked_films = data[data['tconst'].isin(liked_films_tconsts)]
     liked_films_dict = liked_films.to_dict(orient='records')
     return jsonify({"films": liked_films_dict})
 
