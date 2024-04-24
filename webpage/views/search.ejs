@@ -53,7 +53,8 @@
             <!-- Right elements -->
             <div class="col text-end">
                 <% if (session && session.email) { %>
-                    <a href="/search" class="border rounded nav-link d-inline-block menu-btn" style="background-color: orange;">
+                    <a href="/search" class="border rounded nav-link d-inline-block menu-btn"
+                        style="background-color: orange;">
                         <p class="btn btn-sm d-md-block mb-0">Search</p>
                     </a>
                     <a href="/recommend" class="border rounded nav-link d-inline-block menu-btn">
@@ -120,18 +121,6 @@
 <footer>
 
     <script>
-
-        // click on film card to open in index
-        $(document).on('click', '.clickable', async function () {
-            const tconst = $(this).data('id');
-            const response = await axios.get(`http://localhost:8080/openClickedFilm?tconst=${tconst}`);
-            let savedCounter = response.data.counter;
-            let savedIndex = response.data.currentIndex;
-            localStorage.setItem('counter', savedCounter);
-            localStorage.setItem('currentIndex', savedIndex);
-            window.location.href = '/index';
-        });
-
         
         $(document).ready(function () {
             // Monitor scroll event

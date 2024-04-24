@@ -74,16 +74,51 @@ window.onload = async function () {
 
     }
 
-        // click title bar to refresh - shuffle films, reset counter, reload page
-        document.getElementById('page_title').addEventListener('click', async function () {
-            const shuffle = await refreshFilms(user_id)
-            localStorage.setItem('counter', 0);
-            localStorage.setItem('currentIndex', 0);
-            window.location.href = '/';
-    
+
+    document.querySelectorAll('.clickable').forEach(function (element) {
+        element.addEventListener('click', async function () {
+
+            try {
+                const tconst = this.dataset.id;
+
+                // Find the index of the film in the allFilms dataset
+                const filmIndex = films.findIndex(film => film.tconst === tconst);
+
+                // Calculate the page number to which the film belongs
+                const page = Math.floor(filmIndex / 100) + 1;
+
+                // Calculate the currentIndex within the page
+                const startIndex = (page - 1) * 100;
+                const currentIndex = filmIndex - startIndex;
+
+                // Calculate the counter
+                const counter = filmIndex;
+
+                localStorage.setItem('counter', counter);
+                localStorage.setItem('currentIndex', currentIndex);
+                localStorage.setItem('films-source', JSON.stringify(films))
+                window.location.href = '/index';
+
+            }catch (error) {
+                console.error('Error:', error);
+
+            };
+
         });
-    
-    
+    });
+
+
+    // click title bar to refresh - shuffle films, reset counter, reload page
+    document.getElementById('page_title').addEventListener('click', async function () {
+        const shuffle = await refreshFilms(user_id)
+        localStorage.setItem('counter', 0);
+        localStorage.setItem('currentIndex', 0);
+        localStorage.removeItem('films-source');
+        window.location.href = '/';
+
+    });
+
+
 
 
 };

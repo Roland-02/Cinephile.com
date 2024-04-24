@@ -15,6 +15,7 @@ async function getLovedFilms(user_id) {
 async function getLikedFilms(user_id) {
     try {
         const response = await axios.get(`http://127.0.0.1:8081/get_liked_films?user_id=${user_id}`)
+        console.log(response)
         const films = response.data.films;
         return films;
 
@@ -75,6 +76,7 @@ window.onload = async function () {
     // let filmsPack = await getLovedFilms(user_id);
     var films = await getLovedFilms(user_id);
     var likedFilms = await getLikedFilms(user_id);
+    console.log(likedFilms)
 
     //initial update
     if (films.length > 0) {
@@ -111,7 +113,7 @@ window.onload = async function () {
 
         films.forEach(function (film) {
             if (film.poster) {
-                content += `<img class="film-poster clickable-film" data-id="${film.tconst}" src="${baseImagePath + film.poster}" alt="${film.title}">`;
+                content += `<img class="film-poster clickable-film loved-film" data-id="${film.tconst}" src="${baseImagePath + film.poster}" alt="${film.title}">`;
 
             } else {
                 content += `<img class="film-poster clickable-film" data-id="${film.tconst}" src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
@@ -128,7 +130,7 @@ window.onload = async function () {
 
         films.forEach(function (film) {
             if (film.poster) {
-                content += `<img class="film-poster clickable-film" data-id="${film.tconst}" src="${baseImagePath + film.poster}" alt="${film.title}">`;
+                content += `<img class="film-poster clickable-film liked-film" data-id="${film.tconst}" src="${baseImagePath + film.poster}" alt="${film.title}">`;
 
             } else {
                 content += `<img class="film-poster clickable-film" data-id="${film.tconst}" src="/images/MissingPoster.jpeg" alt="Poster Not Available">`;
@@ -231,6 +233,70 @@ window.onload = async function () {
         });
 
     });
+
+    document.querySelectorAll('.loved-film').forEach(function (element) {
+        element.addEventListener('click', async function () {
+            const tconst = this.dataset.id;
+
+            try {
+
+                // Find the index of the film in the allFilms dataset
+                const filmIndex = films.findIndex(film => film.tconst === tconst);
+
+                // Calculate the page number to which the film belongs
+                const page = Math.floor(filmIndex / 100) + 1;
+
+                // Calculate the currentIndex within the page
+                const startIndex = (page - 1) * 100;
+                const currentIndex = filmIndex - startIndex;
+
+                // Calculate the counter
+                const counter = filmIndex;
+
+                localStorage.setItem('counter', counter);
+                localStorage.setItem('currentIndex', currentIndex);
+                localStorage.setItem('films-source', JSON.stringify(films))
+                window.location.href = '/index';
+
+            }catch (error) {
+                console.error('Error:', error);
+
+            };
+
+        });
+    });
+
+    document.querySelectorAll('.liked-film').forEach(function (element) {
+        element.addEventListener('click', async function () {
+            const tconst = this.dataset.id;
+
+            try {
+
+                // Find the index of the film in the allFilms dataset
+                const filmIndex = likedFilms.findIndex(film => film.tconst === tconst);
+
+                // Calculate the page number to which the film belongs
+                const page = Math.floor(filmIndex / 100) + 1;
+
+                // Calculate the currentIndex within the page
+                const startIndex = (page - 1) * 100;
+                const currentIndex = filmIndex - startIndex;
+
+                // Calculate the counter
+                const counter = filmIndex;
+
+                localStorage.setItem('counter', counter);
+                localStorage.setItem('currentIndex', currentIndex);
+                localStorage.setItem('films-source', JSON.stringify(likedFilms));
+                window.location.href = '/index';
+
+            }catch (error) {
+                console.error('Error:', error);
+
+            };
+
+        });
+    });
   
     document.querySelectorAll('.clickable').forEach(function (element) {
         element.addEventListener('click', async function (event) {
@@ -249,6 +315,7 @@ window.onload = async function () {
         const shuffle = await refreshFilms(user_id)
         localStorage.setItem('counter', 0);
         localStorage.setItem('currentIndex', 0);
+        localStorage.removeItem('films-source');
         window.location.href = '/';
 
     });

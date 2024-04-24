@@ -134,8 +134,6 @@ router.post('/filter', async (req, res) => {
           });
         }
 
-
-        // console.log('Filtered films')
         console.log(filteredFilms.length)
         res.json(filteredFilms.length);
 
@@ -184,13 +182,13 @@ router.post('/shuffleFilms', async (req, res) => {
 });
 
 
+
 // Route to handle opening a specific film
 router.get('/openClickedFilm', async (req, res) => {
   try {
-    await allFilmsPromise;
 
     const tconst = req.query.tconst; // Assuming tconst is sent in the request query
-
+    // const source =  req.query.source;
     // Find the index of the film in the allFilms dataset
     const filmIndex = allFilms.findIndex(film => film.tconst === tconst);
 
@@ -204,7 +202,7 @@ router.get('/openClickedFilm', async (req, res) => {
     // Calculate the counter
     const counter = filmIndex;
 
-    res.json({ "counter": counter, "currentIndex": currentIndex })
+    res.json({"counter": counter, "currentIndex": currentIndex })
 
   } catch (error) {
     console.error("Error:", error);
@@ -212,6 +210,18 @@ router.get('/openClickedFilm', async (req, res) => {
   }
 });
 
+router.get('/get_allFilms_index', async (req, res) => {
+  try{
+    const tconst = req.query.tconst;
+    const filmIndex = allFilms.findIndex(film => film.tconst === tconst);
+    res.json(filmIndex);
+
+  }catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+
+})
 
 router.get('/datasetLength', async (req, res) => {
   try {

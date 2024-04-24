@@ -163,16 +163,16 @@
 
     <script>
 
-        // click on film card to open in index
-        $(document).on('click', '.clickable-film', async function () {
-            const tconst = $(this).data('id');
-            const response = await axios.get(`http://localhost:8080/openClickedFilm?tconst=${tconst}`);
-            let savedCounter = response.data.counter;
-            let savedIndex = response.data.currentIndex;
-            localStorage.setItem('counter', savedCounter);
-            localStorage.setItem('currentIndex', savedIndex);
-            window.location.href = '/index';
-        });
+        // // click on film card to open in index
+        // $(document).on('click', '.clickable-film', async function () {
+        //     const tconst = $(this).data('id');
+        //     const response = await axios.get(`http://localhost:8080/openClickedFilm?tconst=${tconst}`);
+        //     let savedCounter = response.data.counter;
+        //     let savedIndex = response.data.currentIndex;
+        //     localStorage.setItem('counter', savedCounter);
+        //     localStorage.setItem('currentIndex', savedIndex);
+        //     window.location.href = '/index';
+        // });
 
         // flash other side of films card
         $(document).ready(function () {
