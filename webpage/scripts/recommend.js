@@ -31,7 +31,7 @@ async function getRecommendedFilmsBatch(user_id, category, page) {
         return null;
     }
 };
-
+ 
 async function getLikedStaff(user_id) {
     try {
         const response = await axios.get(`http://127.0.0.1:8081/get_liked_staff?user_id=${user_id}`)
@@ -113,6 +113,7 @@ window.onload = async function () {
 
     // dynamically load film elements - poster, info etc
     async function displayFilms(films) {
+        console.log(films)
         let content = '';
 
         films.forEach(function (film) {
@@ -191,10 +192,11 @@ window.onload = async function () {
 
             content += `<p>${film.plot}</p>                    
                         </figcaption>
-                    <img class="film-poster" src="${baseImagePath + film.poster}" alt="${film.title}">  
+                    <img class="film-poster" src="${baseImagePath + film.poster}" alt="${film.primaryTitle}">  
                     </figure>`;
 
         });
+
         index += films.length;
         filmContainer.innerHTML += content;
 
@@ -222,7 +224,7 @@ window.onload = async function () {
 
                     localStorage.setItem('counter', counter);
                     localStorage.setItem('currentIndex', currentIndex);
-                    localStorage.setItem('films-source', JSON.stringify(films))
+                    localStorage.setItem('films-source', JSON.stringify(films.slice(startIndex)))
                     window.location.href = '/index';
 
                 } catch (error) {
@@ -231,11 +233,31 @@ window.onload = async function () {
                 };
 
             });
+              
         });
 
-
     };
+ 
+    // load next batch of films when scroll reaches the bottom
+    window.addEventListener('scroll', async function () {
+        // Calculate the distance between the bottom of the page and the current scroll position
+        let distanceToBottom = document.documentElement.offsetHeight - (window.scrollY + window.innerHeight);
 
+        if (distanceToBottom <= 10) {
+            scrollPage++;
+
+            // Call getRecommendedBatch to fetch the next batch of films
+            // films = await getRecommendedFilmsBatch(user_id, option, scrollPage);
+            films = films.concat(await getRecommendedFilmsBatch(user_id, option, scrollPage));
+
+
+            // Append the newly fetched films to the scroll box
+            if (films.length > 0) {
+                await displayFilms(films);
+            }
+        }
+        
+    });
 
     // change filter option
     document.getElementById('showMeOptions').addEventListener('change', async function (event) {
@@ -253,26 +275,6 @@ window.onload = async function () {
 
     });
 
-
-    // load next batch of films when scroll reaches the bottom
-    window.addEventListener('scroll', async function () {
-        // Calculate the distance between the bottom of the page and the current scroll position
-        let distanceToBottom = document.documentElement.offsetHeight - (window.scrollY + window.innerHeight);
-
-        if (distanceToBottom <= 10) {
-            scrollPage++;
-
-            // Call getRecommendedBatch to fetch the next batch of films
-            const films = await getRecommendedFilmsBatch(user_id, option, scrollPage);
-
-            // Append the newly fetched films to the scroll box
-            if (films.length > 0) {
-                await displayFilms(films);
-            }
-        }
-    });
-
-
     // click title bar to refresh - shuffle films, reset counter, reload page
     document.getElementById('page_title').addEventListener('click', async function () {
         const shuffle = await refreshFilms(user_id)
@@ -282,7 +284,6 @@ window.onload = async function () {
         window.location.href = '/';
 
     });
-
 
 
 };

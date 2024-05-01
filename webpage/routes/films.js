@@ -17,7 +17,7 @@ router.get('/indexPageFilms', async (req, res) => {
 
     // Calculate the start and end indices for the current page
     const startIndex = (page - 1) * PAGE_SIZE;
-    const endIndex = startIndex + PAGE_SIZE;
+    const endIndex = parseInt(Number(startIndex) + Number(PAGE_SIZE));
 
     const filmsForPage = allFilms.slice(startIndex, endIndex);
 

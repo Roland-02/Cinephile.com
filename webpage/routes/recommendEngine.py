@@ -1124,7 +1124,7 @@ def get_batch_route():
     user_id = request.args.get("user_id")
     category = request.args.get("category")
     page = int(request.args.get("page"))
-    batch_size = 25
+    batch_size = 100
 
     films_json = cache.get(f'user_{category}_recommended{user_id}')
     
@@ -1295,9 +1295,9 @@ def get_model_stats():
         recommended = recommend_content_films(user_id)
         user_films[user_id] = recommended
 
-    precision = calculate_precision_at_k(user_interactions, user_films, 10) * 100
-    recall = calculate_recall_at_k(user_interactions, user_films, 10) * 100
-    f1 = (2 * precision * recall) / (precision + recall) * 100
+    precision = calculate_precision_at_k(user_interactions, user_films, 100) * 100
+    recall = calculate_recall_at_k(user_interactions, user_films, 100) * 100
+    f1 = (2 * precision * recall) / (precision + recall)
     hit_rate = generate_hit_rate_stats()
     hit_rate_top10 = hit_rate[0] * 100
     hit_rate_top25 = hit_rate[1] * 100
@@ -1322,3 +1322,4 @@ if __name__ == "__main__":
     # Run the scheduler in the main thread
     while True:
         schedule.run_pending()
+        
