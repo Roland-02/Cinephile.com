@@ -6,7 +6,6 @@ async function getFilms(counter) {
     var films = '';
     try {
         page = Math.floor((counter / MAX_LOAD)) + 1;
-        console.log(FILTERED)
 
         if (FILTERED) {
             const response = await fetch(`http://localhost:8080/filteredPageFilms?page=${page}`);
@@ -22,10 +21,10 @@ async function getFilms(counter) {
             }
         }
 
-
     } catch (error) {
         console.error('Error fetching films:', error);
     }
+
     return films
 };
 
@@ -59,16 +58,11 @@ let FILTERED = false;
 var outsideSource = false;
 window.onload = async function () {
 
-    const filmsLength = await getFilmsLength();
-    LAST_INDEX = filmsLength;
-    FILTERED = false;
-
     //initialise html elements
     const filmInfo = document.getElementById('film-info');
     const filmPoster = document.getElementById('film-poster');
     const prevButton = document.getElementById('prev-btn');
     const nextButton = document.getElementById('next-btn');
-
 
     //track position in current load
     var currentIndex = 0;
@@ -76,7 +70,7 @@ window.onload = async function () {
     var counter = 0;
     //stop processes overlapping
     var isClickLocked = false;
-
+    // store batch of 100 films displayed on carousel
     var films;
 
     //initialize counter and currentIndex with saved values
@@ -87,20 +81,19 @@ window.onload = async function () {
         currentIndex = parseInt(savedIndex);
     }
 
-    
-    if(localStorage.getItem('films-source')){
+    // if user has clicked on film from other page - load films from cache
+    if (localStorage.getItem('films-source')) {
         films_cache = localStorage.getItem('films-source');
         films = JSON.parse(films_cache);
-        LAST_INDEX = films.length;
         outsideSource = true;
-        console.log(films)
 
-    }else{
+    } else {
         outsideSource = false;
         films = await getFilms(counter); //read in new load batch
     }
 
-
+    LAST_INDEX = films.length;
+    if (LAST_INDEX < MAX_LOAD) LAST_INDEX -= 1;
 
     //for getting film poster jpegs
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
@@ -125,9 +118,14 @@ window.onload = async function () {
         //load in next batch of films
         if ((currentIndex % MAX_LOAD) == 0) {
 
-            if(!outsideSource){
+            if (!outsideSource) {
                 films = await getFilms(counter); //read in new load batch
             }
+
+            LAST_INDEX = films.length;
+
+            // prevent erroneous click locking
+            if (LAST_INDEX < MAX_LOAD) LAST_INDEX -= 1;
 
             if (counter % MAX_LOAD == 0) {
                 currentIndex = 0; //first position in new load batch
@@ -368,74 +366,25 @@ window.onload = async function () {
 
     };
 
-
-    document.getElementById('filterOptions').addEventListener('submit', async function (event) {
-        event.preventDefault();
-
-        // Get selected filter options
-        var filterRating = document.getElementById('filterRating').value;
-        var filterGenre = document.getElementById('filterGenre').value;
-        var filterRuntime = document.getElementById('filterRuntime').value;
-        var filterYear = document.getElementById('filterYear').value;
-
-        // Construct filter object
-        var filter = {
-            rating: filterRating,
-            genre: filterGenre,
-            runtime: filterRuntime,
-            year: filterYear
-        };
-
-        axios({
-            method: 'post',
-            url: '/filter',
-            params: { filter: filter } // Send filter as query parameters
-        })
-            .then(async function (response) {
-                const filteredLength = await response.data
-                if (filteredLength) {
-                    FILTERED = true;
-                    LAST_INDEX = filteredLength;
-                    counter = 0;
-                    currentIndex = 0;
-                    console.log(filteredLength)
-
-                    updateFilm()
-
-                } else {
-                    console.log('no films')
-                }
-
-            })
-            .catch(function (error) {
-                console.error('Error:', error);
-
-            });
-
-
-        // Hide filter options after submission
-        this.style.display = 'none';
-        document.getElementById('filter-filled').style.display = 'none';
-        document.getElementById('filter-blank').style.display = 'block';
-    });
-
     //handle next film action
     const handleNextAction = async () => {
         if (!isClickLocked) {
             isClickLocked = true;
 
-            if (counter < LAST_INDEX - 1) {
+            if (currentIndex < LAST_INDEX){
                 currentIndex++;
                 counter++;
             }
 
             // Clicking forwards to next load
-            if (currentIndex % MAX_LOAD == 0) {
+            if (currentIndex % MAX_LOAD == 0 && !outsideSource) {
                 page++;
             }
-
+            
             updateFilm();
+            
         }
+
     };
 
     //handle previous film action
@@ -443,7 +392,7 @@ window.onload = async function () {
         if (!isClickLocked && !prevButton.disabled) {
             isClickLocked = true;
 
-            if (currentIndex == 0 && counter != 0) {
+            if (currentIndex == 0 && counter != 0 && !outsideSource) {
                 currentIndex = MAX_LOAD;
                 page--;
 
@@ -461,11 +410,55 @@ window.onload = async function () {
         }
     };
 
-    //next button
-    nextButton.addEventListener('click', handleNextAction);
+    //apply filters to films
+    document.getElementById('filterOptions').addEventListener('submit', async function (event) {
+        event.preventDefault();
 
-    //prev button
-    prevButton.addEventListener('click', handlePrevAction);
+        // Get selected filter options
+        var filterRating = document.getElementById('filterRating').value;
+        var filterGenre = document.getElementById('filterGenre').value;
+        var filterRuntime = document.getElementById('filterRuntime').value;
+        var filterYear = document.getElementById('filterYear').value;
+
+        // Construct filter object
+        var filter = {
+            rating: filterRating,
+            genre: filterGenre,
+            runtime: filterRuntime,
+            year: filterYear
+        };
+
+        // post filter queries to router
+        axios({
+            method: 'post',
+            url: '/filter',
+            params: { filter: filter } // Send filter as query parameters
+        })
+            .then(async function (response) {
+                const filteredLength = await response.data
+                if (filteredLength) {
+                    FILTERED = true;
+                    counter = 0;
+                    currentIndex = 0;
+                    updateFilm()
+
+                } else {
+                    console.log('no films')
+                }
+
+            })
+            .catch(function (error) {
+                console.error('Error:', error);
+
+            });
+
+
+        // Hide filter options after submission
+        this.style.display = 'none';
+        document.getElementById('filter-filled').style.display = 'none';
+        document.getElementById('filter-blank').style.display = 'block';
+
+    });
 
     //carousel navigation with keys
     document.addEventListener('keydown', function (event) {
@@ -487,9 +480,9 @@ window.onload = async function () {
 
     });
 
-    // click title bar to refresh - shuffle films, reset counter, reload page
+    //click title bar to refresh - shuffle films, reset counter, reload page
     document.getElementById('page_title').addEventListener('click', async function () {
-        const shuffle = await refreshFilms(user_id)
+        const shuffle = await refreshFilms(user_id);
         localStorage.setItem('counter', 0);
         localStorage.setItem('currentIndex', 0);
         localStorage.removeItem('films-source');
@@ -498,6 +491,11 @@ window.onload = async function () {
 
     });
 
+    //next button
+    nextButton.addEventListener('click', handleNextAction);
+
+    //prev button
+    prevButton.addEventListener('click', handlePrevAction);
 
 
 };

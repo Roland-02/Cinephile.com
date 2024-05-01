@@ -25,38 +25,36 @@ async function getSearchFilms(query, page = 1) {
 window.onload = async function () {
 
     const posterContainer = document.getElementById('search-films');
-    const user_id = posterContainer.getAttribute('data-id');
     const searchForm = document.getElementById('searchForm');
+    const user_id = posterContainer.getAttribute('data-id');
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryName = urlParams.get('query');
+
     var scrollPage = 1;
     var allQueries = [];
     var films;
 
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const queryName = urlParams.get('query');
-
     if (queryName && queryName.trim() !== '') {
         await handleFormSubmission(queryName)
-    }
+    };
 
-    window.films = films;
     async function updateQueryFilms(page = 1) {
         var concatenatedQueries = allQueries.join(', ');
 
         films = await getSearchFilms(concatenatedQueries, page);
         if (films.length > 0) {
-            await displaySearchFilms(films)
+            await displaySearchFilms(films);
         } else {
-            console.log('no films')
+            console.log('no films');
             posterContainer.innerHTML = ``;
 
         }
     };
 
-
     async function displaySearchFilms(films) {
         var content = '';
+        console.log(films)
 
         films.forEach(function (film) {
             content += `<figure class="poster-wrapper clickable" data-id="${film.tconst}">
@@ -70,6 +68,7 @@ window.onload = async function () {
                 </figure>
             `;
         });
+
         posterContainer.innerHTML = content;
 
         // add event listener so film opens on index page when clicked
@@ -94,7 +93,7 @@ window.onload = async function () {
 
                     localStorage.setItem('counter', counter);
                     localStorage.setItem('currentIndex', currentIndex);
-                    localStorage.setItem('films-source', JSON.stringify(films))
+                    localStorage.setItem('films-source', JSON.stringify(films.slice(startIndex)))
                     window.location.href = '/index';
 
                 } catch (error) {
@@ -112,8 +111,8 @@ window.onload = async function () {
     async function displaySearchQuery(query) {
         // Create a new div element to display the search query
         var content = `<div class="alert alert-info p-2 m-1" id="saved-query-box">${query}
-        <button type="button" class="btn-close queryClose" aria-label="Close"></button>
-        </div>`;
+            <button type="button" class="btn-close queryClose" aria-label="Close"></button>
+            </div>`;
 
         // Append the HTML content to the searchQueries container
         document.getElementById('searchQueries').innerHTML += content;
@@ -168,6 +167,7 @@ window.onload = async function () {
             scrollPage++;
             await updateQueryFilms(scrollPage);
         }
+
     });
 
 
