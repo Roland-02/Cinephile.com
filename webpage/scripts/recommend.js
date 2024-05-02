@@ -61,39 +61,29 @@ window.onload = async function () {
     const filmContainer = document.getElementById('filmsContainer');
     const user_id = filmContainer.getAttribute('data-id');
     const baseImagePath = 'https://image.tmdb.org/t/p/w500';
-    const spinner = document.querySelector('.spinner'); //loading spinner
-
-    var scrollPage = 1;
-
+    
+    var scrollPage = 1;    
     var liked_cast;
     var liked_crew;
-
     var option;
-    var films;
-    var index = 0;
 
-    console.log(refreshProfile)
     if (refreshProfile === 'true') { //user has interacted with film, reload profile
         filmContainer.innerHTML = `<div class="loading-msg">`
         filmContainer.innerHTML += `<p><strong>Updating profile...</strong></p>`
         filmContainer.innerHTML += `<div class="spinner"></div>`
         await updateProfile(user_id);
         filmContainer.innerHTML += `<p><strong>Getting films...</strong></p> </div> </div>`
-
         await cacheRecommendedFilms(user_id);
     }
 
 
-    films = await getRecommendedFilmsBatch(user_id, 'content', 1);
+    var films = await getRecommendedFilmsBatch(user_id, 'content', 1);
     if (films !== '-') {
         document.getElementById('showMeOptions').disabled = false;
-
         filmContainer.innerHTML = `<div class="spinner"></div>`
-
         await initialiseStaff(user_id);
         option = 'content';
         filmContainer.innerHTML = ''
-
         await displayFilms(films);
 
     } else {
@@ -102,7 +92,6 @@ window.onload = async function () {
 
     }
 
-    
     // load liked cast and crew
     async function initialiseStaff(user_id) {
         let likedStaff = await getLikedStaff(user_id);
@@ -110,11 +99,12 @@ window.onload = async function () {
         liked_crew = likedStaff.liked_crew;
     };
 
-
     // dynamically load film elements - poster, info etc
     async function displayFilms(films) {
-        console.log(films)
+        var index = 0;
+
         let content = '';
+        console.log(films)
 
         films.forEach(function (film) {
             // format similarity
@@ -198,7 +188,7 @@ window.onload = async function () {
         });
 
         index += films.length;
-        filmContainer.innerHTML += content;
+        filmContainer.innerHTML = content;
 
         // add event listener to open film when clicked
         document.querySelectorAll('.clickable').forEach(function (element) {
@@ -217,14 +207,14 @@ window.onload = async function () {
 
                     // Calculate the currentIndex within the page
                     const startIndex = (page - 1) * 100;
-                    const currentIndex = filmIndex - startIndex;
+                    var currentIndex = filmIndex - startIndex;
 
                     // Calculate the counter
-                    const counter = filmIndex;
+                    var counter = filmIndex;
 
                     localStorage.setItem('counter', counter);
                     localStorage.setItem('currentIndex', currentIndex);
-                    localStorage.setItem('films-source', JSON.stringify(films.slice(startIndex)))
+                    localStorage.setItem('films-source', JSON.stringify(films))
                     window.location.href = '/index';
 
                 } catch (error) {
@@ -235,6 +225,8 @@ window.onload = async function () {
             });
               
         });
+
+        
 
     };
  
@@ -247,9 +239,7 @@ window.onload = async function () {
             scrollPage++;
 
             // Call getRecommendedBatch to fetch the next batch of films
-            // films = await getRecommendedFilmsBatch(user_id, option, scrollPage);
-            films = films.concat(await getRecommendedFilmsBatch(user_id, option, scrollPage));
-
+            var films = await getRecommendedFilmsBatch(user_id, option, scrollPage);
 
             // Append the newly fetched films to the scroll box
             if (films.length > 0) {
@@ -268,7 +258,7 @@ window.onload = async function () {
         filmContainer.innerHTML = `<div class="spinner"></div>`
 
         scrollPage = 1;
-        films = await getRecommendedFilmsBatch(user_id, option, scrollPage)
+        var films = await getRecommendedFilmsBatch(user_id, option, scrollPage)
 
         filmContainer.innerHTML = ''
         await displayFilms(films);

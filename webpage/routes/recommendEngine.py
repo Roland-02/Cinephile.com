@@ -1137,7 +1137,7 @@ def get_batch_route():
             end_index = (page) * batch_size
 
             # Slice the films list to get the batch
-            batch = films_data[start_index:end_index]
+            batch = films_data[:end_index]
             
             return jsonify({"films": batch})
    
@@ -1252,7 +1252,7 @@ def search_general():
         end_index = (page) * page_size
 
         # Extract the subset of films based on pagination
-        paginated_films = filtered_films.iloc[:end_index].copy()
+        paginated_films = filtered_films.iloc[:end_index]
 
         # Remove the 'soup' column
         paginated_films = paginated_films.drop(columns=['soup'])
@@ -1322,4 +1322,3 @@ if __name__ == "__main__":
     # Run the scheduler in the main thread
     while True:
         schedule.run_pending()
-        
