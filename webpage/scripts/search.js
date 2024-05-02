@@ -33,24 +33,11 @@ window.onload = async function () {
 
     var scrollPage = 1;
     var allQueries = [];
-    var films;
 
     if (queryName && queryName.trim() !== '') {
         await handleFormSubmission(queryName)
     };
 
-    async function updateQueryFilms(page = 1) {
-        var concatenatedQueries = allQueries.join(', ');
-
-        films = await getSearchFilms(concatenatedQueries, page);
-        if (films.length > 0) {
-            await displaySearchFilms(films);
-        } else {
-            console.log('no films');
-            posterContainer.innerHTML = ``;
-
-        }
-    };
 
     async function displaySearchFilms(films) {
         var content = '';
@@ -93,7 +80,7 @@ window.onload = async function () {
 
                     localStorage.setItem('counter', counter);
                     localStorage.setItem('currentIndex', currentIndex);
-                    localStorage.setItem('films-source', JSON.stringify(films.slice(startIndex)))
+                    localStorage.setItem('films-source', JSON.stringify(films))
                     window.location.href = '/index';
 
                 } catch (error) {
@@ -157,6 +144,20 @@ window.onload = async function () {
             deleteQuery(event.target);
         }
     });
+
+    async function updateQueryFilms(page = 1) {
+        var concatenatedQueries = allQueries.join(', ');
+
+        var films = await getSearchFilms(concatenatedQueries, page);
+        if (films.length > 0) {
+            await displaySearchFilms(films);
+
+        } else {
+            console.log('no films');
+            posterContainer.innerHTML = ``;
+
+        }
+    };
 
     window.addEventListener('scroll', async function () {
         // Calculate the distance between the bottom of the page and the current scroll position
