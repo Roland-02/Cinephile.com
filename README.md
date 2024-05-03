@@ -21,64 +21,67 @@ TO RUN:
 <ul>
 <li>navigate to the /webpage directory in terminal</li>
 <li>run 'node app'</li>
-<li>the terminal will shpw the status and outputs from both servers, navigate to http://localhost:8080 to access the website</li>
+<li>the terminal will show the status and outputs from both servers, navigate to http://localhost:8080 to access the website</li>
 <li>the http://127.0.0.1:8081 link is also available for direct API request-making</li>
 </ul>
 
 
 PROJECT FILE STRUCTURE:<br>
-webpage:
-<ul>
-    <li>/bootstrap</li>
+
+<ul>    
+<li>/mysql_schema_tables (sql files for database migration)</li>
+<li>/webpage (SYSTEM)</li>
+    <li>/bootstrap (external styling)</li>
     <li>/images</li>
-    <li>/node_modules</li>
+    <li>/node_modules (packages for GUI)</li>
     <li>/routes (server-side)
         <ul>
-            <li>-recommendEngine.py (python recommendation engine, FLASK)</li>
-            <li>-tmdb_calls.py (TMDB api calls)</li>
-            <li>-films.js (internal films dataset routing)</li>
-            <li>-createAccount.js</li>
-            <li>-login.js</li>
-            <li>-index.js</li>
-            <li>-profile.js</li>
-            <li>-search.js</li>
-            <li>-watchlist.js</li>
+            <li>recommendEngine.py (python recommendation engine, FLASK)</li>
+            <li>tmdb_calls.py (TMDB api calls)</li>
+            <li>films.js (internal films dataset routing)</li>
+            <li>createAccount.js</li>
+            <li>login.js</li>
+            <li>index.js</li>
+            <li>profile.js</li>
+            <li>search.js</li>
+            <li>watchlist.js</li>
         </ul>
     </li>
     <li>/scripts (client-side)
         <ul>
-            <li>-createAccount.js</li>
-            <li>-login.js</li>
-            <li>-index.js</li>
-            <li>-profile.js</li>
-            <li>-recommend.js</li>
-            <li>-search.js</li>
-            <li>-watchlist.js</li>
+            <li>createAccount.js</li>
+            <li>login.js</li>
+            <li>index.js</li>
+            <li>profile.js</li>
+            <li>recommend.js</li>
+            <li>search.js</li>
+            <li>watchlist.js</li>
         </ul>
     </li>
     <li>/styles (custom css)
         <ul>
-            <li>-createAccount.css</li>
-            <li>-login.css</li>
-            <li>-index.css</li>
-            <li>-profile.css</li>
-            <li>-recommend.css</li>
-            <li>-search.css</li>
-            <li>-watchlist.css</li>
+            <li>createAccount.css</li>
+            <li>login.css</li>
+            <li>index.css</li>
+            <li>profile.css</li>
+            <li>recommend.css</li>
+            <li>search.css</li>
+            <li>watchlist.css</li>
         </ul>
     </li>
     <li>/views (html pages)
         <ul>
-            <li>-createAccount.ejs</li>
-            <li>-login.ejs</li>
-            <li>-index.ejs</li>
-            <li>-profile.ejs</li>
-            <li>-recommend.ejs</li>
-            <li>-search.ejs</li>
-            <li>-watchlist.ejs</li>
+            <li>createAccount.ejs</li>
+            <li>login.ejs</li>
+            <li>index.ejs</li>
+            <li>profile.ejs</li>
+            <li>recommend.ejs</li>
+            <li>search.ejs</li>
+            <li>watchlist.ejs</li>
         </ul>
     </li>
-    <li>-database.js (database connection)</li>
-    <li>-app.js (NODE server file - RUN THIS)</li>
-    <li>/mysql_schema_tables (sql files for database migration)</li>
+    <li>Dissertation.docx (pdf submitted on BlakcBoard)</li>
+    <li>database.js (database connection)</li>
+    <li>app.js (NODE server file - RUN THIS)</li>
+
 </ul>
