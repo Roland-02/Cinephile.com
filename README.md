@@ -32,58 +32,58 @@ PROJECT FILE STRUCTURE:<br>
 <li>/mysql_schema_tables (sql files for database migration)</li>
 <li>/webpage (SYSTEM)</li>
     <ul>
-    <li>/bootstrap (external styling)</li>
-    <li>/images</li>
-    <li>/node_modules (packages for GUI)</li>
-    <li>/routes (server-side)
-        <ul>
-            <li>recommendEngine.py (python recommendation engine, FLASK)</li>
-            <li>tmdb_calls.py (TMDB api calls)</li>
-            <li>films.js (internal films dataset routing)</li>
-            <li>createAccount.js</li>
-            <li>login.js</li>
-            <li>index.js</li>
-            <li>profile.js</li>
-            <li>search.js</li>
-            <li>watchlist.js</li>
-        </ul>
-    </li>
-    <li>/scripts (client-side)
-        <ul>
-            <li>createAccount.js</li>
-            <li>login.js</li>
-            <li>index.js</li>
-            <li>profile.js</li>
-            <li>recommend.js</li>
-            <li>search.js</li>
-            <li>watchlist.js</li>
-        </ul>
-    </li>
-    <li>/styles (custom css)
-        <ul>
-            <li>createAccount.css</li>
-            <li>login.css</li>
-            <li>index.css</li>
-            <li>profile.css</li>
-            <li>recommend.css</li>
-            <li>search.css</li>
-            <li>watchlist.css</li>
-        </ul>
-    </li>
-    <li>/views (html pages)
-        <ul>
-            <li>createAccount.ejs</li>
-            <li>login.ejs</li>
-            <li>index.ejs</li>
-            <li>profile.ejs</li>
-            <li>recommend.ejs</li>
-            <li>search.ejs</li>
-            <li>watchlist.ejs</li>
-        </ul>
-    </li>
-    <li>Dissertation.docx (pdf submitted on BlakcBoard)</li>
-    <li>database.js (database connection)</li>
-    <li>app.js (NODE server file - RUN THIS)</li>
+        <li>/bootstrap (external styling)</li>
+        <li>/images</li>
+        <li>/node_modules (packages for GUI)</li>
+        <li>/routes (server-side)
+            <ul>
+                <li>recommendEngine.py (python recommendation engine, FLASK)</li>
+                <li>tmdb_calls.py (TMDB api calls)</li>
+                <li>films.js (internal films dataset routing)</li>
+                <li>createAccount.js</li>
+                <li>login.js</li>
+                <li>index.js</li>
+                <li>profile.js</li>
+                <li>search.js</li>
+                <li>watchlist.js</li>
+            </ul>
+        </li>
+        <li>/scripts (client-side)
+            <ul>
+                <li>createAccount.js</li>
+                <li>login.js</li>
+                <li>index.js</li>
+                <li>profile.js</li>
+                <li>recommend.js</li>
+                <li>search.js</li>
+                <li>watchlist.js</li>
+            </ul>
+        </li>
+        <li>/styles (custom css)
+            <ul>
+                <li>createAccount.css</li>
+                <li>login.css</li>
+                <li>index.css</li>
+                <li>profile.css</li>
+                <li>recommend.css</li>
+                <li>search.css</li>
+                <li>watchlist.css</li>
+            </ul>
+        </li>
+        <li>/views (html pages)
+            <ul>
+                <li>createAccount.ejs</li>
+                <li>login.ejs</li>
+                <li>index.ejs</li>
+                <li>profile.ejs</li>
+                <li>recommend.ejs</li>
+                <li>search.ejs</li>
+                <li>watchlist.ejs</li>
+            </ul>
+        </li>
+        <li>Dissertation.docx (pdf submitted on BlakcBoard)</li>
+        <li>database.js (database connection)</li>
+        <li>app.js (NODE server file - RUN THIS)</li>
     <ul>
 
 
