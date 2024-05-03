@@ -10,17 +10,18 @@ SOFTWARE PRE-REQUISITES:
 -MySql Workbench
 -any browser (Chrome recommennded)
 -packages in the node_modules folder must stored locally
--database must be migrated onto local machine by running dql files in /mysql_schema_tables folder
+-database must be migrated onto local machine by running sql files in /mysql_schema_tables folder
+    -make sure the schema is called 'users'
+    -you will need to change the database host and password in database.js to your credentials
 
 TO RUN:
 -navigate to the /webpage directory in terminal
 -run 'node app'
--the terminal will shpw the status and outputs from both server, navigate to http://localhost:8080 to access the website
+-the terminal will shpw the status and outputs from both servers, navigate to http://localhost:8080 to access the website
 -the http://127.0.0.1:8081 link is also available for direct API request-making
 
 
 PROJECT FILE STRUCTURE:
-
 webpage:
     /bootstrap
     /images
@@ -63,7 +64,7 @@ webpage:
         -search.ejs
         -watchlist.ejs
 
-    -database.js
+    -database.js (database connection)
     -app.js (NODE server file - RUN THIS)
 
 /mysql_schema_tables (sql files for database migration)
