@@ -31,6 +31,7 @@ PROJECT FILE STRUCTURE:<br>
 <ul>    
 <li>/mysql_schema_tables (sql files for database migration)</li>
 <li>/webpage (SYSTEM)</li>
+    <ul>
     <li>/bootstrap (external styling)</li>
     <li>/images</li>
     <li>/node_modules (packages for GUI)</li>
@@ -83,5 +84,7 @@ PROJECT FILE STRUCTURE:<br>
     <li>Dissertation.docx (pdf submitted on BlakcBoard)</li>
     <li>database.js (database connection)</li>
     <li>app.js (NODE server file - RUN THIS)</li>
+    <ul>
+
 
 </ul>
