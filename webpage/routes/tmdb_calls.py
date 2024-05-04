@@ -6,6 +6,7 @@ import requests as req
 import time
 
 MAX_REQUESTS_PER_SECOND = 50
+API_KEY = os.getenv("API_KEY")
 
 #theMovieDB api call for film plot summary and poster
 def fetchDetails(film_id):
@@ -13,7 +14,7 @@ def fetchDetails(film_id):
     
     headers = { 
         "accept": "application/json",
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiOWYwMzQzOWM2Y2E3NzI2MjNlNjM1OTc2OWJiMzc5NyIsInN1YiI6IjY1OGIwNzEyMzI1YTUxNTkyNzAxNWU4OSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.HMMknSAYrH4qBqjoBguVv8O1T7cmBEtbuJbxHy22AEA"
+        "Authorization": f'Bearer {API_KEY}'
     }
 
     response = req.get(url, headers=headers)
