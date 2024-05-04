@@ -5,3 +5,4 @@ oo269/** filter=lfs diff=lfs merge=lfs -text
 <file[[:space:]]of[[:space:]]webpage/films.json
 l
  filter=lfs diff=lfs merge=lfs -text
+*.json filter=lfs diff=lfs merge=lfs -text
