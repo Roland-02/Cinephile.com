@@ -28,11 +28,10 @@ TO RUN:
 
 
 <img width="1440" alt="Screenshot 2024-04-14 at 17 56 03" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/55ccf4f7-85a8-4abd-a466-c5e432862c1f">
-
+<br>
 <img width="1440" alt="Screenshot 2024-04-14 at 17 56 45" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/93066a3d-4ecd-44f7-9753-cd55314271d1">
-
+<br>
 <img width="1440" alt="Screenshot 2024-04-14 at 17 56 27" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/8a04787d-e22f-449a-b4e1-dab830e13232">
-
-<img width="1315" alt="Screenshot 2024-04-11 at 18 06 42" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/b2f23b30-8329-45c9-a1b9-e71c0eaa3400">
-
+<br>
 <img width="1440" alt="Screenshot 2024-04-14 at 17 56 56" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/76825720-91c8-464a-8b90-14bd2dc06a6a">
+<br>
