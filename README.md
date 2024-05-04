@@ -26,64 +26,13 @@ TO RUN:
 </ul>
 
 
-PROJECT FILE STRUCTURE:<br>
 
-<ul>    
-    <li>/mysql_schema_tables (sql files for database migration)</li>
-    <li>Dissertation.docx (pdf submitted on BlackBoard)</li>
-    <li>/webpage (SYSTEM)
-        <ul>
-            <li>/bootstrap (external styling)</li>
-            <li>/images</li>
-            <li>/node_modules (packages for GUI)</li>
-            <li>/routes (server-side)
-                <ul>
-                    <li>recommendEngine.py (python recommendation engine, FLASK)</li>
-                    <li>tmdb_calls.py (TMDB api calls)</li>
-                    <li>films.js (internal films dataset routing)</li>
-                    <li>createAccount.js</li>
-                    <li>login.js</li>
-                    <li>index.js</li>
-                    <li>profile.js</li>
-                    <li>search.js</li>
-                    <li>watchlist.js</li>
-                </ul>
-            </li>
-            <li>/scripts (client-side)
-                <ul>
-                    <li>createAccount.js</li>
-                    <li>login.js</li>
-                    <li>index.js</li>
-                    <li>profile.js</li>
-                    <li>recommend.js</li>
-                    <li>search.js</li>
-                    <li>watchlist.js</li>
-                </ul>
-            </li>
-            <li>/styles (custom css)
-                <ul>
-                    <li>createAccount.css</li>
-                    <li>login.css</li>
-                    <li>index.css</li>
-                    <li>profile.css</li>
-                    <li>recommend.css</li>
-                    <li>search.css</li>
-                    <li>watchlist.css</li>
-                </ul>
-            </li>
-            <li>/views (html pages)
-                <ul>
-                    <li>createAccount.ejs</li>
-                    <li>login.ejs</li>
-                    <li>index.ejs</li>
-                    <li>profile.ejs</li>
-                    <li>recommend.ejs</li>
-                    <li>search.ejs</li>
-                    <li>watchlist.ejs</li>
-                </ul>
-            </li>
-            <li>database.js (database connection)</li>
-            <li>app.js (NODE server file - RUN THIS)</li>
-        <ul>
-    </li>
-</ul>
+<img width="1440" alt="Screenshot 2024-04-14 at 17 56 03" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/55ccf4f7-85a8-4abd-a466-c5e432862c1f">
+
+<img width="1440" alt="Screenshot 2024-04-14 at 17 56 45" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/93066a3d-4ecd-44f7-9753-cd55314271d1">
+
+<img width="1440" alt="Screenshot 2024-04-14 at 17 56 27" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/8a04787d-e22f-449a-b4e1-dab830e13232">
+
+<img width="1315" alt="Screenshot 2024-04-11 at 18 06 42" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/b2f23b30-8329-45c9-a1b9-e71c0eaa3400">
+
+<img width="1440" alt="Screenshot 2024-04-14 at 17 56 56" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/76825720-91c8-464a-8b90-14bd2dc06a6a">
