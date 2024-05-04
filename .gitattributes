@@ -1,3 +1,4 @@
 *.bin filter=lfs diff=lfs merge=lfs -text
 webpage/films.json filter=lfs diff=lfs merge=lfs -text
 webpage/film_data.json filter=lfs diff=lfs merge=lfs -text
+oo269/** filter=lfs diff=lfs merge=lfs -text
