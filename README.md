@@ -9,6 +9,7 @@ The application has two servers, a Node server (running on port 8080) that contr
 
 SOFTWARE PRE-REQUISITES:
 <ul>
+<li>npm</li>
 <li>MySql Workbench</li>
 <li>any browser (Chrome recommennded)</li>
 <li>packages in the node_modules folder must stored locally</li>
