@@ -4,6 +4,7 @@
 
 Cinephile.com is a film recommendation website that allows users to browse through films and receive recommendations based on their preferences using Machine Learning algorithms.
 <br>
+<br>
 The application has two servers, a Node server (running on port 8080) that serves the frontend, and Flask server (running on port 8081) that controls the recommendation engine on the backend.
 <br>
 <br>
