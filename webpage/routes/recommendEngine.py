@@ -3,6 +3,9 @@ import numpy as np
 import pandas as pd
 import mysql.connector
 import json
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # ml
 from sklearn.metrics.pairwise import euclidean_distances
@@ -42,6 +45,14 @@ tfidf_vectorizer = TfidfVectorizer()
 cache = Cache(app) #allow caching for fast storage
 CORS(app) #allow request to be made from other ports
 
+def create_db_connection():
+    return mysql.connector.connect(
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_DATABASE")
+    )
+
 # ensure no duplicate cast members
 def remove_duplicates(names):
     if isinstance(names, str):
@@ -62,12 +73,7 @@ def is_english(text):
 def save_mySQL(data):
 
     # MySQL connection configuration
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Leicester69lol",
-        database="users"
-    )
+    mydb = create_db_connection()
 
     # Cursor object to execute SQL queries
     mycursor = mydb.cursor()
@@ -90,12 +96,7 @@ def save_mySQL(data):
 def save_interaction(user_id, tconst, position, similarity):
 
     # MySQL connection configuration
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Leicester69lol",
-        database="users"
-    )
+    mydb = create_db_connection()
 
     mycursor = mydb.cursor()
 
@@ -302,12 +303,7 @@ def INITIALISE_FILM_DATASET():
 # load whole films dataset from db
 def loadAllFilms():
 
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Leicester69lol",
-        database="users"
-    )
+    mydb = create_db_connection()
 
     mycursor = mydb.cursor()
 
@@ -341,12 +337,7 @@ def count_likeable(row):
 # get user loved films from db
 def get_loved_films(user_id):
 
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Leicester69lol",
-        database="users"
-    )
+    mydb = create_db_connection()
 
     mycursor = mydb.cursor()
 
@@ -368,12 +359,7 @@ def get_loved_films(user_id):
 # get user liked attributes from db
 def get_liked_attributes(user_id):
 
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Leicester69lol",
-        database="users"
-    )
+    mydb = create_db_connection()
 
     mycursor = mydb.cursor()
 
@@ -409,12 +395,8 @@ def get_liked_attributes(user_id):
 
 # get user liked cast from db
 def get_liked_cast(user_id):
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Leicester69lol",
-        database="users"
-    )
+
+    mydb = create_db_connection()
 
     mycursor = mydb.cursor()
 
@@ -434,12 +416,7 @@ def get_liked_cast(user_id):
 
 # get user watchlist from db
 def get_watchlist(user_id):
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Leicester69lol",
-        database="users"
-    )
+    mydb = create_db_connection()
 
     mycursor = mydb.cursor()
 
@@ -719,12 +696,7 @@ def recommend_content_films(user_id):
 # return all user_ids from db
 def get_user_ids():
     # Establish a connection to the MySQL database
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Leicester69lol",
-        database="users"
-    )
+    mydb = create_db_connection()
 
     # Create a cursor object to execute SQL queries
     mycursor = mydb.cursor()
@@ -750,12 +722,7 @@ def get_user_ids():
 # get interaction data between user and recommended films
 def get_recommended_interaction_data():
     # MySQL connection configuration
-    mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Leicester69lol",
-        database="users"
-    )
+    mydb = create_db_connection()
 
     # Cursor object to execute SQL queries
     mycursor = mydb.cursor()
@@ -1315,10 +1282,11 @@ schedule.every(2).weeks.do(INITIALISE_FILM_DATASET) #run intialise dataset every
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8081)
+    app.run(host="0.0.0.0", port=5000)
 
     threading.Thread(target=app.run, kwargs={'debug': True, 'port': 5000}).start()
   
     # Run the scheduler in the main thread
     while True:
         schedule.run_pending()
+
