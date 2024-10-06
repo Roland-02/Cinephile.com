@@ -1,3 +1,33 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:54dec9e199b0ac03f8f78a47b652a239f73bcab9b6f8a98203eb4a9d017f70ba
-size 697
+{
+  "name": "Cinephile.com",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ejs",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ajax": "^0.0.4",
+    "axios": "^1.7.7",
+    "bcrypt": "^5.1.1",
+    "bootstrap": "^5.3.3",
+    "cookie-parser": "^1.4.6",
+    "csv-parser": "^3.0.0",
+    "csvtojson": "^2.0.10",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "fs": "^0.0.1-security",
+    "html": "^1.0.0",
+    "mysql": "^2.18.1",
+    "node-fetch": "^3.3.2",
+    "node-gyp": "^10.2.0",
+    "socket.io": "^4.8.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5",
+    "nodemon": "^3.1.7"
+  }
+}
