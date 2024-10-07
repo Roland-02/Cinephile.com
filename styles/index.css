@@ -1,48 +1,11 @@
-/* nav bar */
-.nav-bar {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  background-color: white;
-  border-bottom: 1px solid #ddd; /* Add a bottom border for styling */
-  z-index: 1000; /* Ensure navbar stays on top of other content */
-}
-
-@media screen and (max-width: 991px) {
-  #page_title { /* Hide the title */
-    display: none;
-  }
-  
-}
-
-@media screen and (max-width: 991px) {
-  .menu-btn { 
-    display: none; /* Hide all menu buttons */
-  }
-  
-  #signoutBtn { 
-    display: none; /* Hide the signout button */
-  }
-}
-
-.menu-btn {
-  width:auto;
-  height:auto;
-  margin:2px;
-  padding: 2px;
-  border-left: solid 2px black;
-}
-
 #filterOptions {
   z-index: 9999; /* Adjust the z-index value as needed */
 }
 
-/* END nav bar */
-
 #film-poster {
   position: relative;
   width: 100%;
-  height: 600px;
+  height: 70vh;
 }
 
 #film-poster img {
@@ -103,5 +66,17 @@
 
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@media screen and (max-width: 991px) {
+  .menu-btn { 
+    display: none; /* Hide all menu buttons */
+  }
+    #page_title { /* Hide the title */
+    display: none;
+  }
+  #signoutBtn { 
+    display: none; /* Hide the signout button */
   }
 }

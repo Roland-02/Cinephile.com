@@ -1,29 +1,3 @@
-/* nav bar */
-.nav-bar {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    background-color: white;
-    border-bottom: 1px solid #ddd; /* Add a bottom border for styling */
-    z-index: 1000; /* Ensure navbar stays on top of other content */
-  }
-  
-  @media screen and (max-width: 991px) {
-    #page_title, /* Hide the title */
-    #signoutBtn { /* Hide the sign-out button */
-      display: none;
-    }
-  }
-  
-  .menu-btn {
-    width:auto;
-    height:auto;
-    margin:2px;
-    padding: 2px;
-    border-left: solid 2px black;
-  }
-  
-  /* END nav bar */
 
   #backToTopBtn {
     position: fixed;

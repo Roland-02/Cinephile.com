@@ -90,8 +90,6 @@ window.onload = async function () {
     }
 
     // store batch of 100 films displayed on carousel
-    console.log(currentIndex)
-    console.log(counter)
     var films = await getFilms(counter);
 
     LAST_INDEX = films.length;
@@ -104,8 +102,6 @@ window.onload = async function () {
     async function updateFilm() {
 
         try {
-
-
             //save current position to cache
             localStorage.setItem('counter', counter);
             localStorage.setItem('currentIndex', currentIndex);
@@ -135,7 +131,6 @@ window.onload = async function () {
 
             }
 
-
             //trigger event in index.ejs jquery
             filmInfo.setAttribute('data-tconst', films[currentIndex].tconst);
             const event = new CustomEvent('updateFilm', { detail: films[currentIndex].tconst });
@@ -148,7 +143,7 @@ window.onload = async function () {
             content += `<div id="_filmTitle" class="${likeable}"><strong>${films[currentIndex].primaryTitle}</strong></div>`;
 
             if (films[currentIndex].plot) {
-                content += `<div id="_filmPlot" class="small-text py-1 overflow-scroll mb-2 ${likeable}" style="height: 60px; cursor: pointer;"> <p> ${films[currentIndex].plot} </p> </div>`;
+                content += `<div id="_filmPlot" class="small-text py-1 mb-1 py-1 ${likeable}" style="cursor: pointer;"> <p> ${films[currentIndex].plot} </p> </div>`;
 
             } else {
                 content += `<div> <p> - </p> </div>`;
@@ -160,8 +155,8 @@ window.onload = async function () {
             content += `<div class="row d-flex">`;
 
             //rating
-            content += `<div id="_filmRating" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
-                        <div class="h5 mb-2 border-bottom">RATING</div>`;
+            content += `<div id="_filmRating" class="col-lg col-md col-sm border border-3 mx-3 px-2 ${likeable}">
+                        <div class="h5 mb-1 py-1 border-bottom">RATING</div>`;
 
             if (films[currentIndex].averageRating) {
                 content += `<div class="p text-center">${films[currentIndex].averageRating}</div>`;
@@ -171,8 +166,8 @@ window.onload = async function () {
             content += `</div>`;
 
             //genre
-            content += `<div id="_filmGenre" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
-                        <div class="h5 mb-2 border-bottom">GENRE</div> 
+            content += `<div id="_filmGenre" class="col-lg col-md col-sm border border-3 mx-3 px-2 ${likeable}">
+                        <div class="h5 mb-1 py-1 border-bottom">GENRE</div> 
                         <div class="list-unstyled" style="font-size: 18px;">`;
 
             const genreArray = films[currentIndex].genres.split(',');
@@ -183,8 +178,8 @@ window.onload = async function () {
             content += `</div></div>`;
 
             //runtime
-            content += `<div id="_filmRuntime" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}"> 
-                    <div class="h5 mb-2 border-bottom">RUNTIME</div>`;
+            content += `<div id="_filmRuntime" class="col-lg col-md col-sm border border-3 mx-3 px-2 ${likeable}"> 
+                    <div class="h5 mb-1 py-1 border-bottom">RUNTIME</div>`;
 
             //display time in hr/min
             if (films[currentIndex].runtimeMinutes !== "\\N") {
@@ -212,8 +207,8 @@ window.onload = async function () {
             content += `</div>`;
 
             //release year
-            content += `<div id="_filmYear" class="col-lg col-md col-sm border border-3 mx-3 px-1 ${likeable}">
-                        <div class="h5 mb-2 border-bottom">YEAR</div> 
+            content += `<div id="_filmYear" class="col-lg col-md col-sm border border-3 mx-3 px-2 ${likeable}">
+                        <div class="h5 mb-1 py-1 border-bottom">YEAR</div> 
                         <div class="p text-center"> ${films[currentIndex].startYear} </div>
                     </div>`;
 
@@ -227,15 +222,15 @@ window.onload = async function () {
 
             content += `<div class="col-lg col-md col-sm-12 py-3">
                         <div class="h5 text-center">CAST</div>
-                        <div class="container px-1">
+                        <div class="container px-2">
                             <div class="d-flex justify-content-center" style="flex-wrap: wrap">`;
 
 
             for (const actor of cast) {
                 content += `<div id="${actor}" class="actor d-flex align-items-center ${likeable} cast">
-                            <span class="px-1">|</span>
+                            <span class="px-2">|</span>
                             <span class="medium-text"> ${actor} </span>
-                            <span class="px-1">|</span>
+                            <span class="px-2">|</span>
                         </div>`;
             }
 
@@ -252,8 +247,8 @@ window.onload = async function () {
             var director = films[currentIndex].director || null;
             likeable = director != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
-                    <div class="h5 mb-2 border-bottom">DIRECTOR</div>`;
+            content += `<div id="_filmDirector" class="col-lg col-md col-sm border border-3 mx-3 px-2 ${likeable}">
+                    <div class="h5 mb-1 py-1 border-bottom">DIRECTOR</div>`;
 
             var directorNames = director.split(','); // Split the director names by comma
             directorNames.forEach(name => {
@@ -267,8 +262,8 @@ window.onload = async function () {
             var cinematographer = films[currentIndex].cinematographer || null;
             likeable = cinematographer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmCamera" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
-                    <div class="h5 mb-2 border-bottom">CAMERA</div>`;
+            content += `<div id="_filmCamera" class="col-lg col-md col-sm border border-3 mx-3 px-2 ${likeable}">
+                    <div class="h5 mb-1 py-1 border-bottom">CAMERA</div>`;
 
             var cinematographerNames = cinematographer.split(','); // Split the director names by comma
             cinematographerNames.forEach(name => {
@@ -282,8 +277,8 @@ window.onload = async function () {
             var writer = films[currentIndex].writer || null;
             likeable = writer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmWriter" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
-                    <div class="h5 mb-2 border-bottom">WRITER</div>`;
+            content += `<div id="_filmWriter" class="col-lg col-md col-sm border border-3 mx-3 px-2 ${likeable}">
+                    <div class="h5 mb-1 py-1 border-bottom">WRITER</div>`;
 
             var writerNames = writer.split(','); // Split the director names by comma
             writerNames.forEach(name => {
@@ -305,8 +300,8 @@ window.onload = async function () {
             var producer = films[currentIndex].producer || null;
             likeable = producer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmProducer" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
-                    <div class="h5 mb-2 border-bottom">PRODUCER</div>`;
+            content += `<div id="_filmProducer" class="col-lg col-md col-sm border border-3 mx-3 px-2 ${likeable}">
+                    <div class="h5 mb-1 py-1 border-bottom">PRODUCER</div>`;
 
             var producerNames = producer.split(','); // Split the director names by comma
             producerNames.forEach(name => {
@@ -320,8 +315,8 @@ window.onload = async function () {
             var editor = films[currentIndex].editor || null;
             likeable = editor != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmEditor" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
-                    <div class="h5 mb-2 border-bottom">EDITOR</div>`;
+            content += `<div id="_filmEditor" class="col-lg col-md col-sm border border-3 mx-3 px-2 ${likeable}">
+                    <div class="h5 mb-1 py-1 border-bottom">EDITOR</div>`;
 
             var editorNames = editor.split(','); // Split the director names by comma
             editorNames.forEach(name => {
@@ -335,8 +330,8 @@ window.onload = async function () {
             var composer = films[currentIndex].composer || null;
             likeable = composer != null && user_id != null ? 'likeable' : ''; //add the class only if director is not null
 
-            content += `<div id="_filmComposer" class="col-lg col-md col-sm border border-3 mx-2 px-1 ${likeable}">
-                    <div class="h5 mb-2 border-bottom">COMPOSER</div>`;
+            content += `<div id="_filmComposer" class="col-lg col-md col-sm border border-3 mx-3 px-2 ${likeable}">
+                    <div class="h5 mb-1 py-1 border-bottom">COMPOSER</div>`;
 
             var composerNames = composer.split(','); // Split the director names by comma
             composerNames.forEach(name => {
