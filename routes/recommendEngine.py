@@ -1282,7 +1282,7 @@ schedule.every(2).weeks.do(INITIALISE_FILM_DATASET) #run intialise dataset every
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8081)
 
     threading.Thread(target=app.run, kwargs={'debug': True, 'port': 5000}).start()
   

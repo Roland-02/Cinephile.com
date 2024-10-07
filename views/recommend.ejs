@@ -10,6 +10,7 @@
     <title>Recommend</title>
 
     <link rel="stylesheet" href="/styles/recommend.css" />
+    <link rel="stylesheet" href="/styles/mobile.css" />
     <link rel="stylesheet" href="/bootstrap/css/mdb.min.css" />
     <script src="/scripts/recommend.js"></script>
     <script src="/bootstrap/js/mdb.min.js"></script>
@@ -20,59 +21,57 @@
 
 <body>
 
-    <!-- Nav bar -->
-    <div class="nav-bar py-1 bg-white border-bottom">
-        <div class="container d-flex justify-content-center align-items-center text-center">
-
-            <!-- Left elements -->
-            <div class="col">
-                <% if (session && session.email) { %>
-                    <!-- sign in button -->
-                    <form action="/signout" method="POST">
-                        <button type="submit" id="signoutBtn" class="border rounded nav-link d-inline-block">
-                            <p class="btn mb-0">Sign out</p>
-                        </button>
-                    </form>
-
-                    <% } else { %>
-                        <!-- sign up and sign in buttons -->
-                        <a href="/createAccount" class="border rounded nav-link d-inline-block">
-                            <p class="btn d-md-block mb-0">Sign up</p>
+        <!-- Nav bar -->
+        <div class="nav-container">
+            <div class="nav-bar py-1 bg-white border-bottom">
+    
+                <!-- Left elements -->
+                <div class="nav-left">
+                    <% if (session && session.email) { %>
+                        <!-- sign in button -->
+                        <form action="/signout" method="POST">
+                            <button type="submit" id="signoutBtn" class="border rounded nav-link d-inline-block">
+                                <p class="btn mb-0">Sign out</p>
+                            </button>
+                        </form>
+    
+                        <% } else { %>
+                            <!-- sign up and sign in buttons -->
+                            <a href="/createAccount" class="border rounded nav-link d-inline-block">
+                                <p class="btn d-md-block mb-0">Sign up</p>
+                            </a>
+                            <a href="/login" class="border rounded nav-link d-inline-block">
+                                <p class="btn d-md-block mb-0">Sign in</p>
+                            </a>
+                            <% } %>
+                </div>
+    
+                <!-- Centered title -->
+                <div class="nav-center" id="page_title" style="cursor: pointer;">
+                    <h1>C I N E P H I L E</h1>
+                </div>
+    
+                <!-- Right elements -->
+                <div class="nav-right">
+                    <% if (session && session.email) { %>
+                        <a href="/search" class="border rounded nav-link d-inline-block menu-btn">
+                            <p class="btn btn-sm d-md-block mb-0">Search</p>
                         </a>
-                        <a href="/login" class="border rounded nav-link d-inline-block">
-                            <p class="btn d-md-block mb-0">Sign in</p>
+                        <a href="/recommend" class="border rounded nav-link d-inline-block menu-btn" style="background-color: orange;">
+                            <p class="btn btn-sm d-md-block mb-0">Recommend</p>
+                        </a>
+                        <a href="/watchlist" class="border rounded nav-link d-inline-block menu-btn">
+                            <p class="btn btn-sm d-md-block mb-0">Watchlist</p>
+                        </a>
+                        <a href="/profile" class="border rounded nav-link d-inline-block menu-btn">
+                            <p class="btn btn-sm d-md-block mb-0">My films</p>
                         </a>
                         <% } %>
+                </div>
+    
             </div>
-
-            <!-- Centered title -->
-            <div class="col" id="page_title" style="cursor: pointer;">
-                <h1>C I N E P H I L E</h1>
-            </div>
-
-            <!-- Right elements -->
-            <div class="col text-end">
-                <% if (session && session.email) { %>
-                    <a href="/search" class="border rounded nav-link d-inline-block menu-btn">
-                        <p class="btn btn-sm d-md-block mb-0">Search</p>
-                    </a>
-                    <a href="/recommend" class="border rounded nav-link d-inline-block menu-btn"
-                        style="background-color: orange;">
-                        <p class="btn btn-sm d-md-block mb-0">Recommend</p>
-                    </a>
-                    <a href="/profile" class="border rounded nav-link d-inline-block menu-btn">
-                        <p class="btn btn-sm d-md-block mb-0">My films</p>
-                    </a>
-                    <a href="/watchlist" class="border rounded nav-link d-inline-block menu-btn">
-                        <p class="btn btn-sm d-md-block mb-0">Watchlist</p>
-                    </a>
-                    <% } %>
-            </div>
-
         </div>
-
-    </div>
-    <!-- END nav bar -->
+        <!-- END nav bar -->
 
 
     <!-- page content -->
