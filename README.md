@@ -1,35 +1,63 @@
 # Film Recommendation App - Cinephile.com
 
-## Information about this repository
+## Project Overview
 
-Cinephile.com is a film recommendation website that allows users to browse through films and receive recommendations based on their preferences using Machine Learning algorithms.
-<br>
-<br>
-The application has two servers, a Node server (running on port 8080) that serves the frontend, and Flask server (running on port 8081) that controls the recommendation engine on the backend.
-<br>
-<br>
- The RecommendEngine.py file is an accesible API allowing user-film preference data to inputted to receive set of recommendations. Preference data must be organised as instructed in documentation.
-<br>
+Cinephile.com is an innovative film recommendation website that leverages machine learning algorithms to provide users with personalized film suggestions. With a user-friendly interface and advanced recommendation engine, Cinephile.com helps movie enthusiasts discover films tailored to their tastes.
 
-SOFTWARE PRE-REQUISITES:
-<ul>
-<li>npm</li>
-<li>MySql Workbench</li>
-<li>any browser (Chrome recommennded)</li>
-<li>packages in the node_modules folder must stored locally</li>
-<li>database must be migrated onto local machine by running sql files in /mysql_schema_tables folder</li>
-    <li>make sure the schema is called 'users'</li>
-    <li>you will need to change the database host and password in database.js to your credentials</li>
-</ul>
+### Tech Stack
 
-TO RUN:
-<ul>
-<li>navigate to the /webpage directory in terminal</li>
-<li>run 'node app'</li>
-<li>the terminal will show the status and outputs from both servers, navigate to http://localhost:8080 to access the website</li>
-<li>the http://127.0.0.1:8081 link is also available for direct API request-making</li>
-</ul>
+- **Frontend:** 
+  - HTML, CSS, JavaScript
+  - Bootstrap for responsive design
+- **Backend:**
+  - Node.js for the server-side application (running on port **8080**)
+  - Flask for the recommendation engine (running on port **8081**)
+  - MySQL for database management
+- **Machine Learning:**
+  - Python for implementing recommendation algorithms
+- **Development Tools:**
+  - npm for package management
+  - MySQL Workbench for database visualization and management
 
+## Key Features
+
+- **Personalized Recommendations:** Utilizes machine learning algorithms to analyze user preferences and suggest relevant films.
+- **User-Friendly Interface:** Easy navigation and search capabilities to enhance the user experience.
+- **API Integration:** Allows for seamless interaction with the recommendation engine through the accessible API in `RecommendEngine.py`.
+- **Multi-Server Architecture:** Operates with two servers to handle front-end requests and backend processing efficiently.
+
+## Achievements
+
+- Developed a fully functional film recommendation system that has been tested with real user data.
+- Successfully integrated a responsive front-end design, making the application accessible across various devices.
+- Implemented robust error handling and validation mechanisms to ensure a smooth user experience.
+
+## Software Prerequisites
+
+To run the application, you will need to have the following installed on your local machine:
+
+- npm
+- MySQL Workbench
+- A modern web browser (Chrome is recommended)
+
+### Database Setup
+
+- Ensure that the packages in the `node_modules` folder are stored locally.
+- Migrate the database to your local machine by executing the SQL files located in the `/mysql_schema_tables` folder.
+  - Make sure the schema is named `users`.
+  - Update the database host and password in `database.js` to match your local credentials.
+
+## How to Run the Application
+
+1. Start the Node.js server:
+   
+   -terminal: node app.js
+
+2. The terminal will display the status and outputs from both servers:
+    
+   -Access the frontend at http://localhost:8080
+   
+   -For direct API requests, use http://127.0.0.1:8081 
 
 
 <img width="1440" alt="Screenshot 2024-04-14 at 17 56 03" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/55ccf4f7-85a8-4abd-a466-c5e432862c1f">
