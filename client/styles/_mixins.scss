@@ -1,0 +1,50 @@
+@use 'variables' as *;
+
+// Flexbox utilities
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// Border utilities
+@mixin border-black {
+  border: $border-width $border-style $border-color;
+}
+
+@mixin border-none {
+  border: none !important;
+  outline: none !important;
+}
+
+// Button styles
+@mixin button-base {
+  background-color: $color-white;
+  color: $color-black;
+  cursor: pointer;
+  transition: opacity $transition-fast;
+}
+
+// Spinner animation
+@mixin spinner($size: 40px, $border-size: 4px) {
+  width: $size;
+  height: $size;
+  border: $border-size solid $color-grey-light;
+  border-top: $border-size solid $color-blue;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+// Media queries
+@mixin mobile {
+  @media screen and (max-width: $breakpoint-md) {
+    @content;
+  }
+}
+

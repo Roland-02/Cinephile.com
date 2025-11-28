@@ -1,0 +1,14 @@
+// Main SCSS entry point
+// Import order matters: variables -> mixins -> base -> components -> pages
+
+@use 'variables';
+@use 'mixins';
+@use 'base';
+@use 'navbar';
+@use 'components';
+@use 'pages/index';
+@use 'pages/profile';
+@use 'pages/recommend';
+@use 'pages/search';
+@use 'pages/watchlist';
+

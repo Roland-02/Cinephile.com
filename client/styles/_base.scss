@@ -1,0 +1,161 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// Reset and base styles
+* {
+  box-sizing: border-box;
+  border-color: $color-black !important;
+}
+
+html,
+body {
+  background-color: $color-white !important;
+  color: $color-black !important;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  background-color: $color-white;
+  min-height: 100vh;
+}
+
+.App {
+  background-color: $color-white;
+  min-height: 100vh;
+}
+
+// Override dark mode
+.bg-dark,
+.dark,
+[data-theme="dark"] {
+  background-color: $color-white !important;
+  color: $color-black !important;
+}
+
+// Global container styles
+.container,
+.container-fluid {
+  background-color: $color-white !important;
+}
+
+// Form elements
+input,
+textarea,
+select {
+  @include border-black;
+  background-color: $color-white !important;
+  color: $color-black !important;
+}
+
+// Buttons - remove double borders
+button,
+.btn {
+  @include border-black;
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+  
+  // Remove Bootstrap's default border if it conflicts
+  &.border {
+    border: $border-width $border-style $color-black !important;
+  }
+}
+
+// Cards and panels
+.card,
+.panel,
+.modal-content {
+  background-color: $color-white !important;
+  @include border-black;
+}
+
+// Utility classes
+.error-label {
+  color: $color-red;
+  font-size: $font-size-base;
+}
+
+.medium-text {
+  font-size: $font-size-md;
+  text-align: center;
+}
+
+.small-text {
+  font-size: $font-size-sm;
+}
+
+.clickable {
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+// Links should always show pointer
+a,
+.link {
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+// All interactive elements should show pointer
+button,
+a,
+[role="button"],
+[onclick],
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+// SVG elements that are clickable
+svg[style*="cursor: pointer"],
+svg.clickable {
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+// Loading spinner
+.loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  @include spinner(40px, 4px);
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Flex utilities
+.row.display-flex {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.row.display-flex > [class*='col-'] {
+  display: flex;
+  flex-direction: column;
+}
+

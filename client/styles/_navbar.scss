@@ -1,0 +1,118 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// Navbar container
+.nav-container {
+  @include flex-between;
+  width: 100%;
+}
+
+.nav-bar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: $navbar-height;
+  z-index: $navbar-z-index;
+  @include flex-between;
+  background-color: $color-white;
+  border-bottom: $border-width $border-style $color-black;
+  box-sizing: border-box;
+  padding: 0 $spacing-xl;
+}
+
+.nav-left,
+.nav-right {
+  display: flex;
+  align-items: center;
+}
+
+.nav-left {
+  justify-content: flex-start;
+}
+
+.nav-right {
+  justify-content: flex-end;
+  
+  .menu-item:not(:last-child) {
+    margin-right: $spacing-md;
+  }
+}
+
+.nav-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  @include flex-center;
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+// Menu buttons - fix double border issue
+.menu-btn {
+  width: auto;
+  height: auto;
+  margin: $spacing-xs;
+  padding: $spacing-sm;
+  @include border-black;
+  background-color: $color-white;
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+  
+  // Remove Bootstrap's border class effect to prevent double borders
+  &.border {
+    border: $border-width $border-style $color-black !important;
+  }
+  
+  p {
+    font-size: $font-size-base;
+    margin: 0;
+  }
+  
+  // Active state
+  &.active {
+    background-color: $color-orange;
+  }
+}
+
+// Sign out button
+#signoutBtn {
+  @include border-black;
+  border-radius: $border-radius;
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+  
+  &.border {
+    border: $border-width $border-style $color-black !important;
+  }
+}
+
+// Login icon link - no border
+.nav-link[style*="border: none"] {
+  @include border-none;
+  padding: $spacing-xs;
+}
+
+// Hide on mobile
+@include mobile {
+  .menu-btn {
+    display: none;
+  }
+  
+  #page_title {
+    display: none;
+  }
+  
+  #signoutBtn {
+    display: none;
+  }
+}
+
