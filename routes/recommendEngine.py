@@ -4,6 +4,8 @@ import pandas as pd
 import mysql.connector
 import json
 import os
+import time
+import threading
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -28,22 +30,27 @@ from langdetect import detect
 from multiprocessing import Manager
 
 # flask server
-from flask import Flask, jsonify, request
+from flask import Blueprint, jsonify, request
 from flask_caching import Cache
-from flask_cors import CORS
 import schedule
 import threading
 
-config = {         
-    "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
-    "CACHE_DEFAULT_TIMEOUT": 2073600 #1 day
-}
+# Create blueprint for recommendation routes
+recommend_bp = Blueprint('recommend', __name__)
 
-app = Flask(__name__)
-app.config.from_mapping(config)
+# Cache will be initialized when blueprint is registered with app
+cache = None
 tfidf_vectorizer = TfidfVectorizer()
-cache = Cache(app) #allow caching for fast storage
-CORS(app) #allow request to be made from other ports
+
+def init_recommend_cache(app_instance):
+    """Initialize cache with the Flask app instance"""
+    global cache
+    config = {         
+        "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
+        "CACHE_DEFAULT_TIMEOUT": 2073600 #1 day
+    }
+    app_instance.config.from_mapping(config)
+    cache = Cache(app_instance)
 
 def create_db_connection():
     return mysql.connector.connect(
@@ -929,8 +936,7 @@ data['soup'] = data.apply(lambda x: create_soup(x, attributes), axis=1)
 kmeans = train_kmeans()
 allFilms_cluster_labels = initialise_clusters()
 
-
-@app.route('/update_profile_and_vectors', methods=['POST'])
+@recommend_bp.route('/update_profile_and_vectors', methods=['POST'])
 def initialise_profile_route():
     user_id = request.args.get("user_id") 
 
@@ -984,7 +990,7 @@ def initialise_profile_route():
         return jsonify({"message": "Error loading profile"})
 
 
-@app.route('/cache_recommend_pack', methods=['POST'])
+@recommend_bp.route('/cache_recommend_pack', methods=['POST'])
 def bulk_recommend_route():
     user_id = request.args.get("user_id") 
 
@@ -1085,7 +1091,7 @@ def bulk_recommend_route():
         return jsonify({"message": "User not found"})
 
 
-@app.route('/get_batch', methods=['GET'])
+@recommend_bp.route('/get_batch', methods=['GET'])
 def get_batch_route():
 
     user_id = request.args.get("user_id")
@@ -1111,7 +1117,7 @@ def get_batch_route():
     return jsonify({"films": "-"})
     
 
-@app.route('/get_liked_staff', methods=['GET'])
+@recommend_bp.route('/get_liked_staff', methods=['GET'])
 def get_staff_route():
 
     user_id = request.args.get("user_id")
@@ -1133,7 +1139,7 @@ def get_staff_route():
     return jsonify({"liked_cast": liked_cast_names, "liked_crew": liked_crew_names})
       
 
-@app.route('/get_loved_films', methods=['GET'])
+@recommend_bp.route('/get_loved_films', methods=['GET'])
 def get_loved_route():
     user_id = request.args.get("user_id")
     loved_films = get_loved_films(user_id)
@@ -1141,7 +1147,7 @@ def get_loved_route():
     return jsonify({"films": loved_films_dict})
 
 
-@app.route('/get_liked_films', methods=['GET'])
+@recommend_bp.route('/get_liked_films', methods=['GET'])
 def get_liked_route():
     user_id = request.args.get("user_id")
     user_profile = get_user_profile(user_id)
@@ -1152,7 +1158,7 @@ def get_liked_route():
     return jsonify({"films": liked_films_dict})
 
 
-@app.route('/get_user_watchlist', methods=['GET'])
+@recommend_bp.route('/get_user_watchlist', methods=['GET'])
 def get_watchlist_route():
     user_id = request.args.get("user_id")
     watchlist = get_watchlist(user_id)
@@ -1165,7 +1171,7 @@ def get_watchlist_route():
         return jsonify({"watchlist": {}})
 
 
-@app.route('/get_user_films', methods=['GET'])
+@recommend_bp.route('/get_user_films', methods=['GET'])
 def get_user_films_route():
     user_id = request.args.get("user_id")
     user_profile = get_user_profile(user_id)[0]
@@ -1178,7 +1184,7 @@ def get_user_films_route():
         return jsonify({"tconst": []})
 
 
-@app.route('/get_profile_stats', methods=['GET'])
+@recommend_bp.route('/get_profile_stats', methods=['GET'])
 def get_fav_cast_route():
     user_id = request.args.get("user_id")
     user_profile_df = get_user_profile(user_id)[0]
@@ -1203,7 +1209,7 @@ def get_fav_cast_route():
         return jsonify({"message": True, "cast": top_cast, "crew": top_crew, "genre": top_genres_dict})
 
 
-@app.route('/search_general', methods=['GET'])
+@recommend_bp.route('/search_general', methods=['GET'])
 def search_general():
     filters_str = request.args.get("query")
     page = int(request.args.get("page", 1))  # Default to page 1 if not provided
@@ -1232,7 +1238,7 @@ def search_general():
         return jsonify({'films': []})
 
 
-@app.route('/save_recommended_interaction', methods=['POST'])
+@recommend_bp.route('/save_recommended_interaction', methods=['POST'])
 def interaction():
     user_id = request.args.get("user_id")
     tconst = request.args.get("tconst")
@@ -1242,7 +1248,7 @@ def interaction():
     return jsonify({"message":"interaction stored successfully"})
 
 
-@app.route('/recommender_performance', methods=['GET'])
+@recommend_bp.route('/recommender_performance', methods=['GET'])
 def get_model_stats():
     # output hit rate, precision-k, recall-k
     all_interactions = create_user_ratings_df()
@@ -1281,12 +1287,19 @@ def get_model_stats():
 schedule.every(2).weeks.do(INITIALISE_FILM_DATASET) #run intialise dataset every fortnite - add new films
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8081)
+def start_recommendation_scheduler():
+    """Start the recommendation engine scheduler in a separate thread"""
+    def run_scheduler():
+        while True:
+            schedule.run_pending()
+            time.sleep(60)  # Check every minute
+    
+    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+    scheduler_thread.start()
+    print("Recommendation engine scheduler started")
 
-    threading.Thread(target=app.run, kwargs={'debug': True, 'port': 5000}).start()
-  
-    # Run the scheduler in the main thread
-    while True:
-        schedule.run_pending()
+if __name__ == "__main__":
+    # This block is kept for backward compatibility but won't be used
+    # The blueprint should be registered in server.py instead
+    print("Note: recommendEngine.py should be imported as a blueprint in server.py")
 
