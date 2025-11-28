@@ -1,5 +1,2 @@
-# Ignore everything
-*
-
-# Except for the README.md file
-!README.md
+.env
+/__pycache__

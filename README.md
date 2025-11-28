@@ -1,42 +1,84 @@
-# Film Recommendation App - Cinephile.com
+# Cinephile.com
 
-## Information about this repository
+A movie discovery and recommendation platform built with React and Flask.
 
-Cinephile.com is a film recommendation website that allows users to browse through films and receive recommendations based on their preferences using Machine Learning algorithms.
-<br>
-<br>
-The application has two servers, a Node server (running on port 8080) that serves the frontend, and Flask server (running on port 8081) that controls the recommendation engine on the backend.
-<br>
-<br>
- The RecommendEngine.py file is an accesible API allowing user-film preference data to inputted to receive set of recommendations. Preference data must be organised as instructed in documentation.
-<br>
+## Architecture
 
-SOFTWARE PRE-REQUISITES:
-<ul>
-<li>npm</li>
-<li>MySql Workbench</li>
-<li>any browser (Chrome recommennded)</li>
-<li>packages in the node_modules folder must stored locally</li>
-<li>database must be migrated onto local machine by running sql files in /mysql_schema_tables folder</li>
-    <li>make sure the schema is called 'users'</li>
-    <li>you will need to change the database host and password in database.js to your credentials</li>
-</ul>
+- **Flask Server (port 5000)**: Main server handling all API routes and serving React app
+  - File: `routes/server.py`
+- **Flask Recommendation Engine (port 8081)**: ML-based recommendation service
+  - File: `routes/recommendEngine.py`
+- **React Frontend**: Single Page Application
+  - Built files in `dist/` (production)
+  - Dev server on port 3000 (development)
 
-TO RUN:
-<ul>
-<li>navigate to the /webpage directory in terminal</li>
-<li>run 'node app'</li>
-<li>the terminal will show the status and outputs from both servers, navigate to http://localhost:8080 to access the website</li>
-<li>the http://127.0.0.1:8081 link is also available for direct API request-making</li>
-</ul>
+## Setup
 
+### Install Dependencies
 
+```bash
+# Node.js dependencies
+npm install
 
-<img width="1440" alt="Screenshot 2024-04-14 at 17 56 03" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/55ccf4f7-85a8-4abd-a466-c5e432862c1f">
-<br>
-<img width="1440" alt="Screenshot 2024-04-14 at 17 56 45" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/93066a3d-4ecd-44f7-9753-cd55314271d1">
-<br>
-<img width="1440" alt="Screenshot 2024-04-14 at 17 56 27" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/8a04787d-e22f-449a-b4e1-dab830e13232">
-<br>
-<img width="1440" alt="Screenshot 2024-04-14 at 17 56 56" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/76825720-91c8-464a-8b90-14bd2dc06a6a">
-<br>
+# Python dependencies
+pip install flask flask-cors flask-caching bcrypt mysql-connector-python requests python-dotenv
+```
+
+### Development Mode
+
+1. **Start Recommendation Engine** (in one terminal):
+   ```bash
+   python routes/recommendEngine.py
+   ```
+   This runs on port 8081.
+
+2. **Start Main Flask Server** (in another terminal):
+   ```bash
+   python routes/server.py
+   ```
+   This runs on port 5000 and serves the React app.
+
+3. **Start React Dev Server** (optional, for hot-reload):
+   ```bash
+   npm run dev
+   ```
+   This runs on port 3000 and proxies API calls to Flask.
+
+### Production Mode
+
+1. **Build React app**:
+   ```bash
+   npm run build
+   ```
+
+2. **Start Recommendation Engine**:
+   ```bash
+   python routes/recommendEngine.py
+   ```
+
+3. **Start Main Server**:
+   ```bash
+   python routes/server.py
+   ```
+
+The Flask server will serve the built React app from `dist/`.
+
+## File Structure
+
+- `routes/server.py` - Main Flask server (auth, films, user interactions, React serving)
+- `routes/recommendEngine.py` - Recommendation engine (ML-based recommendations)
+- `routes/tmdb_calls.py` - TMDB API helper functions
+- `src/` - React source code
+- `dist/` - Built React app (generated)
+
+## Environment Variables
+
+Create a `.env` file with:
+- `PORT` - Main server port (default: 5000)
+- `DB_HOST` - MySQL host
+- `DB_USER` - MySQL user
+- `DB_PASSWORD` - MySQL password
+- `DB_DATABASE` - MySQL database name
+- `DB_PORT` - MySQL port
+- `PAGE_SIZE` - Films per page (default: 100)
+- `SECRET` - Session secret
