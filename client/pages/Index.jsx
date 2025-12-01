@@ -664,8 +664,8 @@ const Index = () => {
             {showFilters && (
               <div
                 id="filterOptions"
-                className="container border border-2 rounded-5 m-2 p-3"
-                style={{ backgroundColor: 'white' }}
+                className="container border border-2 m-2 p-3"
+                style={{ backgroundColor: 'white', position: 'relative', zIndex: 10000 }}
               >
                 <form onSubmit={handleFilterSubmit}>
                   {/* Rating */}

@@ -49,6 +49,7 @@
 #next-btn {
   @include border-none;
   cursor: pointer;
+  z-index: 10;
   
   &:hover {
     cursor: pointer;
@@ -65,7 +66,27 @@
   z-index: $filter-z-index;
   background-color: $color-white;
   @include border-black;
+  position: relative;
+  min-width: 200px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  
+  .form-label {
+    font-weight: 500;
+    margin-bottom: $spacing-xs;
+    font-size: $font-size-sm;
+  }
+  
+  .form-select {
+    margin-bottom: $spacing-md;
+    font-size: $font-size-sm;
+  }
+  
+  .btn-primary {
+    width: 100%;
+    font-size: $font-size-md;
+  }
 }
+
 
 // Back to top button
 #backToTopBtn {
