@@ -32,6 +32,7 @@
 
 .nav-right {
   justify-content: flex-end;
+  gap: $spacing-xs;
   
   .menu-item:not(:last-child) {
     margin-right: $spacing-md;
@@ -54,14 +55,25 @@
 .menu-btn {
   width: auto;
   height: auto;
-  margin: $spacing-xs;
-  padding: $spacing-sm;
+  margin: $spacing-xs $spacing-sm;
+  padding: $spacing-sm $spacing-md;
   @include border-black;
   background-color: $color-white;
   cursor: pointer;
+  border-radius: $border-radius;
+  transition: all $transition-fast;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: 500;
   
   &:hover {
     cursor: pointer;
+    background-color: $color-grey-light;
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
   
   // Remove Bootstrap's border class effect to prevent double borders
@@ -72,33 +84,67 @@
   p {
     font-size: $font-size-base;
     margin: 0;
+    font-weight: 500;
+    color: $color-black;
   }
   
   // Active state
   &.active {
     background-color: $color-orange;
+    font-weight: 600;
+    
+    p {
+      font-weight: 600;
+      color: $color-black;
+    }
+    
+    &:hover {
+      background-color: $color-orange;
+      opacity: 0.9;
+    }
   }
 }
 
-// Sign out button
-#signoutBtn {
-  @include border-black;
-  border-radius: $border-radius;
-  cursor: pointer;
-  
-  &:hover {
-    cursor: pointer;
+// Login and logout icons - grow on hover
+.nav-left {
+  .nav-link {
+    // border: none !important;
+    // background: none !important;
+    padding: $spacing-xs;
+    display: inline-block;
+    transition: transform $transition-fast;
+    
+    svg {
+      transition: transform $transition-fast;
+      transform-origin: center;
+      display: block;
+    }
+    
+    &:hover svg {
+      transform: scale(1.1);
+    }
   }
   
-  &.border {
-    border: $border-width $border-style $color-black !important;
+  // Login icon link - no border
+  .nav-link[style*="border: none"] {
+    @include border-none;
   }
-}
-
-// Login icon link - no border
-.nav-link[style*="border: none"] {
-  @include border-none;
-  padding: $spacing-xs;
+  
+  // Logout button
+  form button.nav-link {
+    border: none !important;
+    background: none !important;
+    
+    svg {
+      transition: transform $transition-fast;
+      transform-origin: center;
+      display: block;
+    }
+    
+    &:hover svg {
+      transform: scale(1.1);
+    }
+  }
 }
 
 // Hide on mobile
@@ -111,7 +157,7 @@
     display: none;
   }
   
-  #signoutBtn {
+  .nav-left form {
     display: none;
   }
 }
