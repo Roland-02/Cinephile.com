@@ -79,7 +79,7 @@ const Watchlist = () => {
   }
 
   return (
-    <div className="container" style={{ paddingTop: '60px' }}>
+    <div className="container" style={{ paddingTop: '60px', paddingBottom: '90px' }}>
       <div className="row justify-content-center">
         <div className="col-12 col-md-8" style={{ width: '100%' }}>
           <div id="watchlist-films" className="poster-container" data-id={user_id}>
@@ -130,7 +130,6 @@ const Watchlist = () => {
           id="backToTopBtn"
           className="btn btn-secondary"
           onClick={scrollToTop}
-          style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 }}
         >
           Back to Top
         </button>

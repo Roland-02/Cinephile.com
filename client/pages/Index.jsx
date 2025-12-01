@@ -722,7 +722,7 @@ const Index = () => {
                     </select>
                   </div>
 
-                  <button type="submit" className="btn btn-primary text-start mt-3">
+                  <button type="submit" className="btn btn-primary mt-3">
                     apply
                   </button>
                 </form>
