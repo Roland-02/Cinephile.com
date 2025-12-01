@@ -84,6 +84,7 @@
   .btn-primary {
     width: 100%;
     font-size: $font-size-md;
+    text-align: center;
   }
 }
 
@@ -91,20 +92,24 @@
 // Back to top button
 #backToTopBtn {
   position: fixed;
-  background-color: $color-white;
-  color: $color-black;
-  width: 300px;
-  top: 65px;
+  top: $navbar-height;
   left: 50%;
   transform: translateX(-50%);
+  background-color: $color-white;
+  color: $color-black;
+  width: auto;
+  min-width: 80px;
+  padding: $spacing-xs $spacing-sm;
+  @include border-black;
+  border-radius: $border-radius;
   z-index: $back-to-top-z-index;
-  opacity: 0.8;
-  transition: opacity $transition-fast;
+  opacity: 0.7;
+  transition: all $transition-fast;
   cursor: pointer;
   
   &:hover {
     opacity: 1;
-    cursor: pointer;
+    background-color: $color-grey-light;
   }
 }
 

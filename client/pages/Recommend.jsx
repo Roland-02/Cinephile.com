@@ -125,7 +125,6 @@ const Recommend = () => {
             id="backToTopBtn"
             className="btn btn-secondary"
             onClick={scrollToTop}
-            style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 }}
           >
             Back to Top
           </button>
