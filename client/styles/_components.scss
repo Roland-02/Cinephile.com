@@ -3,7 +3,7 @@
 
 // View container
 .view-container {
-  display: flex;
+  display: ontlex;
   align-items: center;
   flex-direction: column;
   min-height: 100vh;
@@ -84,6 +84,126 @@
   &:hover {
     opacity: 1;
     cursor: pointer;
+  }
+}
+
+// Auth modal
+.auth-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.auth-modal-content {
+  background-color: $color-white;
+  border: $border-width $border-style $color-black;
+  border-radius: $border-radius;
+  padding: $spacing-lg;
+  padding-bottom: $spacing-xl;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  
+  h2 {
+    margin: 0;
+    margin-bottom: $spacing-sm;
+    text-align: center;
+    text-decoration: underline;
+  }
+  
+  // Close button
+  .auth-modal-close {
+    transition: all $transition-fast;
+    
+    &:hover {
+      background-color: $color-grey-light !important;
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+  
+  // Form group with label on top
+  .auth-form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: $spacing-md;
+    
+    .auth-form-label {
+      font-weight: 500;
+      margin-bottom: $spacing-xs;
+      color: $color-black;
+      font-size: $font-size-base;
+      display: block;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: $spacing-sm $spacing-md;
+      border: $border-width $border-style $color-black;
+      border-radius: $border-radius;
+      font-size: $font-size-base;
+      transition: border-color $transition-fast;
+      background-color: $color-white;
+      color: $color-black;
+      
+      &:focus {
+        outline: none;
+        border-color: $color-black;
+        border-width: 2px;
+      }
+      
+      &::placeholder {
+        color: $color-grey;
+        opacity: 0.7;
+      }
+    }
+  }
+  
+  button[type="button"] {
+    border: $border-width $border-style $color-black;
+    background: $color-white;
+    cursor: pointer;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-lg;
+    transition: all $transition-fast;
+    
+    &:hover {
+      background-color: $color-grey-light;
+    }
+  }
+  
+  // Auth modal buttons - prevent text color change on hover
+  .auth-submit-btn {
+    &.btn-primary {
+      color: $color-white;
+      
+      &:hover {
+        color: $color-white !important;
+        background-color: $color-grey;
+      }
+    }
+  }
+  
+  .auth-switch-btn {
+    &.btn-outline-primary {
+      color: $color-black;
+      
+      &:hover {
+        color: $color-black !important;
+        background-color: $color-grey-light;
+      }
+    }
   }
 }
 
