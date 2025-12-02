@@ -812,7 +812,7 @@ const Index = () => {
                       viewBox="0 0 16 16"
                       type="button"
                       onClick={handleUnloveFilm}
-                      style={{ cursor: 'pointer', fill: 'red' }}
+                      style={{ cursor: 'pointer' }}
                     >
                       <path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1" />
                     </svg>
@@ -844,7 +844,7 @@ const Index = () => {
                       type="button"
                       viewBox="0 0 16 16"
                       onClick={handleWatchlistToggle}
-                      style={{ cursor: 'pointer', fill: 'green' }}
+                      style={{ cursor: 'pointer' }}
                     >
                       <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0" />
                     </svg>

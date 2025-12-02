@@ -42,6 +42,50 @@
   }
 }
 
+// Heart and Watchlist buttons
+#heart-filled,
+#heart-blank,
+#watchlist-filled,
+#watchlist-blank {
+  transition: fill $transition-fast, transform $transition-fast;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+#heart-blank {
+  fill: $color-black;
+  
+  &:hover {
+    fill: $color-red;
+  }
+}
+
+#heart-filled {
+  fill: $color-red;
+  
+  &:hover {
+    fill: #cc0000;
+  }
+}
+
+#watchlist-blank {
+  fill: $color-black;
+  
+  &:hover {
+    fill: #28a745;
+  }
+}
+
+#watchlist-filled {
+  fill: #28a745;
+  
+  &:hover {
+    fill: #218838;
+  }
+}
+
 // Carousel controls - no borders
 .carousel-control-prev,
 .carousel-control-next,
@@ -66,6 +110,7 @@
   z-index: $filter-z-index;
   background-color: $color-white;
   @include border-black;
+  border-radius: $border-radius;
   position: relative;
   min-width: 200px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
