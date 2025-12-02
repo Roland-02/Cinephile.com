@@ -26,8 +26,6 @@
 }
 
 // Film attribute boxes hover effects
-#_filmTitle,
-#_filmPlot,
 #_filmRating,
 #_filmGenre,
 #_filmRuntime,
@@ -40,10 +38,41 @@
 #_filmComposer {
   transition: all $transition-fast;
   border-radius: $border-radius;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100px;
+
   
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .h5 {
+    width: 100%;
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: $spacing-sm;
+    padding-bottom: $spacing-xs;
+  }
+  
+  .medium-text {
+    text-align: center;
+    margin-bottom: $spacing-xs;
+  }
+}
+
+#_filmTitle {
+  strong {
+    font-size: $font-size-xxl;
+  }
+}
+
+#_filmPlot {  
+  p {
+    line-height: 1.6;
   }
 }
 
