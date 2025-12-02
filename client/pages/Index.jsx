@@ -511,62 +511,60 @@ const Index = () => {
 
         {/* Director, Camera, Writer */}
         <div className="row d-flex justify-content-center py-2">
-          <div className="row d-flex py-2">
-            {/* Director */}
-            {currentFilm.director && (
-              <div
-                id="_filmDirector"
-                className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Director') ? 'liked' : ''}`}
-                onClick={() => user_id && handleLikeElement('Director')}
-                style={{ cursor: user_id ? 'pointer' : 'default' }}
-              >
-                <div className="h5 mb-1 py-1 border-bottom">DIRECTOR</div>
-                {currentFilm.director.split(',').map((name, idx) => (
-                  <div key={idx} className="p medium-text text-center">
-                    {name.trim()}
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* Director */}
+          {currentFilm.director && (
+            <div
+              id="_filmDirector"
+              className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Director') ? 'liked' : ''}`}
+              onClick={() => user_id && handleLikeElement('Director')}
+              style={{ cursor: user_id ? 'pointer' : 'default' }}
+            >
+              <div className="h5 mb-1 py-1 border-bottom">DIRECTOR</div>
+              {currentFilm.director.split(',').map((name, idx) => (
+                <div key={idx} className="p medium-text text-center">
+                  {name.trim()}
+                </div>
+              ))}
+            </div>
+          )}
 
-            {/* Camera */}
-            {currentFilm.cinematographer && (
-              <div
-                id="_filmCamera"
-                className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Camera') ? 'liked' : ''}`}
-                onClick={() => user_id && handleLikeElement('Camera')}
-                style={{ cursor: user_id ? 'pointer' : 'default' }}
-              >
-                <div className="h5 mb-1 py-1 border-bottom">CAMERA</div>
-                {currentFilm.cinematographer.split(',').map((name, idx) => (
-                  <div key={idx} className="p medium-text text-center">
-                    {name.trim()}
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* Camera */}
+          {currentFilm.cinematographer && (
+            <div
+              id="_filmCamera"
+              className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Camera') ? 'liked' : ''}`}
+              onClick={() => user_id && handleLikeElement('Camera')}
+              style={{ cursor: user_id ? 'pointer' : 'default' }}
+            >
+              <div className="h5 mb-1 py-1 border-bottom">CAMERA</div>
+              {currentFilm.cinematographer.split(',').map((name, idx) => (
+                <div key={idx} className="p medium-text text-center">
+                  {name.trim()}
+                </div>
+              ))}
+            </div>
+          )}
 
-            {/* Writer */}
-            {currentFilm.writer && (
-              <div
-                id="_filmWriter"
-                className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Writer') ? 'liked' : ''}`}
-                onClick={() => user_id && handleLikeElement('Writer')}
-                style={{ cursor: user_id ? 'pointer' : 'default' }}
-              >
-                <div className="h5 mb-1 py-1 border-bottom">WRITER</div>
-                {currentFilm.writer.split(',').map((name, idx) => (
-                  <div key={idx} className="p medium-text text-center">
-                    {name.trim()}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Writer */}
+          {currentFilm.writer && (
+            <div
+              id="_filmWriter"
+              className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Writer') ? 'liked' : ''}`}
+              onClick={() => user_id && handleLikeElement('Writer')}
+              style={{ cursor: user_id ? 'pointer' : 'default' }}
+            >
+              <div className="h5 mb-1 py-1 border-bottom">WRITER</div>
+              {currentFilm.writer.split(',').map((name, idx) => (
+                <div key={idx} className="p medium-text text-center">
+                  {name.trim()}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Producer, Editor, Composer */}
-        <div className="row d-flex py-2">
+        <div className="row d-flex justify-content-center py-2" style={{ paddingBottom: '40px' }}>
           {/* Producer */}
           {currentFilm.producer && (
             <div
