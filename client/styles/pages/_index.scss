@@ -2,5 +2,86 @@
 @use '../mixins' as *;
 
 // Index page specific styles
-// (Most styles are in components, this is for page-specific overrides)
+
+// Cast names styling
+.actor {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius;
+  transition: all $transition-fast;
+  display: inline-flex;
+  align-items: center;
+  
+  &:hover {
+    background-color: $color-grey-light;
+    transform: translateY(-2px);
+  }
+  
+  &.liked {
+    background-color: $color-orange-light;
+    
+    &:hover {
+      background-color: $color-orange;
+    }
+  }
+}
+
+// Film attribute boxes hover effects
+#_filmTitle,
+#_filmPlot,
+#_filmRating,
+#_filmGenre,
+#_filmRuntime,
+#_filmYear,
+#_filmDirector,
+#_filmCamera,
+#_filmWriter,
+#_filmProducer,
+#_filmEditor,
+#_filmComposer {
+  transition: all $transition-fast;
+  border-radius: $border-radius;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Crew boxes - uniform size and positioning
+.crew-box {
+  min-width: 150px;
+  width: 150px;
+  min-height: 100px;
+  padding: $spacing-sm $spacing-md !important;
+  margin: $spacing-sm !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  flex-shrink: 0;
+  transition: all $transition-fast;
+  border-radius: $border-radius;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .h5 {
+    width: 100%;
+    text-align: center;
+    margin-bottom: $spacing-sm;
+    padding-bottom: $spacing-xs;
+  }
+
+  .medium-text {
+    margin-bottom: $spacing-xs;
+  }
+
+  // Empty state styling
+  &.crew-box-empty {
+    opacity: 0.6;
+    cursor: default !important;
+  }
+}
 

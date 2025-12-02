@@ -493,7 +493,7 @@ const Index = () => {
         <div className="col-lg col-md col-sm-12 py-3">
           <div className="h5 text-center">CAST</div>
           <div className="container px-2">
-            <div className="d-flex justify-content-center" style={{ flexWrap: 'wrap' }}>
+            <div className="d-flex justify-content-center align-items-center" style={{ flexWrap: 'wrap', gap: '5px' }}>
               {currentFilm.cast.split(',').map((actor, idx) => (
                 <div
                   key={idx}
@@ -502,9 +502,7 @@ const Index = () => {
                   onClick={() => user_id && handleLikeElement(actor, true)}
                   style={{ cursor: user_id ? 'pointer' : 'default' }}
                 >
-                  <span className="px-2">|</span>
-                  <span className="medium-text">{actor}</span>
-                  <span className="px-2">|</span>
+                  <span className="medium-text">{actor.trim()}</span>
                 </div>
               ))}
             </div>
