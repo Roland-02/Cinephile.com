@@ -27,18 +27,24 @@
 // Likeable elements
 .likeable {
   cursor: pointer;
+  transition: all $transition-fast;
   
   &:hover {
     cursor: pointer;
+    background-color: $color-grey-light;
+    transform: translateY(-2px);
   }
 }
 
 .liked {
   background-color: $color-orange-light;
   cursor: pointer;
+  transition: all $transition-fast;
   
   &:hover {
     cursor: pointer;
+    background-color: $color-orange;
+    transform: translateY(-2px);
   }
 }
 
