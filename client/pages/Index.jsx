@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { getSession } from '../utils/auth';
 
@@ -27,12 +27,36 @@ const Index = () => {
   const session = getSession();
   const user_id = session?.id;
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const tconstParam = searchParams.get('tconst');
-  const pageParam = searchParams.get('page');
+
 
   useEffect(() => {
-    // Load saved state from localStorage
+    const shouldShuffle = localStorage.getItem('shouldShuffle');
+    
+    if (shouldShuffle === 'true') {
+      localStorage.removeItem('shouldShuffle');
+      const shuffleAndReset = async () => {
+        try {
+          const currentUserId = getSession()?.id;
+          const url = currentUserId ? `/api/shuffleFilms?user_id=${currentUserId}` : `/api/shuffleFilms`;
+          await axios.post(url);
+        } catch (error) {
+          console.error('Error shuffling films:', error);
+        }
+        setFiltered(false);
+        setOutside(false);
+        setFilmIndex(0);
+        setCacheStartIndex(0);
+        localStorage.setItem('filmIndex', 0);
+        localStorage.removeItem('films-source');
+        await loadFilms(0);
+      };
+      shuffleAndReset();
+      return;
+    }
+
+    // Normal page load - restore saved state
     const savedIndex = localStorage.getItem('filmIndex');
     const initialIndex = savedIndex ? parseInt(savedIndex) : 0;
     const initialCacheStart = Math.floor(initialIndex / CACHE_SIZE) * CACHE_SIZE;
@@ -47,7 +71,7 @@ const Index = () => {
 
     // Load initial films
     loadFilms(initialCacheStart);
-  }, []);
+  }, [location.key]);
 
   useEffect(() => {
     // Check if current film is in cache, if not load new cache

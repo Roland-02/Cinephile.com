@@ -17,6 +17,7 @@ const Navbar = ({ onLoginClick }) => {
   };
 
   const handleTitleClick = () => {
+    localStorage.setItem('shouldShuffle', 'true');
     navigate('/');
   };
 
