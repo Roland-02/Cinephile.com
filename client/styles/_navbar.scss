@@ -18,21 +18,26 @@
   border-bottom: $border-width $border-style $color-black;
   box-sizing: border-box;
   padding: 0 $spacing-xl;
+  min-width: 0; // Allow flex items to shrink
 }
 
 .nav-left,
 .nav-right {
   display: flex;
   align-items: center;
+  flex-shrink: 0; // Prevent shrinking
+  min-width: 0;
 }
 
 .nav-left {
   justify-content: flex-start;
+  flex: 0 0 auto;
 }
 
 .nav-right {
   justify-content: flex-end;
   gap: $spacing-xs;
+  flex: 0 0 auto;
   
   .menu-item:not(:last-child) {
     margin-right: $spacing-md;
@@ -45,6 +50,18 @@
   transform: translateX(-50%);
   @include flex-center;
   cursor: pointer;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: calc(100% - 300px); // Reserve space for buttons
+  padding: 0 $spacing-sm;
+  z-index: 1;
+  
+  h1 {
+    white-space: nowrap;
+    font-size: clamp(20px, 3vw, 28px); // Keep title bigger
+    margin: 0;
+    letter-spacing: 2px;
+  }
   
   &:hover {
     cursor: pointer;
@@ -55,8 +72,8 @@
 .menu-btn {
   width: auto;
   height: auto;
-  margin: $spacing-xs $spacing-sm;
-  padding: $spacing-sm $spacing-md;
+  margin: $spacing-xs 4px;
+  padding: $spacing-xs $spacing-sm;
   @include border-black;
   background-color: $color-white;
   cursor: pointer;
@@ -65,6 +82,9 @@
   text-decoration: none;
   display: inline-block;
   font-weight: 500;
+  flex-shrink: 1;
+  white-space: nowrap;
+  min-width: 0;
   
   &:hover {
     cursor: pointer;
@@ -82,7 +102,7 @@
   }
   
   p {
-    font-size: $font-size-base;
+    font-size: clamp(11px, 1.2vw, $font-size-base);
     margin: 0;
     font-weight: 500;
     color: $color-black;
@@ -147,18 +167,163 @@
   }
 }
 
-// Hide on mobile
-@include mobile {
+// Responsive adjustments for medium screens
+@media (max-width: 1400px) {
+  .nav-bar {
+    padding: 0 $spacing-md;
+  }
+  
+  .nav-center {
+    max-width: calc(100% - 280px);
+    
+    h1 {
+      font-size: clamp(18px, 2.5vw, 26px);
+    }
+  }
+  
   .menu-btn {
-    display: none;
+    margin: $spacing-xs 3px;
+    padding: $spacing-xs 8px;
+    
+    p {
+      font-size: clamp(11px, 1.1vw, 14px);
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .nav-bar {
+    padding: 0 $spacing-sm;
   }
   
-  #page_title {
-    display: none;
+  .nav-center {
+    max-width: calc(100% - 260px);
+    
+    h1 {
+      font-size: clamp(16px, 2.2vw, 24px);
+      letter-spacing: 1.5px;
+    }
   }
   
-  .nav-left form {
-    display: none;
+  .menu-btn {
+    margin: $spacing-xs 2px;
+    padding: $spacing-xs 6px;
+    
+    p {
+      font-size: clamp(10px, 1vw, 13px);
+    }
+  }
+}
+
+@media (max-width: 992px) {
+  .nav-bar {
+    padding: 0 $spacing-xs;
+  }
+  
+  .nav-center {
+    max-width: calc(100% - 240px);
+    
+    h1 {
+      font-size: clamp(14px, 2vw, 22px);
+      letter-spacing: 1px;
+    }
+  }
+  
+  .menu-btn {
+    margin: $spacing-xs 1px;
+    padding: 4px 5px;
+    
+    p {
+      font-size: clamp(9px, 0.9vw, 12px);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-bar {
+    padding: 0 $spacing-xs;
+    height: auto;
+    min-height: $navbar-height;
+  }
+  
+  .nav-center {
+    position: relative;
+    left: auto;
+    transform: none;
+    max-width: 100%;
+    order: 2;
+    flex: 1 1 100%;
+    padding: $spacing-xs 0;
+    
+    h1 {
+      font-size: clamp(18px, 4vw, 24px);
+      letter-spacing: 2px;
+    }
+  }
+  
+  .nav-left {
+    order: 1;
+    flex: 0 0 auto;
+  }
+  
+  .nav-right {
+    order: 3;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  
+  .menu-btn {
+    margin: 2px;
+    padding: 4px 6px;
+    
+    p {
+      font-size: 10px;
+    }
+  }
+}
+
+// Very small screens - stack vertically if needed
+@media (max-width: 576px) {
+  .nav-bar {
+    flex-direction: column;
+    height: auto;
+    padding: $spacing-xs;
+  }
+  
+  .nav-left,
+  .nav-right {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .nav-center {
+    order: 1;
+    width: 100%;
+    margin: $spacing-xs 0;
+    
+    h1 {
+      font-size: 20px;
+    }
+  }
+  
+  .nav-left {
+    order: 2;
+  }
+  
+  .nav-right {
+    order: 3;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .menu-btn {
+    margin: 2px;
+    padding: 4px 8px;
+    
+    p {
+      font-size: 11px;
+    }
   }
 }
 
