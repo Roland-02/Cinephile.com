@@ -67,8 +67,9 @@
 #_filmTitle {
   transition: all $transition-fast;
   border-radius: $border-radius;
-  padding: $spacing-xs $spacing-sm;
+  padding: 2px $spacing-xs;
   display: inline-block;
+  margin-bottom: 4px;
   
   strong {
     font-size: $font-size-xxl;
@@ -91,11 +92,13 @@
 #_filmPlot {
   transition: all $transition-fast;
   border-radius: $border-radius;
-  padding: $spacing-xs $spacing-sm;
+  padding: 2px $spacing-xs;
   display: inline-block;
+  margin-top: 4px;
   
   p {
     line-height: 1.6;
+    margin: 0;
   }
   
   &:hover {
