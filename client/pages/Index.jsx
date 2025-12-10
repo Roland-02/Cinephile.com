@@ -3,19 +3,17 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { getSession } from '../utils/auth';
 
-const MAX_LOAD = 100;
+const CACHE_SIZE = 250;
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
 const Index = () => {
-  const [films, setFilms] = useState([]);
+  const [filmCache, setFilmCache] = useState([]); // Cache of 250 films
+  const [cacheStartIndex, setCacheStartIndex] = useState(0); // Global index where cache starts
+  const [filmIndex, setFilmIndex] = useState(0); // Single global index for current film
   const [currentFilm, setCurrentFilm] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [counter, setCounter] = useState(0);
   const [isClickLocked, setIsClickLocked] = useState(false);
   const [filtered, setFiltered] = useState(false);
   const [outside, setOutside] = useState(false);
-  const [page, setPage] = useState(1);
-  const [lastIndex, setLastIndex] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [watchList, setWatchList] = useState([]);
   const [myLiked, setMyLiked] = useState([]);
@@ -35,12 +33,12 @@ const Index = () => {
 
   useEffect(() => {
     // Load saved state from localStorage
-    const savedCounter = localStorage.getItem('counter');
-    const savedIndex = localStorage.getItem('currentIndex');
-    if (savedCounter && savedIndex) {
-      setCounter(parseInt(savedCounter));
-      setCurrentIndex(parseInt(savedIndex));
-    }
+    const savedIndex = localStorage.getItem('filmIndex');
+    const initialIndex = savedIndex ? parseInt(savedIndex) : 0;
+    const initialCacheStart = Math.floor(initialIndex / CACHE_SIZE) * CACHE_SIZE;
+
+    setFilmIndex(initialIndex);
+    setCacheStartIndex(initialCacheStart);
 
     // Check if coming from another page
     if (localStorage.getItem('films-source')) {
@@ -48,64 +46,78 @@ const Index = () => {
     }
 
     // Load initial films
-    loadFilms();
+    loadFilms(initialCacheStart);
   }, []);
 
   useEffect(() => {
-    if (films.length > 0) {
+    // Check if current film is in cache, if not load new cache
+    const cacheEndIndex = cacheStartIndex + filmCache.length;
+    if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
+      const newCacheStart = Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
+      loadFilms(newCacheStart);
+    } else if (filmCache.length > 0) {
       updateFilm();
     }
-  }, [films, currentIndex]);
+  }, [filmIndex, filmCache, cacheStartIndex]);
 
-  const getFilms = async (counter) => {
+  const getFilms = async (startGlobalIndex) => {
     try {
-      const currentPage = Math.floor(counter / MAX_LOAD) + 1;
-      setPage(currentPage);
+      // Calculate which pages we need to load (may need multiple pages to get 250 films)
+      const startPage = Math.floor(startGlobalIndex / 100) + 1;
+      const endPage = Math.floor((startGlobalIndex + CACHE_SIZE - 1) / 100) + 1;
 
-      let filmsData;
+      let allFilmsData = [];
+      
       if (filtered) {
-        const response = await fetch(`/api/filteredPageFilms?page=${currentPage}`);
-        if (response.ok) {
-          filmsData = await response.json();
+        // Load all pages needed for 250 films
+        for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+          const response = await fetch(`/api/filteredPageFilms?page=${pageNum}`);
+          if (response.ok) {
+            const pageData = await response.json();
+            allFilmsData = allFilmsData.concat(pageData);
+          }
         }
       } else if (outside) {
         const films_JSON = JSON.parse(localStorage.getItem('films-source'));
-        const startIndex = (currentPage - 1) * MAX_LOAD;
-        const endIndex = parseInt(Number(startIndex) + Number(MAX_LOAD));
-        filmsData = films_JSON.slice(startIndex, endIndex);
+        allFilmsData = films_JSON.slice(startGlobalIndex, startGlobalIndex + CACHE_SIZE);
       } else {
-        const response = await fetch(`/api/indexPageFilms?page=${currentPage}`);
-        if (response.ok) {
-          filmsData = await response.json();
+        // Load all pages needed for 250 films
+        for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+          const response = await fetch(`/api/indexPageFilms?page=${pageNum}`);
+          if (response.ok) {
+            const pageData = await response.json();
+            allFilmsData = allFilmsData.concat(pageData);
+          }
         }
       }
 
-      return filmsData;
+      // Return exactly CACHE_SIZE films (or less if we've reached the end)
+      return allFilmsData.slice(0, CACHE_SIZE);
     } catch (error) {
       console.error('Error fetching films:', error);
       return [];
     }
   };
 
-  const loadFilms = async () => {
+  const loadFilms = async (startIndex) => {
     setLoading(true);
-    const filmsData = await getFilms(counter);
+    const filmsData = await getFilms(startIndex);
     if (filmsData && filmsData.length > 0) {
-      setFilms(filmsData);
-      setLastIndex(filmsData.length < MAX_LOAD ? filmsData.length - 1 : filmsData.length);
+      setFilmCache(filmsData);
+      setCacheStartIndex(startIndex);
     }
     setLoading(false);
   };
 
   const updateFilm = async () => {
-    if (films.length === 0 || currentIndex >= films.length) return;
+    const localIndex = filmIndex - cacheStartIndex;
+    if (filmCache.length === 0 || localIndex < 0 || localIndex >= filmCache.length) return;
 
-    const film = films[currentIndex];
+    const film = filmCache[localIndex];
     setCurrentFilm(film);
 
     // Save current position
-    localStorage.setItem('counter', counter);
-    localStorage.setItem('currentIndex', currentIndex);
+    localStorage.setItem('filmIndex', filmIndex);
 
     // Load user data if authenticated
     if (user_id) {
@@ -149,60 +161,15 @@ const Index = () => {
   const handleNext = async () => {
     if (isClickLocked) return;
     setIsClickLocked(true);
-
-    let newIndex = currentIndex;
-    let newCounter = counter;
-
-    if (currentIndex < lastIndex) {
-      newIndex = currentIndex + 1;
-      newCounter = counter + 1;
-    }
-
-    // Load next batch if needed
-    if (newIndex % MAX_LOAD === 0 && !outside) {
-      const newPage = page + 1;
-      setPage(newPage);
-      const newFilms = await getFilms(newCounter);
-      if (newFilms && newFilms.length > 0) {
-        setFilms(newFilms);
-        setLastIndex(newFilms.length < MAX_LOAD ? newFilms.length - 1 : newFilms.length);
-        setCurrentIndex(0);
-        setCounter(newCounter);
-        return;
-      }
-    }
-
-    setCurrentIndex(newIndex);
-    setCounter(newCounter);
+    setFilmIndex(prev => prev + 1);
+    setIsClickLocked(false);
   };
 
   const handlePrev = async () => {
-    if (isClickLocked || counter === 0) return;
+    if (isClickLocked || filmIndex === 0) return;
     setIsClickLocked(true);
-
-    let newIndex = currentIndex;
-    let newCounter = counter;
-
-    if (currentIndex === 0 && counter !== 0 && !outside) {
-      newIndex = MAX_LOAD;
-      setPage(page - 1);
-      const newFilms = await getFilms(newCounter - MAX_LOAD);
-      if (newFilms && newFilms.length > 0) {
-        setFilms(newFilms);
-        setLastIndex(newFilms.length < MAX_LOAD ? newFilms.length - 1 : newFilms.length);
-        newIndex = MAX_LOAD - 1;
-      }
-    } else {
-      newIndex = currentIndex - 1;
-    }
-
-    newCounter = counter - 1;
-
-    if (newIndex < 0) newIndex = 0;
-    if (newCounter < 0) newCounter = 0;
-
-    setCurrentIndex(newIndex);
-    setCounter(newCounter);
+    setFilmIndex(prev => prev - 1);
+    setIsClickLocked(false);
   };
 
   const handleKeyDown = (e) => {
@@ -221,7 +188,7 @@ const Index = () => {
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, counter, isClickLocked]);
+  }, [filmIndex, isClickLocked]);
 
   const handleLikeElement = async (elementId, isCast = false) => {
     if (!user_id || !currentFilm) return;
@@ -355,9 +322,9 @@ const Index = () => {
       });
       if (response.data) {
         setFiltered(true);
-        setCounter(0);
-        setCurrentIndex(0);
-        await loadFilms();
+        setFilmIndex(0);
+        setCacheStartIndex(0);
+        await loadFilms(0);
       }
     } catch (error) {
       console.error('Error applying filters:', error);
@@ -371,8 +338,7 @@ const Index = () => {
 
     try {
       await axios.post(`/api/shuffleFilms?user_id=${user_id}`);
-      localStorage.setItem('counter', 0);
-      localStorage.setItem('currentIndex', 0);
+      localStorage.setItem('filmIndex', 0);
       localStorage.removeItem('films-source');
       localStorage.removeItem('marker');
       navigate('/');
@@ -751,7 +717,7 @@ const Index = () => {
                 className="carousel-control-prev"
                 type="button"
                 onClick={handlePrev}
-                disabled={counter === 0}
+                disabled={filmIndex === 0}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -772,7 +738,7 @@ const Index = () => {
                 className="carousel-control-next"
                 type="button"
                 onClick={handleNext}
-                disabled={counter >= lastIndex}
+                disabled={filmCache.length === 0 || (filmIndex - cacheStartIndex >= filmCache.length - 1 && filmCache.length < CACHE_SIZE)}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
