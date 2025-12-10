@@ -277,6 +277,20 @@ const Index = () => {
       setIsLoved(true);
       const lovedRes = await axios.get(`/api/getLovedFilms?user_id=${user_id}`);
       setMyLoved(lovedRes.data);
+      
+      // Automatically like all attributes
+      const allElements = ['Title', 'Plot', 'Rating', 'Genre', 'Runtime', 'Year', 'Director', 'Camera', 'Writer', 'Producer', 'Editor', 'Composer'];
+      const allCast = currentFilm.cast ? currentFilm.cast.split(',').map(c => c.trim()) : [];
+      
+      // Add all elements and cast to liked arrays
+      const newLikedElements = [...new Set([...likedElements, ...allElements])];
+      const newLikedCast = [...new Set([...likedCast, ...allCast])];
+      
+      setLikedElements(newLikedElements);
+      setLikedCast(newLikedCast);
+      
+      // Save all liked elements
+      await saveElements(newLikedElements, newLikedCast);
     } catch (error) {
       console.error('Error loving film:', error);
     }
