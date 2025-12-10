@@ -85,7 +85,15 @@ const Profile = () => {
   const displayGenreChart = () => {
     if (!stats.genre || Object.keys(stats.genre).length === 0) return null;
 
-    const genreEntries = Object.entries(stats.genre).sort((a, b) => b[1] - a[1]);
+    // Handle case where genre values might be objects with Count/Genres keys
+    const genreEntries = Object.entries(stats.genre).map(([genre, value]) => {
+      // If value is an object, extract the count
+      const count = typeof value === 'object' && value !== null 
+        ? (value.Count || value.count || 0)
+        : (typeof value === 'number' ? value : 0);
+      return [genre, count];
+    }).sort((a, b) => b[1] - a[1]);
+    
     const total = genreEntries.reduce((sum, [, count]) => sum + count, 0);
 
     return (
@@ -93,7 +101,7 @@ const Profile = () => {
         {genreEntries.map(([genre, count]) => (
           <div key={genre} className="favourite-item">
             <p>
-              <strong>{genre}</strong> - {count} films ({Math.round((count / total) * 100)}%)
+              <strong>{String(genre)}</strong> - {Number(count)} films ({total > 0 ? Math.round((Number(count) / total) * 100) : 0}%)
             </p>
           </div>
         ))}
