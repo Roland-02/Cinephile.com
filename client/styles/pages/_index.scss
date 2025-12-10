@@ -65,14 +65,50 @@
 }
 
 #_filmTitle {
+  transition: all $transition-fast;
+  border-radius: $border-radius;
+  padding: $spacing-xs $spacing-sm;
+  display: inline-block;
+  
   strong {
     font-size: $font-size-xxl;
   }
+  
+  &:hover {
+    background-color: $color-grey-light;
+    transform: translateY(-2px);
+  }
+  
+  &.liked {
+    background-color: $color-orange-light;
+    
+    &:hover {
+      background-color: $color-orange;
+    }
+  }
 }
 
-#_filmPlot {  
+#_filmPlot {
+  transition: all $transition-fast;
+  border-radius: $border-radius;
+  padding: $spacing-xs $spacing-sm;
+  display: inline-block;
+  
   p {
     line-height: 1.6;
+  }
+  
+  &:hover {
+    background-color: $color-grey-light;
+    transform: translateY(-2px);
+  }
+  
+  &.liked {
+    background-color: $color-orange-light;
+    
+    &:hover {
+      background-color: $color-orange;
+    }
   }
 }
 
