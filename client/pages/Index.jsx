@@ -114,6 +114,19 @@ const Index = () => {
     if (filmCache.length === 0 || localIndex < 0 || localIndex >= filmCache.length) return;
 
     const film = filmCache[localIndex];
+    
+    // Preload image to ensure it's ready before rendering
+    const imageUrl = film.poster ? baseImagePath + film.poster : "/images/MissingPoster.jpeg";
+    const imagePreload = new Image();
+    
+    // Wait for image to load, then update everything together
+    await new Promise((resolve, reject) => {
+      imagePreload.onload = resolve;
+      imagePreload.onerror = resolve; // Resolve even on error to show fallback
+      imagePreload.src = imageUrl;
+    });
+
+    // Now update all state together
     setCurrentFilm(film);
 
     // Save current position
@@ -333,19 +346,6 @@ const Index = () => {
     setShowFilters(false);
   };
 
-  const handleRefresh = async () => {
-    if (!user_id) return;
-
-    try {
-      await axios.post(`/api/shuffleFilms?user_id=${user_id}`);
-      localStorage.setItem('filmIndex', 0);
-      localStorage.removeItem('films-source');
-      localStorage.removeItem('marker');
-      navigate('/');
-    } catch (error) {
-      console.error('Error refreshing films:', error);
-    }
-  };
 
   if (loading || !currentFilm) {
     return (
@@ -360,6 +360,27 @@ const Index = () => {
     if (!currentFilm) return null;
 
     const likeableClass = user_id ? 'likeable' : '';
+    
+    // Format runtime
+    const formatRuntime = (runtimeMinutes) => {
+      if (runtimeMinutes === '\\N' || !runtimeMinutes) return '-';
+      const hours = Math.floor(runtimeMinutes / 60);
+      const minutes = runtimeMinutes % 60;
+      if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+      if (hours > 0) return `${hours}h`;
+      if (minutes > 0) return `${minutes}m`;
+      return '-';
+    };
+
+    // Parse arrays
+    const genres = currentFilm.genres ? currentFilm.genres.split(',').map(g => g.trim()) : [];
+    const cast = currentFilm.cast ? currentFilm.cast.split(',').map(c => c.trim()) : [];
+    const directors = currentFilm.director ? currentFilm.director.split(',').map(d => d.trim()) : [];
+    const cinematographers = currentFilm.cinematographer ? currentFilm.cinematographer.split(',').map(c => c.trim()) : [];
+    const writers = currentFilm.writer ? currentFilm.writer.split(',').map(w => w.trim()) : [];
+    const producers = currentFilm.producer ? currentFilm.producer.split(',').map(p => p.trim()) : [];
+    const editors = currentFilm.editor ? currentFilm.editor.split(',').map(e => e.trim()) : [];
+    const composers = currentFilm.composer ? currentFilm.composer.split(',').map(c => c.trim()) : [];
 
     return (
       <div id="film-info" className="h3 text-center" data-email={session?.email} data-id={user_id}>
@@ -370,24 +391,18 @@ const Index = () => {
             onClick={() => user_id && handleLikeElement('Title')}
             style={{ cursor: user_id ? 'pointer' : 'default' }}
           >
-            <strong>{currentFilm.primaryTitle}</strong>
+            <strong>{currentFilm.primaryTitle || ''}</strong>
           </div>
 
           {/* Plot */}
-          {currentFilm.plot ? (
-            <div
-              id="_filmPlot"
-              className={`small-text py-1 mb-1 ${likeableClass} ${likedElements.includes('Plot') ? 'liked' : ''}`}
-              onClick={() => user_id && handleLikeElement('Plot')}
-              style={{ cursor: user_id ? 'pointer' : 'default' }}
-            >
-              <p>{currentFilm.plot}</p>
-            </div>
-          ) : (
-            <div>
-              <p>-</p>
-            </div>
-          )}
+          <div
+            id="_filmPlot"
+            className={`small-text py-1 mb-1 ${likeableClass} ${likedElements.includes('Plot') ? 'liked' : ''}`}
+            onClick={() => user_id && handleLikeElement('Plot')}
+            style={{ cursor: user_id ? 'pointer' : 'default' }}
+          >
+            <p>{currentFilm.plot || ''}</p>
+          </div>
 
         {/* Rating, Genre, Runtime, Year */}
         <div className="row d-flex">
@@ -411,7 +426,7 @@ const Index = () => {
           >
             <div className="h5 mb-1 py-1 border-bottom">GENRE</div>
             <div className="list-unstyled" style={{ fontSize: '18px' }}>
-              {currentFilm.genres.split(',').map((genre, idx) => (
+              {genres.map((genre, idx) => (
                 <li key={idx}>{genre}</li>
               ))}
             </div>
@@ -425,22 +440,7 @@ const Index = () => {
             style={{ cursor: user_id ? 'pointer' : 'default' }}
           >
             <div className="h5 mb-1 py-1 border-bottom">RUNTIME</div>
-            {currentFilm.runtimeMinutes !== '\\N' ? (
-              (() => {
-                const hours = Math.floor(currentFilm.runtimeMinutes / 60);
-                const minutes = currentFilm.runtimeMinutes % 60;
-                if (hours > 0 && minutes > 0) {
-                  return <div className="p text-center">{hours}h {minutes}m</div>;
-                } else if (hours > 0) {
-                  return <div className="p text-center">{hours}h</div>;
-                } else if (minutes > 0) {
-                  return <div className="p text-center">{minutes}m</div>;
-                }
-                return <div className="p text-center">-</div>;
-              })()
-            ) : (
-              <div className="p text-center">-</div>
-            )}
+            <div className="p text-center">{formatRuntime(currentFilm.runtimeMinutes)}</div>
           </div>
 
           {/* Year */}
@@ -451,7 +451,7 @@ const Index = () => {
             style={{ cursor: user_id ? 'pointer' : 'default' }}
           >
             <div className="h5 mb-1 py-1 border-bottom">YEAR</div>
-            <div className="p text-center">{currentFilm.startYear}</div>
+            <div className="p text-center">{currentFilm.startYear || '-'}</div>
           </div>
         </div>
 
@@ -460,15 +460,15 @@ const Index = () => {
           <div className="h5 text-center">CAST</div>
           <div className="container px-2">
             <div className="d-flex justify-content-center align-items-center" style={{ flexWrap: 'wrap', gap: '5px' }}>
-              {currentFilm.cast.split(',').map((actor, idx) => (
+              {cast.map((actor, idx) => (
                 <div
-                  key={idx}
+                  key={`${actor}-${idx}`}
                   id={actor}
                   className={`actor d-flex align-items-center ${likeableClass} cast ${likedCast.includes(actor) ? 'liked' : ''}`}
                   onClick={() => user_id && handleLikeElement(actor, true)}
                   style={{ cursor: user_id ? 'pointer' : 'default' }}
                 >
-                  <span className="medium-text">{actor.trim()}</span>
+                  <span className="medium-text">{actor}</span>
                 </div>
               ))}
             </div>
@@ -478,109 +478,97 @@ const Index = () => {
         {/* Director, Camera, Writer */}
         <div className="row d-flex justify-content-center py-2">
           {/* Director */}
-          {currentFilm.director && (
-            <div
-              id="_filmDirector"
-              className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Director') ? 'liked' : ''}`}
-              onClick={() => user_id && handleLikeElement('Director')}
-              style={{ cursor: user_id ? 'pointer' : 'default' }}
-            >
-              <div className="h5 mb-1 py-1 border-bottom">DIRECTOR</div>
-              {currentFilm.director.split(',').map((name, idx) => (
-                <div key={idx} className="p medium-text text-center">
-                  {name.trim()}
-                </div>
-              ))}
-            </div>
-          )}
+          <div
+            id="_filmDirector"
+            className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Director') ? 'liked' : ''}`}
+            onClick={() => user_id && handleLikeElement('Director')}
+            style={{ cursor: user_id ? 'pointer' : 'default' }}
+          >
+            <div className="h5 mb-1 py-1 border-bottom">DIRECTOR</div>
+            {directors.map((name, idx) => (
+              <div key={`director-${idx}`} className="p medium-text text-center">
+                {name}
+              </div>
+            ))}
+          </div>
 
           {/* Camera */}
-          {currentFilm.cinematographer && (
-            <div
-              id="_filmCamera"
-              className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Camera') ? 'liked' : ''}`}
-              onClick={() => user_id && handleLikeElement('Camera')}
-              style={{ cursor: user_id ? 'pointer' : 'default' }}
-            >
-              <div className="h5 mb-1 py-1 border-bottom">CAMERA</div>
-              {currentFilm.cinematographer.split(',').map((name, idx) => (
-                <div key={idx} className="p medium-text text-center">
-                  {name.trim()}
-                </div>
-              ))}
-            </div>
-          )}
+          <div
+            id="_filmCamera"
+            className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Camera') ? 'liked' : ''}`}
+            onClick={() => user_id && handleLikeElement('Camera')}
+            style={{ cursor: user_id ? 'pointer' : 'default' }}
+          >
+            <div className="h5 mb-1 py-1 border-bottom">CAMERA</div>
+            {cinematographers.map((name, idx) => (
+              <div key={`camera-${idx}`} className="p medium-text text-center">
+                {name}
+              </div>
+            ))}
+          </div>
 
           {/* Writer */}
-          {currentFilm.writer && (
-            <div
-              id="_filmWriter"
-              className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Writer') ? 'liked' : ''}`}
-              onClick={() => user_id && handleLikeElement('Writer')}
-              style={{ cursor: user_id ? 'pointer' : 'default' }}
-            >
-              <div className="h5 mb-1 py-1 border-bottom">WRITER</div>
-              {currentFilm.writer.split(',').map((name, idx) => (
-                <div key={idx} className="p medium-text text-center">
-                  {name.trim()}
-                </div>
-              ))}
-            </div>
-          )}
+          <div
+            id="_filmWriter"
+            className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Writer') ? 'liked' : ''}`}
+            onClick={() => user_id && handleLikeElement('Writer')}
+            style={{ cursor: user_id ? 'pointer' : 'default' }}
+          >
+            <div className="h5 mb-1 py-1 border-bottom">WRITER</div>
+            {writers.map((name, idx) => (
+              <div key={`writer-${idx}`} className="p medium-text text-center">
+                {name}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Producer, Editor, Composer */}
         <div className="row d-flex justify-content-center py-2" style={{ paddingBottom: '40px' }}>
           {/* Producer */}
-          {currentFilm.producer && (
-            <div
-              id="_filmProducer"
-              className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Producer') ? 'liked' : ''}`}
-              onClick={() => user_id && handleLikeElement('Producer')}
-              style={{ cursor: user_id ? 'pointer' : 'default' }}
-            >
-              <div className="h5 mb-1 py-1 border-bottom">PRODUCER</div>
-              {currentFilm.producer.split(',').map((name, idx) => (
-                <div key={idx} className="p medium-text text-center">
-                  {name.trim()}
-                </div>
-              ))}
-            </div>
-          )}
+          <div
+            id="_filmProducer"
+            className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Producer') ? 'liked' : ''}`}
+            onClick={() => user_id && handleLikeElement('Producer')}
+            style={{ cursor: user_id ? 'pointer' : 'default' }}
+          >
+            <div className="h5 mb-1 py-1 border-bottom">PRODUCER</div>
+            {producers.map((name, idx) => (
+              <div key={`producer-${idx}`} className="p medium-text text-center">
+                {name}
+              </div>
+            ))}
+          </div>
 
           {/* Editor */}
-          {currentFilm.editor && (
-            <div
-              id="_filmEditor"
-              className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Editor') ? 'liked' : ''}`}
-              onClick={() => user_id && handleLikeElement('Editor')}
-              style={{ cursor: user_id ? 'pointer' : 'default' }}
-            >
-              <div className="h5 mb-1 py-1 border-bottom">EDITOR</div>
-              {currentFilm.editor.split(',').map((name, idx) => (
-                <div key={idx} className="p medium-text text-center">
-                  {name.trim()}
-                </div>
-              ))}
-            </div>
-          )}
+          <div
+            id="_filmEditor"
+            className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Editor') ? 'liked' : ''}`}
+            onClick={() => user_id && handleLikeElement('Editor')}
+            style={{ cursor: user_id ? 'pointer' : 'default' }}
+          >
+            <div className="h5 mb-1 py-1 border-bottom">EDITOR</div>
+            {editors.map((name, idx) => (
+              <div key={`editor-${idx}`} className="p medium-text text-center">
+                {name}
+              </div>
+            ))}
+          </div>
 
           {/* Composer */}
-          {currentFilm.composer && (
-            <div
-              id="_filmComposer"
-              className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Composer') ? 'liked' : ''}`}
-              onClick={() => user_id && handleLikeElement('Composer')}
-              style={{ cursor: user_id ? 'pointer' : 'default' }}
-            >
-              <div className="h5 mb-1 py-1 border-bottom">COMPOSER</div>
-              {currentFilm.composer.split(',').map((name, idx) => (
-                <div key={idx} className="p medium-text text-center">
-                  {name.trim()}
-                </div>
-              ))}
-            </div>
-          )}
+          <div
+            id="_filmComposer"
+            className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Composer') ? 'liked' : ''}`}
+            onClick={() => user_id && handleLikeElement('Composer')}
+            style={{ cursor: user_id ? 'pointer' : 'default' }}
+          >
+            <div className="h5 mb-1 py-1 border-bottom">COMPOSER</div>
+            {composers.map((name, idx) => (
+              <div key={`composer-${idx}`} className="p medium-text text-center">
+                {name}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -699,14 +687,10 @@ const Index = () => {
             <div className="d-flex align-items-center justify-content-center">
               <div className="carousel-inner">
                 <div id="film-poster" className="carousel-item active">
-                  {currentFilm.poster ? (
-                    <img
-                      src={baseImagePath + currentFilm.poster}
-                      alt={currentFilm.primaryTitle}
-                    />
-                  ) : (
-                    <img src="/images/MissingPoster.jpeg" alt="Poster Not Available" />
-                  )}
+                  <img
+                    src={currentFilm.poster ? baseImagePath + currentFilm.poster : "/images/MissingPoster.jpeg"}
+                    alt={currentFilm.primaryTitle || "Film Poster"}
+                  />
                 </div>
               </div>
 
