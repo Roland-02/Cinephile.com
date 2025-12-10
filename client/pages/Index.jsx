@@ -23,6 +23,7 @@ const Index = () => {
   const [isLoved, setIsLoved] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [loading, setLoading] = useState(true);
+  const hasInitialized = useRef(false);
   
   const session = getSession();
   const user_id = session?.id;
@@ -30,6 +31,74 @@ const Index = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
+
+  // Load user data once on mount or when user_id changes
+  const loadUserData = async () => {
+    if (!user_id) return;
+    
+    const cached = localStorage.getItem('user_data');
+    
+    if (cached) {
+      try {
+        const data = JSON.parse(cached);
+        setWatchList(data.watchlist || []);
+        // Convert liked dictionary to array for state
+        // Dictionary items are { tconst, ...filmProps, elements, cast }
+        // Extract just the film properties (excluding elements and cast) for state
+        const likedDict = data.liked || {};
+        setMyLiked(Object.values(likedDict).map(item => {
+          // Handle both old structure (item.film) and new structure (item.tconst)
+          if (item.film) {
+            // Old structure: { film: {...}, elements: [], cast: [] }
+            return item.film;
+          } else {
+            // New structure: { tconst: "...", ...filmProps, elements: [], cast: [] }
+            const { elements, cast, ...film } = item;
+            return film;
+          }
+        }));
+        setMyLoved(data.loved || []);
+        return; // Use cached data, no API calls needed
+      } catch (e) {
+        console.error('Error parsing cached user data:', e);
+        // Fall through to fetch from API if cache is corrupted
+      }
+    }
+    
+    // Only fetch from API if not in cache
+    try {
+      const [watchListRes, likedRes, lovedRes] = await Promise.all([
+        axios.get(`/api/getWatchlist?user_id=${user_id}`),
+        axios.get(`/api/getLikedFilms?user_id=${user_id}`),
+        axios.get(`/api/getLovedFilms?user_id=${user_id}`),
+      ]);
+
+      // Convert liked array to dictionary with tconst as key
+      // Store full film object, elements, and cast
+      const likedDict = {};
+      likedRes.data.forEach(film => {
+        likedDict[film.tconst] = { ...film, elements: [], cast: [] };
+      });
+
+      const userData = {
+        watchlist: watchListRes.data,
+        liked: likedDict, // Dictionary: { tconst: { film, elements, cast } }
+        loved: lovedRes.data,
+      };
+
+      setWatchList(userData.watchlist);
+      setMyLiked(likedRes.data); // Keep array for state
+      setMyLoved(userData.loved);
+      
+      localStorage.setItem('user_data', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
+
+  const updateUserDataCache = (watchlist, liked, loved) => {
+    localStorage.setItem('user_data', JSON.stringify({ watchlist, liked, loved }));
+  };
 
   useEffect(() => {
     const shouldShuffle = localStorage.getItem('shouldShuffle');
@@ -69,7 +138,10 @@ const Index = () => {
       setOutside(true);
     }
 
-    // Load initial films
+    // Load user data once (only if not cached)
+    loadUserData();
+
+    // Load initial films once
     loadFilms(initialCacheStart);
   }, [location.key]);
 
@@ -123,6 +195,46 @@ const Index = () => {
     }
   };
 
+  const fetchLikedElements = async (filmTconst) => {
+    try {
+      const elementsRes = await axios.get(
+        `/api/getLikedElements?user_id=${user_id}&film_id=${filmTconst}`
+      );
+      const elements = elementsRes.data.likedElements || [];
+      const cast = elementsRes.data.likedCast || [];
+      setLikedElements(elements);
+      setLikedCast(cast);
+      
+      // Update cache in user_data.liked dictionary
+      const cached = localStorage.getItem('user_data');
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          data.liked = data.liked || {};
+          if (data.liked[filmTconst]) {
+            // Update existing entry with elements and cast
+            data.liked[filmTconst].elements = elements;
+            data.liked[filmTconst].cast = cast;
+          } else {
+            // If film not in liked dict, find it from myLiked state
+            const film = myLiked.find(f => f.tconst === filmTconst);
+            if (film) {
+              // Store film properties directly (not nested in film object)
+              data.liked[filmTconst] = { ...film, elements, cast };
+            }
+          }
+          localStorage.setItem('user_data', JSON.stringify(data));
+        } catch (e) {
+          console.error('Error updating cache:', e);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading liked elements:', error);
+      setLikedElements([]);
+      setLikedCast([]);
+    }
+  };
+
   const loadFilms = async (startIndex) => {
     setLoading(true);
     const filmsData = await getFilms(startIndex);
@@ -156,39 +268,42 @@ const Index = () => {
     // Save current position
     localStorage.setItem('filmIndex', filmIndex);
 
-    // Load user data if authenticated
+    // Use cached user data if authenticated
     if (user_id) {
-      try {
-        const [watchListRes, likedRes, lovedRes] = await Promise.all([
-          axios.get(`/api/getWatchlist?user_id=${user_id}`),
-          axios.get(`/api/getLikedFilms?user_id=${user_id}`),
-          axios.get(`/api/getLovedFilms?user_id=${user_id}`),
-        ]);
+      // Check if film is in watchlist (from cache)
+      setIsInWatchlist(watchList.some((f) => f.tconst === film.tconst));
 
-        setWatchList(watchListRes.data);
-        setMyLiked(likedRes.data);
-        setMyLoved(lovedRes.data);
+      // Check if film is loved (from cache)
+      const isLovedFilm = myLoved.some((f) => f.tconst === film.tconst);
+      setIsLoved(isLovedFilm);
 
-        // Check if film is in watchlist
-        setIsInWatchlist(watchListRes.data.some((f) => f.tconst === film.tconst));
-
-        // Check if film is loved
-        const isLovedFilm = lovedRes.data.some((f) => f.tconst === film.tconst);
-        setIsLoved(isLovedFilm);
-
-        // Load liked elements if film is liked
-        if (likedRes.data.some((f) => f.tconst === film.tconst)) {
-          const elementsRes = await axios.get(
-            `/api/getLikedElements?user_id=${user_id}&film_id=${film.tconst}`
-          );
-          setLikedElements(elementsRes.data.likedElements || []);
-          setLikedCast(elementsRes.data.likedCast || []);
+      // Load liked elements if film is liked (from cache)
+      const isFilmLiked = myLiked.some((f) => f.tconst === film.tconst);
+      if (isFilmLiked) {
+        // Check localStorage cache for liked elements in liked dictionary
+        const cached = localStorage.getItem('user_data');
+        if (cached) {
+          try {
+            const data = JSON.parse(cached);
+            const likedFilm = data.liked?.[film.tconst];
+            if (likedFilm && (likedFilm.elements?.length > 0 || likedFilm.cast?.length > 0)) {
+              setLikedElements(likedFilm.elements || []);
+              setLikedCast(likedFilm.cast || []);
+            } else {
+              // Not in cache, fetch from API
+              fetchLikedElements(film.tconst);
+            }
+          } catch (e) {
+            // If cache parse fails, fetch from API
+            fetchLikedElements(film.tconst);
+          }
         } else {
-          setLikedElements([]);
-          setLikedCast([]);
+          // Not in cache, fetch from API
+          fetchLikedElements(film.tconst);
         }
-      } catch (error) {
-        console.error('Error loading user data:', error);
+      } else {
+        setLikedElements([]);
+        setLikedCast([]);
       }
     }
 
@@ -275,8 +390,10 @@ const Index = () => {
         user_id: user_id,
       });
       setIsLoved(true);
-      const lovedRes = await axios.get(`/api/getLovedFilms?user_id=${user_id}`);
-      setMyLoved(lovedRes.data);
+      
+      // Update cache
+      const newLoved = [...myLoved, { tconst: currentFilm.tconst }];
+      setMyLoved(newLoved);
       
       // Automatically like all attributes
       const allElements = ['Title', 'Plot', 'Rating', 'Genre', 'Runtime', 'Year', 'Director', 'Camera', 'Writer', 'Producer', 'Editor', 'Composer'];
@@ -288,6 +405,21 @@ const Index = () => {
       
       setLikedElements(newLikedElements);
       setLikedCast(newLikedCast);
+      
+      // Update liked dictionary in cache
+      const cached = localStorage.getItem('user_data');
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          data.liked = data.liked || {};
+          // Find or use current film, store film properties directly (not nested)
+          const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
+          data.liked[currentFilm.tconst] = { ...film, elements: newLikedElements, cast: newLikedCast };
+          updateUserDataCache(watchList, data.liked, newLoved);
+        } catch (e) {
+          console.error('Error updating cache:', e);
+        }
+      }
       
       // Save all liked elements
       await saveElements(newLikedElements, newLikedCast);
@@ -305,8 +437,20 @@ const Index = () => {
         user_id: user_id,
       });
       setIsLoved(false);
-      const lovedRes = await axios.get(`/api/getLovedFilms?user_id=${user_id}`);
-      setMyLoved(lovedRes.data);
+      
+      // Update cache
+      const newLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
+      setMyLoved(newLoved);
+      const cached = localStorage.getItem('user_data');
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          updateUserDataCache(watchList, data.liked || {}, newLoved);
+        } catch (e) {
+          console.error('Error updating cache:', e);
+        }
+      }
+      
       await saveElements(likedElements, likedCast);
     } catch (error) {
       console.error('Error unloving film:', error);
@@ -322,15 +466,37 @@ const Index = () => {
           film_id: currentFilm.tconst,
           user_id: user_id,
         });
+        // Update cache
+        const newWatchlist = watchList.filter(f => f.tconst !== currentFilm.tconst);
+        setWatchList(newWatchlist);
+        const cached = localStorage.getItem('user_data');
+        if (cached) {
+          try {
+            const data = JSON.parse(cached);
+            updateUserDataCache(newWatchlist, data.liked || {}, myLoved);
+          } catch (e) {
+            console.error('Error updating cache:', e);
+          }
+        }
       } else {
         await axios.post(`/api/addWatchlist`, {
           film_id: currentFilm.tconst,
           user_id: user_id,
         });
+        // Update cache
+        const newWatchlist = [...watchList, { tconst: currentFilm.tconst }];
+        setWatchList(newWatchlist);
+        const cached = localStorage.getItem('user_data');
+        if (cached) {
+          try {
+            const data = JSON.parse(cached);
+            updateUserDataCache(newWatchlist, data.liked || {}, myLoved);
+          } catch (e) {
+            console.error('Error updating cache:', e);
+          }
+        }
       }
       setIsInWatchlist(!isInWatchlist);
-      const watchListRes = await axios.get(`/api/getWatchlist?user_id=${user_id}`);
-      setWatchList(watchListRes.data);
     } catch (error) {
       console.error('Error toggling watchlist:', error);
     }
@@ -346,8 +512,38 @@ const Index = () => {
         elements: elements,
         cast: cast,
       });
-      const likedRes = await axios.get(`/api/getLikedFilms?user_id=${user_id}`);
-      setMyLiked(likedRes.data);
+      
+      // Update liked dictionary in cache
+      const cached = localStorage.getItem('user_data');
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          data.liked = data.liked || {};
+          const isFilmLiked = myLiked.some((f) => f.tconst === currentFilm.tconst);
+          
+          if (elements.length > 0 || cast.length > 0) {
+            // Film has liked elements - add/update in liked dictionary
+            const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
+            // Store film properties directly (not nested in film object)
+            data.liked[currentFilm.tconst] = { ...film, elements, cast };
+            
+            // Update state if film wasn't in liked list
+            if (!isFilmLiked) {
+              const newLiked = [...myLiked, film];
+              setMyLiked(newLiked);
+            }
+          } else if (isFilmLiked) {
+            // Film is liked but has no elements - remove from liked dictionary
+            delete data.liked[currentFilm.tconst];
+            const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
+            setMyLiked(newLiked);
+          }
+          
+          updateUserDataCache(watchList, data.liked, myLoved);
+        } catch (e) {
+          console.error('Error updating cache:', e);
+        }
+      }
     } catch (error) {
       console.error('Error saving elements:', error);
     }
