@@ -61,12 +61,8 @@ const Recommend = () => {
       const response = await axios.get(
         `/api/get_batch?user_id=${user_id}&category=${category}&page=1`
       );
-      const filmsData = response.data.films;
-      if (filmsData && filmsData !== '-') {
-        setFilms(Array.isArray(filmsData) ? filmsData : []);
-      } else {
-        setFilms([]);
-      }
+      const filmsData = response.data.films;      
+      setFilms(filmsData);
     } catch (error) {
       console.error('Error loading recommended films:', error);
       setFilms([]);
