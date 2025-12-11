@@ -483,9 +483,44 @@ const Index = () => {
       const likedCount = newLikedElements.length + newLikedCast.length;
 
       if (likedCount === totalLikeables && !isLoved) {
+        // All elements liked - automatically love the film
         await handleLoveFilm();
       } else if (isLoved && likedCount < totalLikeables) {
-        await handleUnloveFilm();
+        // Loved film but not all elements are liked - automatically unlove but keep current liked elements
+        // Don't call handleUnloveFilm as that clears all elements - just unlove but keep current state
+        try {
+          await axios.post(`/api/unloveFilm`, {
+            film_id: currentFilm.tconst,
+            user_id: user_id,
+          });
+          setIsLoved(false);
+          
+          // Update cache
+          const newLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
+          setMyLoved(newLoved);
+          
+          // Keep current liked elements (film goes from loved to liked, other attributes stay highlighted)
+          const cached = localStorage.getItem('user_data');
+          if (cached) {
+            try {
+              const data = JSON.parse(cached);
+              data.liked = data.liked || {};
+              const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
+              data.liked[currentFilm.tconst] = { ...film, elements: newLikedElements, cast: newLikedCast };
+              // Update myLiked state if not already there
+              if (!myLiked.some(f => f.tconst === currentFilm.tconst)) {
+                setMyLiked([...myLiked, film]);
+              }
+              updateUserDataCache(watchList, data.liked, newLoved);
+            } catch (e) {
+              console.error('Error updating cache:', e);
+            }
+          }
+          
+          await saveElements(newLikedElements, newLikedCast);
+        } catch (error) {
+          console.error('Error unloving film:', error);
+        }
       } else {
         await saveElements(newLikedElements, newLikedCast);
       }
@@ -552,17 +587,30 @@ const Index = () => {
       // Update cache
       const newLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
       setMyLoved(newLoved);
+      
+      // Remove all highlights (clear all liked elements and cast) when button is pressed
+      setLikedElements([]);
+      setLikedCast([]);
+      
+      // Update cache - remove from liked dictionary since all elements are unliked
       const cached = localStorage.getItem('user_data');
       if (cached) {
         try {
           const data = JSON.parse(cached);
-          updateUserDataCache(watchList, data.liked || {}, newLoved);
+          data.liked = data.liked || {};
+          // Remove from liked dictionary since all elements are unliked
+          delete data.liked[currentFilm.tconst];
+          // Update myLiked state - remove if it was there
+          const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
+          setMyLiked(newLiked);
+          updateUserDataCache(watchList, data.liked, newLoved);
         } catch (e) {
           console.error('Error updating cache:', e);
         }
       }
       
-      await saveElements(likedElements, likedCast);
+      // Save empty elements (remove all highlights)
+      await saveElements([], []);
     } catch (error) {
       console.error('Error unloving film:', error);
     }
