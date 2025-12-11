@@ -25,7 +25,12 @@
   font-weight: 400;
   text-align: left;
   text-decoration: underline;
-  margin-bottom: $spacing-xs;
+  margin-bottom: $spacing-sm;
+  margin-top: $spacing-md;
+  
+  &:first-of-type {
+    margin-top: 0;
+  }
 }
 
 .clickable-film {
@@ -69,9 +74,14 @@
 // Profile stats
 .favourite-item {
   width: 100%;
-  height: 20vh;
-  flex-grow: 1;
-  margin-bottom: $spacing-sm;
+  min-height: auto;
+  margin-bottom: $spacing-md;
+  padding: $spacing-xs 0;
+  
+  p {
+    margin: $spacing-xs 0;
+    line-height: 1.6;
+  }
 }
 
 ol {
@@ -100,9 +110,14 @@ li {
 }
 
 #analyticsContent {
-  position: fixed;
-  top: 60px;
-  right: 1px;
+  position: relative;
+  padding: $spacing-md;
+  height: 100%;
+  
+  .container {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
 }
 
 #loved,
