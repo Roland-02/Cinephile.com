@@ -577,8 +577,7 @@ const Index = () => {
   };
 
   const handleFilterSubmit = async (e) => {
-    e.preventDefault();
-    
+    e.preventDefault();    
     // Use current filter values from state
     const filter = {
       rating: filterValues.rating,
@@ -933,7 +932,7 @@ const Index = () => {
                       onChange={(e) => setFilterValues({...filterValues, runtime: e.target.value})}
                     >
                       <option value="Any">Any</option>
-                      {['≤ 1 Hr', '≤ 1Hr 30m', '≤ 2Hrs', '≤ 2Hrs 30m', '≤ 3Hrs', 'really long...'].map((runtime) => (
+                      {['≤ 1Hr', '≤ 1Hr 30m', '≤ 2Hrs', '≤ 2Hrs 30m', '≤ 3Hrs', 'really long...'].map((runtime) => (
                         <option key={runtime} value={runtime}>{runtime}</option>
                       ))}
                     </select>

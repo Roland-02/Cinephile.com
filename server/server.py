@@ -98,8 +98,8 @@ def login():
             
             # Update profile and cache films in recommendation engine
             try:
-                requests.post(f'{RECOMMEND_ENGINE_URL}/update_profile_and_vectors?user_id={user_id}', timeout=10)
-                requests.post(f'{RECOMMEND_ENGINE_URL}/cache_recommend_pack?user_id={user_id}', timeout=10)
+                request.post(f'{RECOMMEND_ENGINE_URL}/update_profile_and_vectors?user_id={user_id}', timeout=10)
+                request.post(f'{RECOMMEND_ENGINE_URL}/cache_recommend_pack?user_id={user_id}', timeout=10)
             except Exception as e:
                 print(f"Warning: Could not update profile: {e}")
             
@@ -149,7 +149,7 @@ def create_account():
         
         # Update profile in recommendation engine
         try:
-            requests.post(f'{RECOMMEND_ENGINE_URL}/update_profile_and_vectors?user_id={user_id}', timeout=10)
+            request.post(f'{RECOMMEND_ENGINE_URL}/update_profile_and_vectors?user_id={user_id}', timeout=10)
         except Exception as e:
             print(f"Warning: Could not update profile: {e}")
         
@@ -244,16 +244,28 @@ def filter_films():
                 if filter_data.get('runtime') != 'Any':
                     runtime = filter_data['runtime']
                     runtime_filters = {
-                        '≤ 1 Hr': lambda x: x <= 60,
+                        '≤ 1Hr': lambda x: x <= 60,
                         '≤ 1Hr 30m': lambda x: 60 < x <= 90,
                         '≤ 2Hrs': lambda x: 90 < x <= 120,
                         '≤ 2Hrs 30m': lambda x: 120 < x <= 150,
                         '≤ 3Hrs': lambda x: 150 < x <= 180,
                         'really long...': lambda x: x > 180
                     }
-                    if runtime in runtime_filters:
-                        filteredFilms_global = [f for f in filteredFilms_global 
-                                               if f.get('runtimeMinutes') and runtime_filters[runtime](f['runtimeMinutes'])]
+
+                    def is_valid_runtime(film):
+                        film_runtime = film.get('runtimeMinutes')
+                        try:
+                            runtime_int = int(film_runtime)
+
+                            # pass the integer to the lambda
+                            if runtime in runtime_filters:
+                                return runtime_filters[runtime](runtime_int)
+                            return False
+
+                        except Exception:
+                            return False
+                        
+                    filteredFilms_global = [f for f in filteredFilms_global if is_valid_runtime(f)]
                 
                 if filter_data.get('year') != 'Any':
                     year_ranges = {
@@ -284,7 +296,7 @@ def shuffle_films():
         exclude_tconsts = []
         if user_id:
             try:
-                exclude_res = requests.get(f'{RECOMMEND_ENGINE_URL}/get_user_films?user_id={user_id}', timeout=5)
+                exclude_res = request.get(f'{RECOMMEND_ENGINE_URL}/get_user_films?user_id={user_id}', timeout=5)
                 exclude_tconsts = exclude_res.json().get('tconsts', [])
             except:
                 pass
