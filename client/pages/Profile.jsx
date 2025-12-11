@@ -70,6 +70,10 @@ const Profile = () => {
     navigate('/index');
   };
 
+  const handleItemClick = (name) => {
+    navigate(`/search?query=${encodeURIComponent(name)}`);
+  };
+
   const displayStats = (items) => {
     if (!items || items.length === 0) return <p></p>;
 
@@ -81,9 +85,15 @@ const Profile = () => {
           const count = typeof item === 'object' && item !== null ? item.count : null;
           
           return (
-            <div key={index} className="favourite-item">
+            <div 
+              key={index} 
+              className="favourite-item"
+              onClick={() => handleItemClick(name)}
+              style={{ cursor: 'pointer' }}
+            >
               <p>
-                {index + 1}. <strong>{name}</strong>
+                <span style={{ marginRight: '12px' }}>{index + 1}.</span>
+                <strong>{name}</strong>
                 {count !== null && count !== undefined && ` - ${count} film${count !== 1 ? 's' : ''}`}
               </p>
             </div>
@@ -160,7 +170,12 @@ const Profile = () => {
           {genreEntries.map((item, index) => {
             const percentage = Math.round((item.count / total) * 100);
             return (
-              <div key={index} className="favourite-item" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <div 
+                key={index} 
+                className="favourite-item" 
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', cursor: 'pointer' }}
+                onClick={() => handleItemClick(item.genre)}
+              >
                 <div
                   style={{
                     width: '15px',
@@ -171,7 +186,8 @@ const Profile = () => {
                   }}
                 />
                 <p style={{ margin: 0 }}>
-                  {index + 1}. <strong>{item.genre}</strong>
+                  <span style={{ marginRight: '12px' }}>{index + 1}.</span>
+                  <strong>{item.genre}</strong>
                 </p>
               </div>
             );
@@ -317,28 +333,35 @@ const Profile = () => {
         <div className="col-lg-6 col-md-6 col-sm-12" id="analyticsContent">
           <div className="main-title">my analytics</div>
           <div className="container d-flex flex-column" style={{ padding: '20px', maxHeight: '80vh', overflowY: 'auto' }}>
-            {/* Top actors */}
-            <div className="secondary-title">Top actors</div>
-            <div id="cast-box">
-              {stats.cast && stats.cast.length > 0 ? (
-                displayStats(stats.cast)
-              ) : (
-                <p></p>
-              )}
-            </div>
+            {/* Top actors and Top film-makers side by side */}
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', flexWrap: 'wrap' }}>
+              {/* Top actors */}
+              <div style={{ flex: 1, minWidth: '250px' }}>
+                <div className="secondary-title">Top actors</div>
+                <div id="cast-box">
+                  {stats.cast && stats.cast.length > 0 ? (
+                    displayStats(stats.cast)
+                  ) : (
+                    <p></p>
+                  )}
+                </div>
+              </div>
 
-            {/* Top film-makers */}
-            <div className="secondary-title">Top film-makers</div>
-            <div id="crew-box">
-              {stats.crew && stats.crew.length > 0 ? (
-                displayStats(stats.crew)
-              ) : (
-                <p></p>
-              )}
+              {/* Top film-makers */}
+              <div style={{ flex: 1, minWidth: '250px' }}>
+                <div className="secondary-title">Top film-makers</div>
+                <div id="crew-box">
+                  {stats.crew && stats.crew.length > 0 ? (
+                    displayStats(stats.crew)
+                  ) : (
+                    <p></p>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Top genres */}
-            <div className="secondary-title">Top genres</div>
+            <div className="secondary-title" style={{ marginTop: '20px', textAlign: 'center' }}>Top genres</div>
             <div id="genre-box">
               {stats.genre && (Array.isArray(stats.genre) ? stats.genre.length > 0 : Object.keys(stats.genre).length > 0) ? (
                 displayGenreChart()
