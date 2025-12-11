@@ -138,30 +138,49 @@ const Index = () => {
     // Normal page load - restore saved state
     const savedIndex = localStorage.getItem('filmIndex');
     const initialIndex = savedIndex ? parseInt(savedIndex) : 0;
-    const initialCacheStart = Math.floor(initialIndex / CACHE_SIZE) * CACHE_SIZE;
-
-    setFilmIndex(initialIndex);
-    setCacheStartIndex(initialCacheStart);
-
+    
     // Check if coming from another page
-    if (localStorage.getItem('films-source')) {
+    const hasFilmsSource = localStorage.getItem('films-source');
+    let initialCacheStart;
+    
+    if (hasFilmsSource) {
       setOutside(true);
+      // Clear filters when coming from Profile/other pages
+      setFiltered(false);
+      
+      // For outside films, calculate cache start based on the actual film list size
+      const films_JSON = JSON.parse(hasFilmsSource);
+      const totalFilms = films_JSON.length;
+      // If the list is smaller than cache size, load from 0. Otherwise, load the chunk containing the target film
+      initialCacheStart = totalFilms < CACHE_SIZE 
+        ? 0 
+        : Math.floor(initialIndex / CACHE_SIZE) * CACHE_SIZE;
+      
+      setFilmIndex(initialIndex);
+      setCacheStartIndex(initialCacheStart);
+    } else {
+      // Normal behavior for regular films
+      initialCacheStart = Math.floor(initialIndex / CACHE_SIZE) * CACHE_SIZE;
+      setFilmIndex(initialIndex);
+      setCacheStartIndex(initialCacheStart);
     }
 
-    // Restore filter values from localStorage
-    const savedFilters = localStorage.getItem('activeFilters');
-    if (savedFilters) {
-      try {
-        const filters = JSON.parse(savedFilters);
-        setFilterValues(filters);
-        // Check if filters are active (not all "Any")
-        const hasActiveFilters = !(filters.rating === 'Any' && filters.genre === 'Any' && 
-                                   filters.runtime === 'Any' && filters.year === 'Any');
-        if (hasActiveFilters) {
-          setFiltered(true);
+    // Restore filter values from localStorage (only if not coming from another page)
+    if (!localStorage.getItem('films-source')) {
+      const savedFilters = localStorage.getItem('activeFilters');
+      if (savedFilters) {
+        try {
+          const filters = JSON.parse(savedFilters);
+          setFilterValues(filters);
+          // Check if filters are active (not all "Any")
+          const hasActiveFilters = !(filters.rating === 'Any' && filters.genre === 'Any' && 
+                                     filters.runtime === 'Any' && filters.year === 'Any');
+          if (hasActiveFilters) {
+            setFiltered(true);
+          }
+        } catch (e) {
+          console.error('Error parsing saved filters:', e);
         }
-      } catch (e) {
-        console.error('Error parsing saved filters:', e);
       }
     }
 
@@ -175,23 +194,51 @@ const Index = () => {
   useEffect(() => {
     // Check if current film is in cache, if not load new cache
     const cacheEndIndex = cacheStartIndex + filmCache.length;
-    if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
-      const newCacheStart = Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
-      loadFilms(newCacheStart);
-    } else if (filmCache.length > 0) {
-      updateFilm();
+    
+    // If we're outside (from Profile/other pages), check bounds against the source films
+    if (outside) {
+      const films_JSON = JSON.parse(localStorage.getItem('films-source') || '[]');
+      const totalFilms = films_JSON.length;
+      
+      // Ensure filmIndex is within bounds
+      if (filmIndex >= totalFilms) {
+        setFilmIndex(Math.max(0, totalFilms - 1));
+        return;
+      }
+      
+      // For outside films, if the current film is not in cache, load the correct chunk
+      if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
+        // For small sets, load from 0. For larger sets, load the chunk containing the target film
+        const newCacheStart = totalFilms < CACHE_SIZE 
+          ? 0 
+          : Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
+        loadFilms(newCacheStart);
+      } else if (filmCache.length > 0) {
+        updateFilm();
+      }
+    } else {
+      // Normal behavior for non-outside films
+      if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
+        const newCacheStart = Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
+        loadFilms(newCacheStart);
+      } else if (filmCache.length > 0) {
+        updateFilm();
+      }
     }
-  }, [filmIndex, filmCache, cacheStartIndex]);
+  }, [filmIndex, filmCache, cacheStartIndex, outside]);
 
   const getFilms = async (startGlobalIndex) => {
     try {
-      // Calculate which pages we need to load (may need multiple pages to get 250 films)
-      const startPage = Math.floor(startGlobalIndex / 100) + 1;
-      const endPage = Math.floor((startGlobalIndex + CACHE_SIZE - 1) / 100) + 1;
-
+      // Check if we have films-source in localStorage (coming from Profile/other pages)
+      // Check this directly instead of relying on state which might not be updated yet
+      const filmsSource = localStorage.getItem('films-source');
+      
       let allFilmsData = [];
       
       if (filtered) {
+        // Calculate which pages we need to load (may need multiple pages to get 250 films)
+        const startPage = Math.floor(startGlobalIndex / 100) + 1;
+        const endPage = Math.floor((startGlobalIndex + CACHE_SIZE - 1) / 100) + 1;
         // Load all pages needed for 250 films
         for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
           const response = await fetch(`/api/filteredPageFilms?page=${pageNum}`);
@@ -200,10 +247,22 @@ const Index = () => {
             allFilmsData = allFilmsData.concat(pageData);
           }
         }
-      } else if (outside) {
-        const films_JSON = JSON.parse(localStorage.getItem('films-source'));
-        allFilmsData = films_JSON.slice(startGlobalIndex, startGlobalIndex + CACHE_SIZE);
+      } else if (filmsSource) {
+        // Coming from Profile/other pages - load from stored list
+        const films_JSON = JSON.parse(filmsSource);
+        // If the list is smaller than cache size, load all films from 0
+        if (films_JSON.length < CACHE_SIZE) {
+          allFilmsData = films_JSON.slice(0);
+        } else {
+          // Make sure we don't go beyond the array length
+          const endIndex = Math.min(startGlobalIndex + CACHE_SIZE, films_JSON.length);
+          allFilmsData = films_JSON.slice(startGlobalIndex, endIndex);
+        }
       } else {
+        // Normal behavior - load from API
+        // Calculate which pages we need to load (may need multiple pages to get 250 films)
+        const startPage = Math.floor(startGlobalIndex / 100) + 1;
+        const endPage = Math.floor((startGlobalIndex + CACHE_SIZE - 1) / 100) + 1;
         // Load all pages needed for 250 films
         for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
           const response = await fetch(`/api/indexPageFilms?page=${pageNum}`);
@@ -340,14 +399,39 @@ const Index = () => {
   const handleNext = async () => {
     if (isClickLocked) return;
     setIsClickLocked(true);
-    setFilmIndex(prev => prev + 1);
+    
+    setFilmIndex(prev => {
+      // If we're outside (from Profile/other pages), check bounds
+      if (outside) {
+        const films_JSON = JSON.parse(localStorage.getItem('films-source') || '[]');
+        const totalFilms = films_JSON.length;
+        // Loop back to 0 if we reach the end
+        if (prev + 1 >= totalFilms) {
+          return 0;
+        }
+      }
+      return prev + 1;
+    });
+    
     setIsClickLocked(false);
   };
 
   const handlePrev = async () => {
-    if (isClickLocked || filmIndex === 0) return;
+    if (isClickLocked) return;
     setIsClickLocked(true);
-    setFilmIndex(prev => prev - 1);
+    
+    setFilmIndex(prev => {
+      if (prev === 0) {
+        // If we're outside, loop to the end
+        if (outside) {
+          const films_JSON = JSON.parse(localStorage.getItem('films-source') || '[]');
+          return Math.max(0, films_JSON.length - 1);
+        }
+        return 0;
+      }
+      return prev - 1;
+    });
+    
     setIsClickLocked(false);
   };
 

@@ -55,13 +55,9 @@ const Profile = () => {
   };
 
   const handleFilmClick = (film, filmIndex, filmList) => {
-    const page = Math.floor(filmIndex / 100) + 1;
-    const startIndex = (page - 1) * 100;
-    const currentIndex = filmIndex - startIndex;
-    const counter = filmIndex;
-
-    localStorage.setItem('counter', counter);
-    localStorage.setItem('currentIndex', currentIndex);
+    // Set the film index that Index.jsx expects
+    localStorage.setItem('filmIndex', filmIndex.toString());
+    // Store the film list so Index.jsx knows we're coming from another page
     localStorage.setItem('films-source', JSON.stringify(filmList));
     navigate('/index');
   };
