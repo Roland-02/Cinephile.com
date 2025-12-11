@@ -98,8 +98,8 @@ def login():
             
             # Update profile and cache films in recommendation engine
             try:
-                request.post(f'{RECOMMEND_ENGINE_URL}/update_profile_and_vectors?user_id={user_id}', timeout=10)
-                request.post(f'{RECOMMEND_ENGINE_URL}/cache_recommend_pack?user_id={user_id}', timeout=10)
+                request.post(f'/api/update_profile_and_vectors?user_id={user_id}', timeout=10)
+                request.post(f'/api/cache_recommend_pack?user_id={user_id}', timeout=10)
             except Exception as e:
                 print(f"Warning: Could not update profile: {e}")
             
@@ -149,7 +149,7 @@ def create_account():
         
         # Update profile in recommendation engine
         try:
-            request.post(f'{RECOMMEND_ENGINE_URL}/update_profile_and_vectors?user_id={user_id}', timeout=10)
+            request.post(f'/api/update_profile_and_vectors?user_id={user_id}', timeout=10)
         except Exception as e:
             print(f"Warning: Could not update profile: {e}")
         
@@ -296,7 +296,7 @@ def shuffle_films():
         exclude_tconsts = []
         if user_id:
             try:
-                exclude_res = request.get(f'{RECOMMEND_ENGINE_URL}/get_user_films?user_id={user_id}', timeout=5)
+                exclude_res = request.get(f'/api/get_user_films?user_id={user_id}', timeout=5)
                 exclude_tconsts = exclude_res.json().get('tconsts', [])
             except:
                 pass
