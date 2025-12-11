@@ -23,6 +23,12 @@ const Index = () => {
   const [isLoved, setIsLoved] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [filterValues, setFilterValues] = useState({
+    rating: 'Any',
+    genre: 'Any',
+    runtime: 'Any',
+    year: 'Any'
+  });
   const hasInitialized = useRef(false);
   
   const session = getSession();
@@ -119,6 +125,10 @@ const Index = () => {
         setCacheStartIndex(0);
         localStorage.setItem('filmIndex', 0);
         localStorage.removeItem('films-source');
+        // Reset filters
+        const defaultFilters = { rating: 'Any', genre: 'Any', runtime: 'Any', year: 'Any' };
+        setFilterValues(defaultFilters);
+        localStorage.setItem('activeFilters', JSON.stringify(defaultFilters));
         await loadFilms(0);
       };
       shuffleAndReset();
@@ -136,6 +146,23 @@ const Index = () => {
     // Check if coming from another page
     if (localStorage.getItem('films-source')) {
       setOutside(true);
+    }
+
+    // Restore filter values from localStorage
+    const savedFilters = localStorage.getItem('activeFilters');
+    if (savedFilters) {
+      try {
+        const filters = JSON.parse(savedFilters);
+        setFilterValues(filters);
+        // Check if filters are active (not all "Any")
+        const hasActiveFilters = !(filters.rating === 'Any' && filters.genre === 'Any' && 
+                                   filters.runtime === 'Any' && filters.year === 'Any');
+        if (hasActiveFilters) {
+          setFiltered(true);
+        }
+      } catch (e) {
+        console.error('Error parsing saved filters:', e);
+      }
     }
 
     // Load user data once (only if not cached)
@@ -551,26 +578,30 @@ const Index = () => {
 
   const handleFilterSubmit = async (e) => {
     e.preventDefault();
-    const filterRating = document.getElementById('filterRating').value;
-    const filterGenre = document.getElementById('filterGenre').value;
-    const filterRuntime = document.getElementById('filterRuntime').value;
-    const filterYear = document.getElementById('filterYear').value;
-
+    
+    // Use current filter values from state
     const filter = {
-      rating: filterRating,
-      genre: filterGenre,
-      runtime: filterRuntime,
-      year: filterYear,
+      rating: filterValues.rating,
+      genre: filterValues.genre,
+      runtime: filterValues.runtime,
+      year: filterValues.year,
     };
 
+    // Save filter values to localStorage
+    localStorage.setItem('activeFilters', JSON.stringify(filter));
+
     try {
+      // Send filter as JSON string (backend expects JSON string in query params)
       const response = await axios.post('/api/filter', null, {
-        params: { filter: filter }
+        params: { filter: JSON.stringify(filter) }
       });
-      if (response.data) {
+      // Backend returns the count of filtered films
+      if (response.data !== undefined && response.data !== null) {
         setFiltered(true);
         setFilmIndex(0);
         setCacheStartIndex(0);
+        // Clear cache to force reload with filtered films
+        setFilmCache([]);
         await loadFilms(0);
       }
     } catch (error) {
@@ -857,8 +888,13 @@ const Index = () => {
                     <label htmlFor="filterRating" className="form-label">
                       Rating
                     </label>
-                    <select id="filterRating" className="form-select">
-                      <option selected>Any</option>
+                    <select 
+                      id="filterRating" 
+                      className="form-select"
+                      value={filterValues.rating}
+                      onChange={(e) => setFilterValues({...filterValues, rating: e.target.value})}
+                    >
+                      <option value="Any">Any</option>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                         <option key={num} value={num}>
                           {num}/10
@@ -872,10 +908,15 @@ const Index = () => {
                     <label htmlFor="filterGenre" className="form-label">
                       Genre
                     </label>
-                    <select id="filterGenre" className="form-select">
-                      <option selected>Any</option>
+                    <select 
+                      id="filterGenre" 
+                      className="form-select"
+                      value={filterValues.genre}
+                      onChange={(e) => setFilterValues({...filterValues, genre: e.target.value})}
+                    >
+                      <option value="Any">Any</option>
                       {['Drama', 'Action', 'Comedy', 'Sci-Fi', 'Fantasy', 'Romance', 'Family', 'Horror', 'Mystery', 'Documentary'].map((genre) => (
-                        <option key={genre}>{genre}</option>
+                        <option key={genre} value={genre}>{genre}</option>
                       ))}
                     </select>
                   </div>
@@ -885,10 +926,15 @@ const Index = () => {
                     <label htmlFor="filterRuntime" className="form-label">
                       Runtime
                     </label>
-                    <select id="filterRuntime" className="form-select">
-                      <option selected>Any</option>
+                    <select 
+                      id="filterRuntime" 
+                      className="form-select"
+                      value={filterValues.runtime}
+                      onChange={(e) => setFilterValues({...filterValues, runtime: e.target.value})}
+                    >
+                      <option value="Any">Any</option>
                       {['≤ 1 Hr', '≤ 1Hr 30m', '≤ 2Hrs', '≤ 2Hrs 30m', '≤ 3Hrs', 'really long...'].map((runtime) => (
-                        <option key={runtime}>{runtime}</option>
+                        <option key={runtime} value={runtime}>{runtime}</option>
                       ))}
                     </select>
                   </div>
@@ -898,10 +944,15 @@ const Index = () => {
                     <label htmlFor="filterYear" className="form-label">
                       Year
                     </label>
-                    <select id="filterYear" className="form-select">
-                      <option selected>Any</option>
+                    <select 
+                      id="filterYear" 
+                      className="form-select"
+                      value={filterValues.year}
+                      onChange={(e) => setFilterValues({...filterValues, year: e.target.value})}
+                    >
+                      <option value="Any">Any</option>
                       {['2020s', '2010s', '2000s', '1990s', '1980s', '1970s', '1960s'].map((year) => (
-                        <option key={year}>{year}</option>
+                        <option key={year} value={year}>{year}</option>
                       ))}
                     </select>
                   </div>
