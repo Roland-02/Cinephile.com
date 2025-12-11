@@ -1,44 +1,62 @@
 # general
+import os
+import time
+import json
+import warnings
+import threading
 import numpy as np
 import pandas as pd
 import mysql.connector
-import json
-import os
-import time
-import threading
 from dotenv import load_dotenv
-load_dotenv()
 
 # ml
-from sklearn.metrics.pairwise import euclidean_distances, cosine_similarity
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.cluster import KMeans
-import warnings
-warnings.filterwarnings("ignore")
+from sklearn.metrics.pairwise import euclidean_distances, cosine_similarity
 
 # initalising dataset
 import gzip
 import requests as req
 import concurrent.futures
 from io import BytesIO
-from collections import Counter
-from sqlalchemy import create_engine
 from langdetect import detect
+from collections import Counter
 from multiprocessing import Manager
+from sqlalchemy import create_engine
 
 # flask server
-from flask import Blueprint, jsonify, request
-from flask_caching import Cache
 import schedule
 import threading
+from flask_caching import Cache
+from flask import Blueprint, jsonify, request
 
-# Create blueprint for recommendation routes
+# Load environment variables
+load_dotenv()
+
+# Ignore warnings
+warnings.filterwarnings("ignore")
+
+# TF-IDF vectorizer for text similarity calculations
+tfidf_vectorizer = TfidfVectorizer()
+
+# Flask blueprint for recommendation routes
 recommend_bp = Blueprint('recommend', __name__)
 
-# Cache will be initialized when blueprint is registered with app
-cache = None
-tfidf_vectorizer = TfidfVectorizer()
+# TMDB API configuration
+MAX_REQUESTS_PER_SECOND = 50
+
+# TMDB API key
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+
+# Global database connection and cursor
+mydb = mysql.connector.connect(
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_DATABASE")
+)
+mycursor = mydb.cursor()
 
 def init_recommend_cache(app_instance):
     """Initialize cache with the Flask app instance"""
@@ -49,14 +67,6 @@ def init_recommend_cache(app_instance):
     }
     app_instance.config.from_mapping(config)
     cache = Cache(app_instance)
-
-def create_db_connection():
-    return mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_DATABASE")
-    )
 
 # ensure no duplicate cast members
 def remove_duplicates(names):
@@ -74,10 +84,6 @@ def is_english(text):
     except:
         return False
 
-# TMDB API configuration
-MAX_REQUESTS_PER_SECOND = 50
-API_KEY = os.getenv("API_KEY")
-
 # TMDB API call for film plot summary and poster
 def fetchDetails(film_id):
     """Fetch film details from TMDB API"""
@@ -85,7 +91,7 @@ def fetchDetails(film_id):
     
     headers = { 
         "accept": "application/json",
-        "Authorization": f'Bearer {API_KEY}'
+        "Authorization": f'Bearer {TMDB_API_KEY}'
     }
 
     response = req.get(url, headers=headers)
@@ -130,12 +136,6 @@ def doBatch(shared_data):
 # export film data to mysql
 def save_mySQL(data):
 
-    # MySQL connection configuration
-    mydb = create_db_connection()
-
-    # Cursor object to execute SQL queries
-    mycursor = mydb.cursor()
-
     # Table name in the database
     table_name = "all_films"
 
@@ -152,11 +152,6 @@ def save_mySQL(data):
 
 # export recommended film interaction data to mysql
 def save_interaction(user_id, tconst, position, similarity):
-
-    # MySQL connection configuration
-    mydb = create_db_connection()
-
-    mycursor = mydb.cursor()
 
     table_name = "user_recommended_interaction"
 
@@ -210,7 +205,6 @@ def INITIALISE_FILM_DATASET():
     names = pd.read_csv(BytesIO(names_gzip), delimiter='\t',low_memory=False)
     langs = pd.read_csv(BytesIO(title_langs_gzip), delimiter='\t',low_memory=False)
 
-
     print('Cleaning data...')
 
     #first data clean
@@ -251,7 +245,6 @@ def INITIALISE_FILM_DATASET():
     print('Merging tables...')
 
     #merge relational tables
-
     crew_data = crew.copy()
 
     #merge crew data with names table to get respective names rather than nconst
@@ -264,7 +257,6 @@ def INITIALISE_FILM_DATASET():
         values=['primaryName'],
         aggfunc=lambda x: ', '.join(str(item) for item in x),
     ).reset_index()
-
 
     #format and restructure columns before merging
     crew_data.columns = ['_'.join(col).strip() for col in crew_data.columns.values]
@@ -306,10 +298,7 @@ def INITIALISE_FILM_DATASET():
     film_data['plot'] = np.nan
     film_data['poster'] = np.nan
 
-
     print('Films: ' + str(len(film_data)))
-
-
     print('Fetching plot summaries and posters...')
 
     # get film plot and poster with tmdb api ~ inconsistent runtime (<2Hrs)
@@ -361,10 +350,6 @@ def INITIALISE_FILM_DATASET():
 # load whole films dataset from db
 def loadAllFilms():
 
-    mydb = create_db_connection()
-
-    mycursor = mydb.cursor()
-
     sql_query = "SELECT * FROM all_films"
 
     mycursor.execute(sql_query)
@@ -372,9 +357,6 @@ def loadAllFilms():
     columns = [col[0] for col in mycursor.description]
 
     films = mycursor.fetchall()
-
-    mycursor.close()
-    mydb.close()
 
     films_data = pd.DataFrame(films, columns=columns)
 
@@ -395,10 +377,6 @@ def count_likeable(row):
 # get user loved films from db
 def get_loved_films(user_id):
 
-    mydb = create_db_connection()
-
-    mycursor = mydb.cursor()
-
     sql_query = "SELECT tconst FROM user_loved_films WHERE user_id = %s"
 
     mycursor.execute(sql_query, (user_id,))
@@ -407,19 +385,12 @@ def get_loved_films(user_id):
 
     tconst_list = [tconst[0] for tconst in rows]
 
-    mycursor.close()
-    mydb.close()
-
     loved_films_df = data[data['tconst'].isin(tconst_list)]
 
     return loved_films_df
 
 # get user liked attributes from db
 def get_liked_attributes(user_id):
-
-    mydb = create_db_connection()
-
-    mycursor = mydb.cursor()
 
     sql_query = "SELECT * FROM user_liked_attributes WHERE user_id = %s"
 
@@ -429,9 +400,6 @@ def get_liked_attributes(user_id):
 
     tconst_list = [row[1] for row in attribute_fetch]
     attribute_bin = [row[1:] for row in attribute_fetch]
-
-    mycursor.close()
-    mydb.close()
 
     attributes_template = ['tconst','primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes', 'startYear', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer']
     liked_attributes_df = pd.DataFrame(columns=attributes_template)
@@ -454,18 +422,11 @@ def get_liked_attributes(user_id):
 # get user liked cast from db
 def get_liked_cast(user_id):
 
-    mydb = create_db_connection()
-
-    mycursor = mydb.cursor()
-
     sql_query = "SELECT * FROM user_liked_cast WHERE user_id = %s"
 
     mycursor.execute(sql_query, (user_id,))
 
     cast_fetch = mycursor.fetchall()
-
-    mycursor.close()
-    mydb.close()
 
     cast = [row[1:] for row in cast_fetch]
     liked_cast_df = pd.DataFrame(cast, columns=['tconst', 'name'])
@@ -474,9 +435,6 @@ def get_liked_cast(user_id):
 
 # get user watchlist from db
 def get_watchlist(user_id):
-    mydb = create_db_connection()
-
-    mycursor = mydb.cursor()
 
     sql_query = "SELECT * FROM user_watchlist WHERE user_id = %s"
 
@@ -484,9 +442,6 @@ def get_watchlist(user_id):
 
 
     watchlist_fetch = mycursor.fetchall()
-
-    mycursor.close()
-    mydb.close()
 
     tconst_list = [row[1] for row in watchlist_fetch]
     attributes_template = ['tconst','primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes', 'startYear', 'cast', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer', 'poster']
@@ -674,8 +629,6 @@ def top_5_genres(genres_series):
     
     return top_5
 
-# RECOMMENDATIONS EVALUATION METRICS
-
 # repeat of get_conent_recommendations - for evaluation metrics
 def recommend_content_films(user_id):
     # get update user profile and loved films
@@ -756,10 +709,6 @@ def recommend_content_films(user_id):
 # return all user_ids from db
 def get_user_ids():
     # Establish a connection to the MySQL database
-    mydb = create_db_connection()
-
-    # Create a cursor object to execute SQL queries
-    mycursor = mydb.cursor()
 
     # SQL query to select all user IDs from the user_login table
     sql_query = "SELECT user_id FROM user_login"
@@ -773,19 +722,10 @@ def get_user_ids():
     # Extract user IDs from the fetched rows
     user_ids = [row[0] for row in rows]
 
-    # Close the cursor and database connection
-    mycursor.close()
-    mydb.close()
-
     return user_ids
 
 # get interaction data between user and recommended films
 def get_recommended_interaction_data():
-    # MySQL connection configuration
-    mydb = create_db_connection()
-
-    # Cursor object to execute SQL queries
-    mycursor = mydb.cursor()
 
     # Table name in the database
     table_name = "user_recommended_interaction"
@@ -801,9 +741,6 @@ def get_recommended_interaction_data():
 
     # Create a DataFrame from the fetched data
     df = pd.DataFrame(interaction_data, columns=["user_id", "tconst", "position", "similarity"])
-
-    # Close the database connection
-    mydb.close()
 
     return df
 
