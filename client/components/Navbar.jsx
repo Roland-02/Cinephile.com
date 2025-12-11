@@ -99,7 +99,7 @@ const Navbar = ({ onLoginClick }) => {
                 to="/profile"
                 className={`menu-btn ${window.location.pathname === '/profile' ? 'active' : ''}`}
               >
-                <p className="mb-0">My films</p>
+                <p className="mb-0">Profile</p>
               </Link>
             </>
           )}

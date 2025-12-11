@@ -595,12 +595,14 @@ def get_content_recommendations(user_profile_groups, similarity_vectors):
     return sorted_films
 
 # return most recurring names in input data
-def most_common_names(df, top_n=10):
+def most_common_names(df, top_n=5):
     all_names = pd.Series(df.values.flatten())
     split_names = all_names.str.split(',').explode()
+    split_names = split_names.str.strip()  # Remove whitespace
     name_counts = split_names.value_counts()
     top_n_names = name_counts.head(top_n)
-    return top_n_names.index.tolist()
+    # Return list of dictionaries with name and count
+    return [{'name': name, 'count': int(count)} for name, count in top_n_names.items()]
 
 # return user's top 5 main genres
 def top_5_genres(genres_series):

@@ -2,13 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getSession } from '../utils/auth';
+import { Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
 const Profile = () => {
   const [lovedFilms, setLovedFilms] = useState([]);
   const [likedFilms, setLikedFilms] = useState([]);
-  const [stats, setStats] = useState({ cast: [], crew: [], genre: {} });
+  const [stats, setStats] = useState({ cast: [], crew: [], genre: [] });
   const [loading, setLoading] = useState(true);
   const [isFlipped, setIsFlipped] = useState(false);
   const session = getSession();
@@ -40,13 +49,12 @@ const Profile = () => {
       setLovedFilms(loved);
       setLikedFilms(liked);
 
-      if (profileStats.message) {
-        setStats({
-          cast: profileStats.cast || [],
-          crew: profileStats.crew || [],
-          genre: profileStats.genre || {},
-        });
-      }
+      // Set stats regardless of message flag - handle empty arrays properly
+      setStats({
+        cast: Array.isArray(profileStats.cast) ? profileStats.cast : [],
+        crew: Array.isArray(profileStats.crew) ? profileStats.crew : [],
+        genre: Array.isArray(profileStats.genre) ? profileStats.genre : (profileStats.genre || {}),
+      });
     } catch (error) {
       console.error('Error loading profile data:', error);
     } finally {
@@ -67,40 +75,108 @@ const Profile = () => {
 
     return (
       <div>
-        {items.slice(0, 10).map((item, index) => (
-          <div key={index} className="favourite-item">
-            <p>
-              <strong>{item.name}</strong> - {item.count} films
-            </p>
-          </div>
-        ))}
+        {items.slice(0, 5).map((item, index) => {
+          // Handle both object format {name, count} and string format (legacy)
+          const name = typeof item === 'object' && item !== null ? (item.name || item) : item;
+          const count = typeof item === 'object' && item !== null ? item.count : null;
+          
+          return (
+            <div key={index} className="favourite-item">
+              <p>
+                {index + 1}. <strong>{name}</strong>
+                {count !== null && count !== undefined && ` - ${count} film${count !== 1 ? 's' : ''}`}
+              </p>
+            </div>
+          );
+        })}
       </div>
     );
   };
 
   const displayGenreChart = () => {
-    if (!stats.genre || Object.keys(stats.genre).length === 0) return null;
-
-    // Handle case where genre values might be objects with Count/Genres keys
-    const genreEntries = Object.entries(stats.genre).map(([genre, value]) => {
-      // If value is an object, extract the count
-      const count = typeof value === 'object' && value !== null 
-        ? (value.Count || value.count || 0)
-        : (typeof value === 'number' ? value : 0);
-      return [genre, count];
-    }).sort((a, b) => b[1] - a[1]);
+    if (!stats.genre) return <p></p>;
     
-    const total = genreEntries.reduce((sum, [, count]) => sum + count, 0);
+    // Handle array format from backend: [{'Genres': genre, 'Count': count}, ...]
+    let genreEntries = [];
+    
+    // Backend returns array of objects
+    genreEntries = stats.genre.map(item => ({
+      genre: item.Genres,
+      count: item.Count
+    })).sort((a, b) => b.count - a.count);
+    if (genreEntries.length === 0) {
+      return <p></p>;
+    }
+    
+    const total = genreEntries.reduce((sum, item) => sum + item.count, 0);
+    
+    // Colors for pie chart
+    const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
+    
+    // Prepare data for Chart.js
+    const chartData = {
+      labels: genreEntries.map(item => item.genre),
+      datasets: [
+        {
+          data: genreEntries.map(item => item.count),
+          backgroundColor: colors.slice(0, genreEntries.length),
+          borderColor: '#fff',
+          borderWidth: 2,
+        },
+      ],
+    };
+
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: false, // We'll use our custom legend
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = context.label || '';
+              const value = context.parsed || 0;
+              const percentage = Math.round((value / total) * 100);
+              return `${label}: ${value} films (${percentage}%)`;
+            }
+          }
+        }
+      }
+    };
 
     return (
-      <div>
-        {genreEntries.map(([genre, count]) => (
-          <div key={genre} className="favourite-item">
-            <p>
-              <strong>{String(genre)}</strong> - {Number(count)} films ({total > 0 ? Math.round((Number(count) / total) * 100) : 0}%)
-            </p>
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Pie Chart */}
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ width: '250px', height: '250px' }}>
+            <Pie data={chartData} options={chartOptions} />
           </div>
-        ))}
+        </div>
+        
+        {/* Legend with numbers */}
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          {genreEntries.map((item, index) => {
+            const percentage = Math.round((item.count / total) * 100);
+            return (
+              <div key={index} className="favourite-item" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <div
+                  style={{
+                    width: '15px',
+                    height: '15px',
+                    backgroundColor: colors[index % colors.length],
+                    borderRadius: '3px',
+                    flexShrink: 0
+                  }}
+                />
+                <p style={{ margin: 0 }}>
+                  {index + 1}. <strong>{item.genre}</strong>
+                </p>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   };
@@ -114,8 +190,8 @@ const Profile = () => {
   }
 
   return (
-    <div className="container" style={{ paddingTop: '60px' }}>
-      <div className="row">
+    <div className="container" style={{ paddingTop: '60px', paddingBottom: '40px' }}>
+      <div className="row" style={{ margin: 0 }}>
         {/* Favourite film posters */}
         <div className="col-lg-6 col-md-6 col-sm-12">
           <div className="container">
@@ -240,10 +316,10 @@ const Profile = () => {
         {/* Analytics */}
         <div className="col-lg-6 col-md-6 col-sm-12" id="analyticsContent">
           <div className="main-title">my analytics</div>
-          <div className="container d-flex flex-column m-15 p-10">
+          <div className="container d-flex flex-column" style={{ padding: '20px', maxHeight: '80vh', overflowY: 'auto' }}>
             {/* Top actors */}
             <div className="secondary-title">Top actors</div>
-            <div id="cast-box" className="favourite-item">
+            <div id="cast-box">
               {stats.cast && stats.cast.length > 0 ? (
                 displayStats(stats.cast)
               ) : (
@@ -253,7 +329,7 @@ const Profile = () => {
 
             {/* Top film-makers */}
             <div className="secondary-title">Top film-makers</div>
-            <div id="crew-box" className="favourite-item">
+            <div id="crew-box">
               {stats.crew && stats.crew.length > 0 ? (
                 displayStats(stats.crew)
               ) : (
@@ -263,8 +339,8 @@ const Profile = () => {
 
             {/* Top genres */}
             <div className="secondary-title">Top genres</div>
-            <div id="genre-box" className="favourite-item">
-              {stats.genre && Object.keys(stats.genre).length > 0 ? (
+            <div id="genre-box">
+              {stats.genre && (Array.isArray(stats.genre) ? stats.genre.length > 0 : Object.keys(stats.genre).length > 0) ? (
                 displayGenreChart()
               ) : (
                 <p></p>
