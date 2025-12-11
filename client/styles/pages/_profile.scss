@@ -21,7 +21,7 @@
 }
 
 .secondary-title {
-  font-size: $font-size-xl;
+  font-size: $font-size-xl + 5px;
   font-weight: 400;
   text-align: left;
   text-decoration: underline;
@@ -77,10 +77,17 @@
   min-height: auto;
   margin-bottom: $spacing-md;
   padding: $spacing-xs 0;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+  }
   
   p {
     margin: $spacing-xs 0;
-    line-height: 1.6;
+    line-height: 1.2;
+    font-size: 1.15em;
   }
 }
 
