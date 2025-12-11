@@ -10,8 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ml
-from sklearn.metrics.pairwise import euclidean_distances
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import euclidean_distances, cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
@@ -24,7 +23,6 @@ import requests as req
 import concurrent.futures
 from io import BytesIO
 from collections import Counter
-from tmdb_calls import doBatch
 from sqlalchemy import create_engine
 from langdetect import detect
 from multiprocessing import Manager
@@ -75,6 +73,59 @@ def is_english(text):
         return lang == 'en'
     except:
         return False
+
+# TMDB API configuration
+MAX_REQUESTS_PER_SECOND = 50
+API_KEY = os.getenv("API_KEY")
+
+# TMDB API call for film plot summary and poster
+def fetchDetails(film_id):
+    """Fetch film details from TMDB API"""
+    url = f'https://api.themoviedb.org/3/movie/{film_id}'
+    
+    headers = { 
+        "accept": "application/json",
+        "Authorization": f'Bearer {API_KEY}'
+    }
+
+    response = req.get(url, headers=headers)
+    return response
+
+# Call API with rate limiting
+def doFetch(film_id):
+    """Fetch film details with rate limiting"""
+    time.sleep(1 / MAX_REQUESTS_PER_SECOND)  # Introduce delay to respect rate limits
+    return fetchDetails(film_id)
+
+# Get film poster and plot for given batch of films
+def doBatch(shared_data):
+    """Process a batch of films to fetch TMDB details using multi-threading"""
+    film_data = shared_data.film_data  # Access the DataFrame from the shared namespace
+
+    MAX_THREADS = min(os.cpu_count(), 1000)
+
+    # Use ThreadPoolExecutor for multi-threading within each process
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
+            results = list(executor.map(doFetch, film_data['tconst']))
+
+            for index, details in zip(film_data.index, results):
+                if details.ok:
+                    details = details.json()
+
+                    if details.get('overview'):
+                        film_data.loc[index, 'plot'] = details['overview']
+
+                    if details.get('poster_path'):
+                        film_data.loc[index, 'poster'] = details['poster_path']
+                else:
+                    time.sleep(1 / MAX_REQUESTS_PER_SECOND)  # Introduce delay if rate limit is exceeded
+
+        shared_data.film_data = film_data
+
+    except Exception as e:
+        print(f"Error in ThreadPoolExecutor: {e}")
+        time.sleep(1 / MAX_REQUESTS_PER_SECOND)  # Introduce delay if rate limit is exceeded
     
 # export film data to mysql
 def save_mySQL(data):
