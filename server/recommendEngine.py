@@ -148,7 +148,7 @@ def save_mySQL(data):
 
     engine = create_engine("mysql+mysqlconnector://root:Leicester69lol@localhost/users")
 
-    data.to_sql('all_films', con=engine, if_exists='replace', index=False)
+    data.to_sql('all_films', con=engine, if_exists='replace', index=True)
 
 # export recommended film interaction data to mysql
 def save_interaction(user_id, tconst, position, similarity):
@@ -1058,12 +1058,12 @@ def bulk_recommend_route():
 
             if(user_profile_df.empty):
 
-                # save recommendations to cache
-                cache.set(f'user_content_recommended{user_id}', json.dumps({}))
-                cache.set(f'user_plot_recommended{user_id}', json.dumps({}))
-                cache.set(f'user_cast_recommended{user_id}', json.dumps({}))
-                cache.set(f'user_crew_recommended{user_id}', json.dumps({}))
-                cache.set(f'user_genre_recommended{user_id}', json.dumps({}))
+                # save recommendations to cache (empty lists instead of empty dicts)
+                cache.set(f'user_content_recommended{user_id}', json.dumps([]))
+                cache.set(f'user_plot_recommended{user_id}', json.dumps([]))
+                cache.set(f'user_cast_recommended{user_id}', json.dumps([]))
+                cache.set(f'user_crew_recommended{user_id}', json.dumps([]))
+                cache.set(f'user_genre_recommended{user_id}', json.dumps([]))
 
                 return jsonify({"message": "Profile empty, empty recommendations cached"})
         
@@ -1132,12 +1132,12 @@ def bulk_recommend_route():
                 return jsonify({"message": "Recommendations stored in cache"})
             
         else:
-            # save recommendations to cache
-            cache.set(f'user_content_recommended{user_id}', json.dumps({}))
-            cache.set(f'user_plot_recommended{user_id}', json.dumps({}))
-            cache.set(f'user_cast_recommended{user_id}', json.dumps({}))
-            cache.set(f'user_crew_recommended{user_id}', json.dumps({}))
-            cache.set(f'user_genre_recommended{user_id}', json.dumps({}))
+            # save recommendations to cache (empty lists instead of empty dicts)
+            cache.set(f'user_content_recommended{user_id}', json.dumps([]))
+            cache.set(f'user_plot_recommended{user_id}', json.dumps([]))
+            cache.set(f'user_cast_recommended{user_id}', json.dumps([]))
+            cache.set(f'user_crew_recommended{user_id}', json.dumps([]))
+            cache.set(f'user_genre_recommended{user_id}', json.dumps([]))
 
             return jsonify({"message": "Profile empty, empty recommendations cached"})
     else:
@@ -1158,16 +1158,22 @@ def get_batch_route():
 
         films_data = json.loads(films_json)
 
-        if films_data:
+        # Handle both list and dict formats, ensure it's a list
+        if isinstance(films_data, dict):
+            films_data = list(films_data.values()) if films_data else []
+        elif not isinstance(films_data, list):
+            films_data = []
+
+        if films_data and len(films_data) > 0:
             start_index = (page - 1) * batch_size
             end_index = (page) * batch_size
 
             # Slice the films list to get the batch
-            batch = films_data[:end_index]
+            batch = films_data[start_index:end_index]
             
             return jsonify({"films": batch})
    
-    return jsonify({"films": "-"})
+    return jsonify({"films": []})
     
 
 @recommend_bp.route('/get_liked_staff', methods=['GET'])
