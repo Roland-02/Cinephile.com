@@ -50,11 +50,11 @@ const Profile = () => {
       setLikedFilms(liked);
 
       // Set stats regardless of message flag - handle empty arrays properly
-      setStats({
+        setStats({
         cast: Array.isArray(profileStats.cast) ? profileStats.cast : [],
         crew: Array.isArray(profileStats.crew) ? profileStats.crew : [],
         genre: Array.isArray(profileStats.genre) ? profileStats.genre : (profileStats.genre || {}),
-      });
+        });
     } catch (error) {
       console.error('Error loading profile data:', error);
     } finally {
@@ -91,12 +91,12 @@ const Profile = () => {
               onClick={() => handleItemClick(name)}
               style={{ cursor: 'pointer' }}
             >
-              <p>
+            <p>
                 <span style={{ marginRight: '12px' }}>{index + 1}.</span>
                 <strong>{name}</strong>
                 {count !== null && count !== undefined && ` - ${count} film${count !== 1 ? 's' : ''}`}
-              </p>
-            </div>
+            </p>
+          </div>
           );
         })}
       </div>
@@ -105,7 +105,7 @@ const Profile = () => {
 
   const displayGenreChart = () => {
     if (!stats.genre) return <p></p>;
-    
+
     // Handle array format from backend: [{'Genres': genre, 'Count': count}, ...]
     let genreEntries = [];
     
@@ -335,27 +335,27 @@ const Profile = () => {
           <div className="container d-flex flex-column" style={{ padding: '20px', maxHeight: '80vh', overflowY: 'auto' }}>
             {/* Top actors and Top film-makers side by side */}
             <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', flexWrap: 'wrap' }}>
-              {/* Top actors */}
+            {/* Top actors */}
               <div style={{ flex: 1, minWidth: '250px' }}>
-                <div className="secondary-title">Top actors</div>
+            <div className="secondary-title">Top actors</div>
                 <div id="cast-box">
-                  {stats.cast && stats.cast.length > 0 ? (
-                    displayStats(stats.cast)
-                  ) : (
-                    <p></p>
-                  )}
+              {stats.cast && stats.cast.length > 0 ? (
+                displayStats(stats.cast)
+              ) : (
+                <p></p>
+              )}
                 </div>
-              </div>
+            </div>
 
-              {/* Top film-makers */}
+            {/* Top film-makers */}
               <div style={{ flex: 1, minWidth: '250px' }}>
-                <div className="secondary-title">Top film-makers</div>
+            <div className="secondary-title">Top film-makers</div>
                 <div id="crew-box">
-                  {stats.crew && stats.crew.length > 0 ? (
-                    displayStats(stats.crew)
-                  ) : (
-                    <p></p>
-                  )}
+              {stats.crew && stats.crew.length > 0 ? (
+                displayStats(stats.crew)
+              ) : (
+                <p></p>
+              )}
                 </div>
               </div>
             </div>
