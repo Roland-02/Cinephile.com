@@ -53,7 +53,7 @@ def load_films_from_db():
     try:
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute('SELECT * FROM all_films')
+        cursor.execute('SELECT * FROM films')
         allFilms_global = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -85,7 +85,7 @@ def login():
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        cursor.execute("SELECT * FROM user_login WHERE email = %s", (email,))
+        cursor.execute("SELECT * FROM login WHERE email = %s", (email,))
         result = cursor.fetchone()
         
         if not result:
@@ -136,14 +136,14 @@ def create_account():
         cursor = conn.cursor(dictionary=True)
         
         # Check if user exists
-        cursor.execute("SELECT * FROM user_login WHERE email = %s", (email,))
+        cursor.execute("SELECT * FROM login WHERE email = %s", (email,))
         if cursor.fetchone():
             cursor.close()
             conn.close()
             return jsonify({'message': 'User already exists'}), 409
         
         # Create new user
-        cursor.execute("INSERT INTO user_login (user_id, email, password) VALUES (0, %s, %s)", 
+        cursor.execute("INSERT INTO login (user_id, email, password) VALUES (0, %s, %s)", 
                        (email, hash_password))
         user_id = cursor.lastrowid
         
@@ -372,9 +372,9 @@ def get_liked_films():
         cursor = conn.cursor(dictionary=True)
         
         query = """
-            (SELECT tconst FROM user_liked_attributes WHERE user_id = %s)
+            (SELECT tconst FROM liked_attributes WHERE user_id = %s)
             UNION
-            (SELECT tconst FROM user_liked_cast WHERE user_id = %s)
+            (SELECT tconst FROM liked_cast WHERE user_id = %s)
         """
         cursor.execute(query, (user_id, user_id))
         results = cursor.fetchall()
@@ -393,7 +393,7 @@ def get_loved_films():
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        cursor.execute("SELECT tconst FROM user_loved_films WHERE user_id = %s", (user_id,))
+        cursor.execute("SELECT tconst FROM loved_films WHERE user_id = %s", (user_id,))
         results = cursor.fetchall()
         
         cursor.close()
@@ -410,7 +410,7 @@ def get_watchlist():
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        cursor.execute("SELECT tconst FROM user_watchlist WHERE user_id = %s", (user_id,))
+        cursor.execute("SELECT tconst FROM watchlist WHERE user_id = %s", (user_id,))
         results = cursor.fetchall()
         
         cursor.close()
@@ -432,7 +432,8 @@ def get_liked_elements():
         # Get liked attributes
         cursor.execute("""
             SELECT Title, Plot, Rating, Genre, Runtime, Year, Director, Camera, Writer, Producer, Editor, Composer 
-            FROM user_liked_attributes WHERE user_id = %s AND tconst = %s
+            FROM liked_attributes 
+            WHERE user_id = %s AND tconst = %s
         """, (user_id, film_id))
         film_results = cursor.fetchall()
         
@@ -444,7 +445,7 @@ def get_liked_elements():
                         elements.append(key)
         
         # Get liked cast
-        cursor.execute("SELECT name FROM user_liked_cast WHERE user_id = %s AND tconst = %s", 
+        cursor.execute("SELECT name FROM liked_cast WHERE user_id = %s AND tconst = %s", 
                       (user_id, film_id))
         cast_results = cursor.fetchall()
         cast = [row['name'] for row in cast_results]
@@ -468,13 +469,13 @@ def love_film():
         cursor = conn.cursor()
         
         # Delete existing liked attributes and cast
-        cursor.execute("DELETE FROM user_liked_attributes WHERE user_id = %s AND tconst = %s", 
+        cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s", 
                       (user_id, tconst))
-        cursor.execute("DELETE FROM user_liked_cast WHERE user_id = %s AND tconst = %s", 
+        cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s", 
                       (user_id, tconst))
         
         # Insert loved film
-        cursor.execute("INSERT INTO user_loved_films (user_id, tconst) VALUES (%s, %s)", 
+        cursor.execute("INSERT INTO loved_films (user_id, tconst) VALUES (%s, %s)", 
                       (user_id, tconst))
         
         conn.commit()
@@ -498,7 +499,7 @@ def unlove_film():
         conn = create_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("DELETE FROM user_loved_films WHERE user_id = %s AND tconst = %s", 
+        cursor.execute("DELETE FROM loved_films WHERE user_id = %s AND tconst = %s", 
                       (user_id, film_id))
         
         conn.commit()
@@ -536,15 +537,15 @@ def save_liked_elements():
         cursor = conn.cursor()
         
         # Delete existing
-        cursor.execute("DELETE FROM user_liked_attributes WHERE user_id = %s AND tconst = %s", 
+        cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s", 
                       (user_id, tconst))
-        cursor.execute("DELETE FROM user_liked_cast WHERE user_id = %s AND tconst = %s", 
+        cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s", 
                       (user_id, tconst))
         
         # Insert attributes
         if liked_elements:
             cursor.execute("""
-                INSERT INTO user_liked_attributes 
+                INSERT INTO liked_attributes 
                 (user_id, tconst, Title, Plot, Rating, Genre, Runtime, Year, Director, Camera, Writer, Producer, Editor, Composer) 
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (user_id, tconst, *attribute_values.values()))
@@ -552,7 +553,7 @@ def save_liked_elements():
         # Insert cast
         if liked_cast:
             cast_values = [(user_id, tconst, name) for name in liked_cast]
-            cursor.executemany("INSERT INTO user_liked_cast (user_id, tconst, name) VALUES (%s, %s, %s)", 
+            cursor.executemany("INSERT INTO liked_cast (user_id, tconst, name) VALUES (%s, %s, %s)", 
                              cast_values)
         
         conn.commit()
@@ -575,7 +576,7 @@ def add_watchlist():
         conn = create_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("INSERT INTO user_watchlist (user_id, tconst) VALUES (%s, %s)", 
+        cursor.execute("INSERT INTO watchlist (user_id, tconst) VALUES (%s, %s)", 
                       (user_id, film_id))
         
         conn.commit()
@@ -597,7 +598,7 @@ def delete_watchlist():
         conn = create_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("DELETE FROM user_watchlist WHERE user_id = %s AND tconst = %s", 
+        cursor.execute("DELETE FROM watchlist WHERE user_id = %s AND tconst = %s", 
                       (user_id, film_id))
         
         conn.commit()

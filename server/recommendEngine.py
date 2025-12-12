@@ -49,14 +49,25 @@ MAX_REQUESTS_PER_SECOND = 50
 # TMDB API key
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
-# Global database connection and cursor
-mydb = mysql.connector.connect(
-    host=os.getenv("DB_HOST"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_DATABASE")
-)
-mycursor = mydb.cursor()
+# Thread-local storage for database connections (thread-safe)
+_thread_local = threading.local()
+
+def get_db_connection():
+    """Get thread-local database connection"""
+    if not hasattr(_thread_local, 'mydb') or not _thread_local.mydb.is_connected():
+        _thread_local.mydb = mysql.connector.connect(
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_DATABASE")
+        )
+    return _thread_local.mydb
+
+def get_db_cursor():
+    """Get thread-local database cursor"""
+    if not hasattr(_thread_local, 'mycursor'):
+        _thread_local.mycursor = get_db_connection().cursor()
+    return _thread_local.mycursor
 
 def init_recommend_cache(app_instance):
     """Initialize cache with the Flask app instance"""
@@ -135,9 +146,12 @@ def doBatch(shared_data):
     
 # export film data to mysql
 def save_mySQL(data):
-
+    # Get thread-local connection
+    mydb = get_db_connection()
+    mycursor = get_db_cursor()
+    
     # Table name in the database
-    table_name = "all_films"
+    table_name = "films"
 
     # Define the SQL query to delete all records from the table
     delete_query = "DELETE FROM {}".format(table_name)
@@ -146,14 +160,17 @@ def save_mySQL(data):
     mycursor.execute(delete_query)
     mydb.commit()
 
-    engine = create_engine("mysql+mysqlconnector://root:Leicester69lol@localhost/users")
+    engine = create_engine("mysql+mysqlconnector://root:Leicester69lol@localhost/cinephile")
 
-    data.to_sql('all_films', con=engine, if_exists='replace', index=True)
+    data.to_sql('films', con=engine, if_exists='replace', index=True)
 
 # export recommended film interaction data to mysql
 def save_interaction(user_id, tconst, position, similarity):
-
-    table_name = "user_recommended_interaction"
+    # Get thread-local connection
+    mydb = get_db_connection()
+    mycursor = get_db_cursor()
+    
+    table_name = "recommended_film_interactions"
 
     # Check if the given user_id and tconst combination already exists
     select_query = "SELECT * FROM {} WHERE user_id = %s AND tconst = %s".format(table_name)
@@ -349,8 +366,11 @@ def INITIALISE_FILM_DATASET():
 
 # load whole films dataset from db
 def loadAllFilms():
+    # Get thread-local connection
+    mydb = get_db_connection()
+    mycursor = get_db_cursor()
 
-    sql_query = "SELECT * FROM all_films"
+    sql_query = "SELECT * FROM films"
 
     mycursor.execute(sql_query)
     
@@ -376,8 +396,11 @@ def count_likeable(row):
 
 # get user loved films from db
 def get_loved_films(user_id):
+    # Get thread-local connection
+    mydb = get_db_connection()
+    mycursor = get_db_cursor()
 
-    sql_query = "SELECT tconst FROM user_loved_films WHERE user_id = %s"
+    sql_query = "SELECT tconst FROM loved_films WHERE user_id = %s"
 
     mycursor.execute(sql_query, (user_id,))
 
@@ -391,8 +414,11 @@ def get_loved_films(user_id):
 
 # get user liked attributes from db
 def get_liked_attributes(user_id):
+    # Get thread-local connection
+    mydb = get_db_connection()
+    mycursor = get_db_cursor()
 
-    sql_query = "SELECT * FROM user_liked_attributes WHERE user_id = %s"
+    sql_query = "SELECT * FROM liked_attributes WHERE user_id = %s"
 
     mycursor.execute(sql_query, (user_id,))
 
@@ -421,8 +447,11 @@ def get_liked_attributes(user_id):
 
 # get user liked cast from db
 def get_liked_cast(user_id):
+    # Get thread-local connection
+    mydb = get_db_connection()
+    mycursor = get_db_cursor()
 
-    sql_query = "SELECT * FROM user_liked_cast WHERE user_id = %s"
+    sql_query = "SELECT * FROM liked_cast WHERE user_id = %s"
 
     mycursor.execute(sql_query, (user_id,))
 
@@ -435,11 +464,13 @@ def get_liked_cast(user_id):
 
 # get user watchlist from db
 def get_watchlist(user_id):
+    # Get thread-local connection
+    mydb = get_db_connection()
+    mycursor = get_db_cursor()
 
-    sql_query = "SELECT * FROM user_watchlist WHERE user_id = %s"
+    sql_query = "SELECT * FROM watchlist WHERE user_id = %s"
 
     mycursor.execute(sql_query, (user_id,))
-
 
     watchlist_fetch = mycursor.fetchall()
 
@@ -708,10 +739,12 @@ def recommend_content_films(user_id):
 
 # return all user_ids from db
 def get_user_ids():
-    # Establish a connection to the MySQL database
+    # Get thread-local connection
+    mydb = get_db_connection()
+    mycursor = get_db_cursor()
 
-    # SQL query to select all user IDs from the user_login table
-    sql_query = "SELECT user_id FROM user_login"
+    # SQL query to select all user IDs from the login table
+    sql_query = "SELECT user_id FROM login"
 
     # Execute the SQL query
     mycursor.execute(sql_query)
@@ -726,9 +759,12 @@ def get_user_ids():
 
 # get interaction data between user and recommended films
 def get_recommended_interaction_data():
+    # Get thread-local connection
+    mydb = get_db_connection()
+    mycursor = get_db_cursor()
 
     # Table name in the database
-    table_name = "user_recommended_interaction"
+    table_name = "recommended_film_interactions"
 
     # Define the SQL query to select interaction data for the given user_id
     select_query = "SELECT * FROM {}".format(table_name)
