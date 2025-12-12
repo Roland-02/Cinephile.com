@@ -81,20 +81,17 @@ const Profile = () => {
       <div>
         {items.slice(0, 5).map((item, index) => {
           // Handle both object format {name, count} and string format (legacy)
-          const name = typeof item === 'object' && item !== null ? (item.name || item) : item;
-          const count = typeof item === 'object' && item !== null ? item.count : null;
           
           return (
             <div 
               key={index} 
               className="favourite-item"
-              onClick={() => handleItemClick(name)}
+              onClick={() => handleItemClick(item.name)}
               style={{ cursor: 'pointer' }}
             >
             <p>
                 <span style={{ marginRight: '12px' }}>{index + 1}.</span>
-                <strong>{name}</strong>
-                {count !== null && count !== undefined && ` - ${count} film${count !== 1 ? 's' : ''}`}
+                <strong>{item.name}</strong>
             </p>
           </div>
           );
@@ -149,7 +146,7 @@ const Profile = () => {
               const label = context.label || '';
               const value = context.parsed || 0;
               const percentage = Math.round((value / total) * 100);
-              return `${label}: ${value} films (${percentage}%)`;
+              return `${label}: (${percentage}%)`;
             }
           }
         }
