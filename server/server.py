@@ -99,7 +99,6 @@ def login():
             # Update profile and cache films in recommendation engine
             try:
                 request.post(f'/api/update_profile_and_vectors?user_id={user_id}', timeout=10)
-                request.post(f'/api/cache_recommend_pack?user_id={user_id}', timeout=10)
             except Exception as e:
                 print(f"Warning: Could not update profile: {e}")
             
