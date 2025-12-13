@@ -76,8 +76,8 @@ def init_recommend_cache(app_instance):
     """Initialize cache with the Flask app instance"""
     global cache
     config = {         
-        "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
-        "CACHE_DEFAULT_TIMEOUT": 2073600 #1 day
+        "CACHE_TYPE": "SimpleCache",     # Flask-Caching related configs
+        "CACHE_DEFAULT_TIMEOUT": 2073600 # 1 day
     }
     app_instance.config.from_mapping(config)
     cache = Cache(app_instance)
@@ -1098,7 +1098,8 @@ def get_batch_route():
     user_id = request.args.get("user_id")
     category = request.args.get("category")
     page = int(request.args.get("page"))
-    batch_size = 100
+    batch_size = int(os.getenv("PAGE_SIZE"))
+
 
     films_json = cache.get(f'user_{category}_recommended{user_id}')
 
