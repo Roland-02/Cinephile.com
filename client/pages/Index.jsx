@@ -291,6 +291,18 @@ const Index = () => {
       setLikedElements(elements);
       setLikedCast(cast);
       
+      // Check if all attributes are liked - if so, ensure film is marked as loved
+      setTimeout(() => {
+        const totalLikeables = document.querySelectorAll('.likeable').length;
+        const likedCount = elements.length + cast.length;
+        if (totalLikeables > 0 && likedCount === totalLikeables) {
+          const isCurrentlyLoved = myLoved.some((f) => f.tconst === filmTconst);
+          if (!isCurrentlyLoved) {
+            setIsLoved(true);
+          }
+        }
+      }, 0);
+      
       // Update cache in user_data.liked dictionary
       const cached = localStorage.getItem('user_data');
       if (cached) {
@@ -359,22 +371,50 @@ const Index = () => {
       // Check if film is in watchlist (from cache)
       setIsInWatchlist(watchList.some((f) => f.tconst === film.tconst));
 
-      // Check if film is loved (from cache)
-      const isLovedFilm = myLoved.some((f) => f.tconst === film.tconst);
+      // Check localStorage cache for most up-to-date loved status
+      const cached = localStorage.getItem('user_data');
+      let isLovedFilm = false;
+      
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          // Check both state and cache for loved status
+          isLovedFilm = myLoved.some((f) => f.tconst === film.tconst) || 
+                       (data.loved && data.loved.some((f) => f.tconst === film.tconst));
+        } catch (e) {
+          // Fallback to state if cache parse fails
+          isLovedFilm = myLoved.some((f) => f.tconst === film.tconst);
+        }
+      } else {
+        // No cache, use state
+        isLovedFilm = myLoved.some((f) => f.tconst === film.tconst);
+      }
+      
       setIsLoved(isLovedFilm);
 
       // Load liked elements if film is liked (from cache)
       const isFilmLiked = myLiked.some((f) => f.tconst === film.tconst);
       if (isFilmLiked) {
         // Check localStorage cache for liked elements in liked dictionary
-        const cached = localStorage.getItem('user_data');
         if (cached) {
           try {
             const data = JSON.parse(cached);
             const likedFilm = data.liked?.[film.tconst];
             if (likedFilm && (likedFilm.elements?.length > 0 || likedFilm.cast?.length > 0)) {
-              setLikedElements(likedFilm.elements || []);
-              setLikedCast(likedFilm.cast || []);
+              const elements = likedFilm.elements || [];
+              const cast = likedFilm.cast || [];
+              setLikedElements(elements);
+              setLikedCast(cast);
+              
+              // If all attributes are liked, ensure film is marked as loved
+              // Use setTimeout to ensure DOM is ready
+              setTimeout(() => {
+                const totalLikeables = document.querySelectorAll('.likeable').length;
+                const likedCount = elements.length + cast.length;
+                if (totalLikeables > 0 && likedCount === totalLikeables && !isLovedFilm) {
+                  setIsLoved(true);
+                }
+              }, 0);
             } else {
               // Not in cache, fetch from API
               fetchLikedElements(film.tconst);
