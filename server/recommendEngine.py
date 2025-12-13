@@ -69,6 +69,9 @@ def get_db_cursor():
         _thread_local.mycursor = get_db_connection().cursor()
     return _thread_local.mycursor
 
+# Global cache variable (will be initialized by init_recommend_cache)
+cache = None
+
 def init_recommend_cache(app_instance):
     """Initialize cache with the Flask app instance"""
     global cache
@@ -967,8 +970,9 @@ allFilms_cluster_labels = initialise_clusters()
 
 
 @recommend_bp.route('/update_profile_and_vectors', methods=['POST'])
-def update_profile_and_vectors():
-    user_id = request.args.get("user_id") 
+def update_profile_and_vectors(user_id=None):
+    if user_id is None:
+        user_id = request.args.get("user_id") 
 
     if user_id:
         # get update user profile and loved films
@@ -1098,19 +1102,26 @@ def get_batch_route():
 
     films_json = cache.get(f'user_{category}_recommended{user_id}')
 
-    if (films_json is not None):
+    # If cache is empty, regenerate recommendations
+    if films_json is None:
+        try:
+            update_profile_and_vectors(user_id=user_id)
+            # Try to get the cache again after regeneration
+            films_json = cache.get(f'user_{category}_recommended{user_id}')
+        except Exception as e:
+            print(f"Error regenerating recommendations: {e}")
+            return jsonify({"films": []})
 
-        films_data = json.loads(films_json)
+ 
+    films_data = json.loads(films_json)
 
-        start_index = (page - 1) * batch_size
-        end_index = (page) * batch_size
+    start_index = (page - 1) * batch_size
+    end_index = (page) * batch_size
 
-        # Slice the films list to get the batch
-        batch = films_data[start_index:end_index]
-        
-        return jsonify({"films": batch})
-
-    return jsonify({"films": []})
+    # Slice the films list to get the batch
+    batch = films_data[start_index:end_index]
+    
+    return jsonify({"films": batch})
     
 
 @recommend_bp.route('/get_liked_staff', methods=['GET'])
