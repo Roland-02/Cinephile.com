@@ -379,6 +379,9 @@ def loadAllFilms():
     films = mycursor.fetchall()
 
     films_data = pd.DataFrame(films, columns=columns)
+    
+    # Convert averageRating to float if it exists
+    films_data['averageRating'] = films_data['averageRating'].astype(float)
 
     return films_data
 
@@ -962,8 +965,9 @@ data['soup'] = data.apply(lambda x: create_soup(x, attributes), axis=1)
 kmeans = train_kmeans()
 allFilms_cluster_labels = initialise_clusters()
 
+
 @recommend_bp.route('/update_profile_and_vectors', methods=['POST'])
-def initialise_profile_route():
+def update_profile_and_vectors():
     user_id = request.args.get("user_id") 
 
     if user_id:
@@ -1011,110 +1015,77 @@ def initialise_profile_route():
         cache.set(f'user_profile_{user_id}', user_profile.to_json())
         cache.set(f'similarity_vectors_{user_id}', json.dumps(similarity_vectors_json))
 
-        return jsonify({"message": "User profile and vectors updated and stored in cache"})
-    else:
-        return jsonify({"message": "Error loading profile"})
-
-
-@recommend_bp.route('/cache_recommend_pack', methods=['POST'])
-def bulk_recommend_route():
-    user_id = request.args.get("user_id") 
-
-    if user_id:
-
-        # user_profile_json = redis_client.get(f'user_profile_{user_id}')
-        user_profile_json = cache.get(f'user_profile_{user_id}')
-        if(user_profile_json):
-
-            user_profile_data = json.loads(user_profile_json)
-            user_profile_df = pd.DataFrame(user_profile_data)
-
-            if(user_profile_df.empty):
-
-                # save recommendations to cache (empty lists instead of empty dicts)
-                cache.set(f'user_content_recommended{user_id}', json.dumps([]))
-                cache.set(f'user_plot_recommended{user_id}', json.dumps([]))
-                cache.set(f'user_cast_recommended{user_id}', json.dumps([]))
-                cache.set(f'user_crew_recommended{user_id}', json.dumps([]))
-                cache.set(f'user_genre_recommended{user_id}', json.dumps([]))
-
-                return jsonify({"message": "Profile empty, empty recommendations cached"})
-        
-            else:    
-                # get groups of liked attributes
-                grouped_likes = collate_liked_groups(user_profile_df)
-                liked_plot = grouped_likes[0]
-                liked_cast = grouped_likes[1]
-                liked_crew = grouped_likes[2]
-                liked_genre = grouped_likes[3]
-                liked_meta = grouped_likes[4]
-
-                user_profile_groups = {
-                    'plot': liked_plot,
-                    'cast': liked_cast,
-                    'crew': liked_crew,
-                    'genre': liked_genre,
-                    'meta': liked_meta
-                }
-            
-                # similarity_vectors_json = redis_client.get(f'similarity_vectors_{user_id}')
-                similarity_vectors_json = cache.get(f'similarity_vectors_{user_id}')
-                similarity_vectors_data = json.loads(similarity_vectors_json)
-
-                # Convert lists to NumPy arrays
-                similarity_vectors = {
-                    'plot': np.array(similarity_vectors_data['plot']),
-                    'cast': np.array(similarity_vectors_data['cast']),
-                    'crew': np.array(similarity_vectors_data['crew']),
-                    'genre': np.array(similarity_vectors_data['genre']),
-                    'meta': np.array(similarity_vectors_data['meta'])
-                }
-     
-                # content recommendations 
-                content_recommended = get_content_recommendations(user_profile_groups, similarity_vectors)
-                content_recommended_filtered = content_recommended[~content_recommended['tconst'].isin(user_profile_df['tconst'])]
-                content_recommended_dict = content_recommended_filtered.to_dict(orient='records')
-                similarity_dict = dict(zip(content_recommended_filtered['tconst'], content_recommended_filtered['similarity']))
-
-                #plot recommendations
-                plot_recommended = get_similar_films(similarity_vectors['plot'], user_profile_df)
-                plot_recommended['similarity'] = plot_recommended['tconst'].map(similarity_dict)
-                plot_recommended_dict = plot_recommended.to_dict(orient='records')
-
-                #cast recommendations
-                cast_recommended = get_similar_films(similarity_vectors['cast'], user_profile_df)
-                cast_recommended['similarity'] = cast_recommended['tconst'].map(similarity_dict)
-                cast_recommended_dict = cast_recommended.to_dict(orient='records')
-
-                #crew recommendations
-                crew_recommended = get_similar_films(similarity_vectors['crew'], user_profile_df)
-                crew_recommended['similarity'] = crew_recommended['tconst'].map(similarity_dict)
-                crew_recommended_dict = crew_recommended.to_dict(orient='records')
-
-                # genre recommendations from clusters
-                genre_recommended = recommend_genre_clusters(user_profile_df, content_recommended)
-                genre_recommended_dict = genre_recommended.to_dict(orient='records')
-
-                #save recommendations to cache
-                cache.set(f'user_content_recommended{user_id}', json.dumps(content_recommended_dict))
-                cache.set(f'user_plot_recommended{user_id}', json.dumps(plot_recommended_dict))
-                cache.set(f'user_cast_recommended{user_id}', json.dumps(cast_recommended_dict))
-                cache.set(f'user_crew_recommended{user_id}', json.dumps(crew_recommended_dict))
-                cache.set(f'user_genre_recommended{user_id}', json.dumps(genre_recommended_dict))
-
-                return jsonify({"message": "Recommendations stored in cache"})
-            
-        else:
+        # Immediately generate and cache recommendations
+        if user_profile.empty:
             # save recommendations to cache (empty lists instead of empty dicts)
             cache.set(f'user_content_recommended{user_id}', json.dumps([]))
             cache.set(f'user_plot_recommended{user_id}', json.dumps([]))
             cache.set(f'user_cast_recommended{user_id}', json.dumps([]))
             cache.set(f'user_crew_recommended{user_id}', json.dumps([]))
             cache.set(f'user_genre_recommended{user_id}', json.dumps([]))
-
+            
             return jsonify({"message": "Profile empty, empty recommendations cached"})
+        else:
+            # get groups of liked attributes
+            grouped_likes = collate_liked_groups(user_profile)
+            liked_plot = grouped_likes[0]
+            liked_cast = grouped_likes[1]
+            liked_crew = grouped_likes[2]
+            liked_genre = grouped_likes[3]
+            liked_meta = grouped_likes[4]
+
+            user_profile_groups = {
+                'plot': liked_plot,
+                'cast': liked_cast,
+                'crew': liked_crew,
+                'genre': liked_genre,
+                'meta': liked_meta
+            }
+
+            # Convert similarity vectors to NumPy arrays
+            similarity_vectors = {
+                'plot': np.array(similarity_vectors_json['plot']),
+                'cast': np.array(similarity_vectors_json['cast']),
+                'crew': np.array(similarity_vectors_json['crew']),
+                'genre': np.array(similarity_vectors_json['genre']),
+                'meta': np.array(similarity_vectors_json['meta'])
+            }
+ 
+            # content recommendations 
+            content_recommended = get_content_recommendations(user_profile_groups, similarity_vectors)
+            content_recommended_filtered = content_recommended[~content_recommended['tconst'].isin(user_profile['tconst'])]
+            content_recommended_dict = content_recommended_filtered.to_dict(orient='records')
+            similarity_dict = dict(zip(content_recommended_filtered['tconst'], content_recommended_filtered['similarity']))
+
+            #plot recommendations
+            plot_recommended = get_similar_films(similarity_vectors['plot'], user_profile)
+            plot_recommended['similarity'] = plot_recommended['tconst'].map(similarity_dict)
+            plot_recommended_dict = plot_recommended.to_dict(orient='records')
+
+            #cast recommendations
+            cast_recommended = get_similar_films(similarity_vectors['cast'], user_profile)
+            cast_recommended['similarity'] = cast_recommended['tconst'].map(similarity_dict)
+            cast_recommended_dict = cast_recommended.to_dict(orient='records')
+
+            #crew recommendations
+            crew_recommended = get_similar_films(similarity_vectors['crew'], user_profile)
+            crew_recommended['similarity'] = crew_recommended['tconst'].map(similarity_dict)
+            crew_recommended_dict = crew_recommended.to_dict(orient='records')
+
+            # genre recommendations from clusters
+            genre_recommended = recommend_genre_clusters(user_profile, content_recommended)
+            genre_recommended_dict = genre_recommended.to_dict(orient='records')
+
+            # save recommendations to cache (handle Decimal serialization)
+            cache.set(f'user_content_recommended{user_id}', json.dumps(content_recommended_dict))
+            cache.set(f'user_plot_recommended{user_id}', json.dumps(plot_recommended_dict))
+            cache.set(f'user_cast_recommended{user_id}', json.dumps(cast_recommended_dict))
+            cache.set(f'user_crew_recommended{user_id}', json.dumps(crew_recommended_dict))
+            cache.set(f'user_genre_recommended{user_id}', json.dumps(genre_recommended_dict))
+
+            return jsonify({"message": "User profile, vectors, and recommendations updated and stored in cache"})
     else:
-        return jsonify({"message": "User not found"})
+        return jsonify({"message": "Error loading profile"})
 
 
 @recommend_bp.route('/get_batch', methods=['GET'])
@@ -1126,31 +1097,24 @@ def get_batch_route():
     batch_size = 100
 
     films_json = cache.get(f'user_{category}_recommended{user_id}')
-    
-    if(films_json is not None):
+
+    if (films_json is not None):
 
         films_data = json.loads(films_json)
 
-        # Handle both list and dict formats, ensure it's a list
-        if isinstance(films_data, dict):
-            films_data = list(films_data.values()) if films_data else []
-        elif not isinstance(films_data, list):
-            films_data = []
+        start_index = (page - 1) * batch_size
+        end_index = (page) * batch_size
 
-        if films_data and len(films_data) > 0:
-            start_index = (page - 1) * batch_size
-            end_index = (page) * batch_size
+        # Slice the films list to get the batch
+        batch = films_data[start_index:end_index]
+        
+        return jsonify({"films": batch})
 
-            # Slice the films list to get the batch
-            batch = films_data[start_index:end_index]
-            
-            return jsonify({"films": batch})
-   
     return jsonify({"films": []})
     
 
 @recommend_bp.route('/get_liked_staff', methods=['GET'])
-def get_staff_route():
+def get_liked_staff():
 
     user_id = request.args.get("user_id")
     get_profile = get_user_profile(user_id)
@@ -1191,7 +1155,7 @@ def get_liked_route():
 
 
 @recommend_bp.route('/get_user_watchlist', methods=['GET'])
-def get_watchlist_route():
+def get_user_watchlist():
     user_id = request.args.get("user_id")
     watchlist = get_watchlist(user_id)
 
@@ -1204,7 +1168,7 @@ def get_watchlist_route():
 
 
 @recommend_bp.route('/get_user_films', methods=['GET'])
-def get_user_films_route():
+def get_user_films():
     user_id = request.args.get("user_id")
     user_profile = get_user_profile(user_id)[0]
 
@@ -1217,7 +1181,7 @@ def get_user_films_route():
 
 
 @recommend_bp.route('/get_profile_stats', methods=['GET'])
-def get_fav_cast_route():
+def get_profile_stats():
     user_id = request.args.get("user_id")
     user_profile_df = get_user_profile(user_id)[0]
     

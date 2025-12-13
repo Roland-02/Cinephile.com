@@ -30,6 +30,7 @@ const Index = () => {
     year: 'Any'
   });
   const hasInitialized = useRef(false);
+  const isLoadingRef = useRef(false);
   
   const session = getSession();
   const user_id = session?.id;
@@ -208,24 +209,31 @@ const Index = () => {
       
       // For outside films, if the current film is not in cache, load the correct chunk
       if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
-        // For small sets, load from 0. For larger sets, load the chunk containing the target film
-        const newCacheStart = totalFilms < CACHE_SIZE 
-          ? 0 
-          : Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
-        loadFilms(newCacheStart);
-      } else if (filmCache.length > 0) {
+        // Skip if already loading to prevent duplicate calls
+        if (!loading) {
+          // For small sets, load from 0. For larger sets, load the chunk containing the target film
+          const newCacheStart = totalFilms < CACHE_SIZE 
+            ? 0 
+            : Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
+          loadFilms(newCacheStart);
+        }
+      } else if (filmCache.length > 0 && !loading) {
         updateFilm();
       }
     } else {
       // Normal behavior for non-outside films
       if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
-        const newCacheStart = Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
-        loadFilms(newCacheStart);
-      } else if (filmCache.length > 0) {
+        // Skip if already loading to prevent duplicate calls
+        if (!loading) {
+          const newCacheStart = Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
+          loadFilms(newCacheStart);
+        }
+      } else if (filmCache.length > 0 && !loading) {
         updateFilm();
       }
     }
-  }, [filmIndex, filmCache, cacheStartIndex, outside]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filmIndex, cacheStartIndex, outside, loading]);
 
   const getFilms = async (startGlobalIndex) => {
     try {
@@ -334,13 +342,21 @@ const Index = () => {
   };
 
   const loadFilms = async (startIndex) => {
+    // Prevent duplicate calls
+    if (isLoadingRef.current) return;
+    
+    isLoadingRef.current = true;
     setLoading(true);
-    const filmsData = await getFilms(startIndex);
-    if (filmsData && filmsData.length > 0) {
-      setFilmCache(filmsData);
-      setCacheStartIndex(startIndex);
+    try {
+      const filmsData = await getFilms(startIndex);
+      if (filmsData && filmsData.length > 0) {
+        setFilmCache(filmsData);
+        setCacheStartIndex(startIndex);
+      }
+    } finally {
+      setLoading(false);
+      isLoadingRef.current = false;
     }
-    setLoading(false);
   };
 
   const updateFilm = async () => {
