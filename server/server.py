@@ -23,6 +23,8 @@ CORS(app)
 
 # Initialize recommendation engine cache
 init_recommend_cache(app)
+# Import cache after initialization
+from recommendEngine import cache
 
 # Register recommendation blueprint with /api prefix
 app.register_blueprint(recommend_bp, url_prefix='/api')
@@ -481,6 +483,15 @@ def love_film():
         cursor.close()
         conn.close()
         
+        # Clear recommendation cache since user profile changed
+        cache.delete(f'user_content_recommended{user_id}')
+        cache.delete(f'user_plot_recommended{user_id}')
+        cache.delete(f'user_cast_recommended{user_id}')
+        cache.delete(f'user_crew_recommended{user_id}')
+        cache.delete(f'user_genre_recommended{user_id}')
+        cache.delete(f'user_profile_{user_id}')
+        cache.delete(f'similarity_vectors_{user_id}')
+        
         hasUserInteracted = True
         return jsonify('Film saved successfully')
     except Exception as e:
@@ -504,6 +515,15 @@ def unlove_film():
         conn.commit()
         cursor.close()
         conn.close()
+        
+        # Clear recommendation cache since user profile changed
+        cache.delete(f'user_content_recommended{user_id}')
+        cache.delete(f'user_plot_recommended{user_id}')
+        cache.delete(f'user_cast_recommended{user_id}')
+        cache.delete(f'user_crew_recommended{user_id}')
+        cache.delete(f'user_genre_recommended{user_id}')
+        cache.delete(f'user_profile_{user_id}')
+        cache.delete(f'similarity_vectors_{user_id}')
         
         hasUserInteracted = True
         return jsonify('Removed successfully')
@@ -558,6 +578,15 @@ def save_liked_elements():
         conn.commit()
         cursor.close()
         conn.close()
+        
+        # Clear recommendation cache since user profile changed
+        cache.delete(f'user_content_recommended{user_id}')
+        cache.delete(f'user_plot_recommended{user_id}')
+        cache.delete(f'user_cast_recommended{user_id}')
+        cache.delete(f'user_crew_recommended{user_id}')
+        cache.delete(f'user_genre_recommended{user_id}')
+        cache.delete(f'user_profile_{user_id}')
+        cache.delete(f'similarity_vectors_{user_id}')
         
         hasUserInteracted = True
         return jsonify('Data saved successfully')
@@ -624,7 +653,7 @@ def has_user_interacted():
 # All routes are registered with /api prefix in the blueprint registration above
 
 # ============================================================================
-# SERVE REACT APP - Must be last route
+# SERVE REACT APP
 # ============================================================================
 
 @app.route('/client/<path:filename>')
