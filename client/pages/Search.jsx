@@ -128,13 +128,7 @@ const Search = () => {
   };
 
   const handleFilmClick = (film, filmIndex) => {
-    const page = Math.floor(filmIndex / 100) + 1;
-    const startIndex = (page - 1) * 100;
-    const currentIndex = filmIndex - startIndex;
-    const counter = filmIndex;
-
-    localStorage.setItem('counter', counter);
-    localStorage.setItem('currentIndex', currentIndex);
+    localStorage.setItem('filmIndex', filmIndex);
     localStorage.setItem('films-source', JSON.stringify(films));
     navigate('/index');
   };
