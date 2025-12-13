@@ -36,7 +36,7 @@ start_recommendation_scheduler()
 hasUserInteracted = False
 allFilms_global = []
 filteredFilms_global = []
-PAGE_SIZE = int(os.getenv("PAGE_SIZE", "100"))
+PAGE_SIZE = int(os.getenv("PAGE_SIZE"))
 films_loaded = False
 
 def create_db_connection():
