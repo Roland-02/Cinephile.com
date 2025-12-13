@@ -46,7 +46,6 @@ const Recommend = () => {
     setLoading(true);
     try {
       await axios.post(`/api/update_profile_and_vectors?user_id=${user_id}`);
-      await axios.post(`/api/cache_recommend_pack?user_id=${user_id}`);
       await loadFilms();
     } catch (error) {
       console.error('Error updating profile:', error);
