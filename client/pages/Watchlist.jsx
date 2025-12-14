@@ -30,12 +30,39 @@ const Watchlist = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [user_id]);
 
-  // Load user's watchlist from API
+  // Load user's watchlist from cache or API
   const loadWatchlist = async () => {
+    // Try to load from cache first
+    const cached = localStorage.getItem('user_data');
+    
+    if (cached) {
+      try {
+        const data = JSON.parse(cached);
+        if (data.watchlist && Array.isArray(data.watchlist)) {
+          setFilms(data.watchlist);
+          setLoading(false);
+          return; // Exit early if cache loaded successfully
+        }
+      } catch (e) {
+        console.error('Error parsing cached user data:', e);
+      }
+    }
+    
+    // If cache not available or invalid, fetch from API
     try {
       const response = await axios.get(`/api/get_user_watchlist?user_id=${user_id}`);
-      const watchlist = response.data.watchlist || [];
+      const watchlist = response.data.watchlist || response.data || [];
       setFilms(watchlist);
+      
+      // Update cache with full film data
+      try {
+        const cached = localStorage.getItem('user_data');
+        const data = cached ? JSON.parse(cached) : {};
+        data.watchlist = watchlist;
+        localStorage.setItem('user_data', JSON.stringify(data));
+      } catch (e) {
+        console.error('Error updating cache with watchlist data:', e);
+      }
     } catch (error) {
       console.error('Error loading watchlist:', error);
     } finally {

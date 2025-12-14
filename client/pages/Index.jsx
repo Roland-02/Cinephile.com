@@ -73,10 +73,11 @@ const Index = () => {
         likedDict[film.tconst] = { ...film, elements: [], cast: [] };
       });
 
+      // Ensure we store full film objects with metadata
       const userData = {
-        watchlist: watchListRes.data,
+        watchlist: Array.isArray(watchListRes.data) ? watchListRes.data : [],
         liked: likedDict,
-        loved: lovedRes.data,
+        loved: Array.isArray(lovedRes.data) ? lovedRes.data : (lovedRes.data?.films || []),
       };
 
       setWatchList(userData.watchlist);
@@ -353,7 +354,15 @@ const Index = () => {
       setIsLoved(isLovedFilm);
 
       const isFilmLiked = myLiked.some((f) => f.tconst === film.tconst);
-      if (isFilmLiked) {
+      
+      // If film is loved, all elements should be highlighted
+      if (isLovedFilm) {
+        const allElements = ['Title', 'Plot', 'Rating', 'Genre', 'Runtime', 'Year', 'Director', 'Camera', 'Writer', 'Producer', 'Editor', 'Composer'];
+        const allCast = film.cast ? film.cast.split(',').map(c => c.trim()) : [];
+        setLikedElements(allElements);
+        setLikedCast(allCast);
+      } else if (isFilmLiked) {
+        // Film is liked but not loved, load the specific liked elements
         if (cached) {
           try {
             const data = JSON.parse(cached);
@@ -381,6 +390,7 @@ const Index = () => {
           fetchLikedElements(film.tconst);
         }
       } else {
+        // Film is neither loved nor liked
         setLikedElements([]);
         setLikedCast([]);
       }
@@ -521,7 +531,7 @@ const Index = () => {
         user_id: user_id,
       });
       setIsLoved(true);
-      const newLoved = [...myLoved, { tconst: currentFilm.tconst }];
+      const newLoved = [...myLoved, currentFilm];
       setMyLoved(newLoved);
 
       const allElements = ['Title', 'Plot', 'Rating', 'Genre', 'Runtime', 'Year', 'Director', 'Camera', 'Writer', 'Producer', 'Editor', 'Composer'];
@@ -611,7 +621,7 @@ const Index = () => {
           film_id: currentFilm.tconst,
           user_id: user_id,
         });
-        const newWatchlist = [...watchList, { tconst: currentFilm.tconst }];
+        const newWatchlist = [...watchList, currentFilm];
         setWatchList(newWatchlist);
         const cached = localStorage.getItem('user_data');
         if (cached) {
