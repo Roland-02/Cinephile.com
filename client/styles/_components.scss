@@ -1,0 +1,235 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// View container
+.view-container {
+  display: ontlex;
+  align-items: center;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 95%;
+  background-color: $color-white;
+}
+
+// Film poster
+#film-poster {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+// Likeable elements
+.likeable {
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.liked {
+  background-color: $color-orange-light;
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+// Carousel controls - no borders
+.carousel-control-prev,
+.carousel-control-next,
+#prev-btn,
+#next-btn {
+  @include border-none;
+  cursor: pointer;
+  z-index: 10;
+  
+  &:hover {
+    cursor: pointer;
+  }
+  
+  &:focus {
+    @include border-none;
+    box-shadow: none !important;
+  }
+}
+
+// Filter options
+#filterOptions {
+  z-index: $filter-z-index;
+  background-color: $color-white;
+  @include border-black;
+  position: relative;
+  min-width: 200px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  
+  .form-label {
+    font-weight: 500;
+    margin-bottom: $spacing-xs;
+    font-size: $font-size-sm;
+  }
+  
+  .form-select {
+    margin-bottom: $spacing-md;
+    font-size: $font-size-sm;
+  }
+  
+  .btn-primary {
+    width: 100%;
+    font-size: $font-size-md;
+    text-align: center;
+  }
+}
+
+
+// Back to top button
+#backToTopBtn {
+  position: fixed;
+  top: $navbar-height;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: $color-white;
+  color: $color-black;
+  width: auto;
+  min-width: 80px;
+  padding: $spacing-xs $spacing-sm;
+  @include border-black;
+  border-radius: $border-radius;
+  z-index: $back-to-top-z-index;
+  opacity: 0.7;
+  transition: all $transition-fast;
+  cursor: pointer;
+  
+  &:hover {
+    opacity: 1;
+    background-color: $color-grey-light;
+  }
+}
+
+// Auth modal
+.auth-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.auth-modal-content {
+  background-color: $color-white;
+  border: $border-width $border-style $color-black;
+  border-radius: $border-radius;
+  padding: $spacing-lg;
+  padding-bottom: $spacing-xl;
+  max-width: 450px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  
+  h2 {
+    margin: 0;
+    margin-bottom: $spacing-sm;
+    text-align: center;
+    text-decoration: underline;
+  }
+  
+  // Close button
+  .auth-modal-close {
+    transition: all $transition-fast;
+    
+    &:hover {
+      background-color: $color-grey-light !important;
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+  
+  // Form group with label on top
+  .auth-form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: $spacing-md;
+    
+    .auth-form-label {
+      font-weight: 500;
+      margin-bottom: $spacing-xs;
+      color: $color-black;
+      font-size: $font-size-base;
+      display: block;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: $spacing-sm $spacing-md;
+      border: $border-width $border-style $color-black;
+      border-radius: $border-radius;
+      font-size: $font-size-base;
+      transition: border-color $transition-fast;
+      background-color: $color-white;
+      color: $color-black;
+      
+      &:focus {
+        outline: none;
+        border-color: $color-black;
+        border-width: 2px;
+      }
+      
+      &::placeholder {
+        color: $color-grey;
+        opacity: 0.7;
+      }
+    }
+  }
+  
+  button[type="button"] {
+    border: $border-width $border-style $color-black;
+    background: $color-white;
+    cursor: pointer;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-lg;
+    transition: all $transition-fast;
+    
+    &:hover {
+      background-color: $color-grey-light;
+    }
+  }
+  
+  // Auth modal buttons - prevent text color change on hover
+  .auth-submit-btn {
+    &.btn-primary {
+      color: $color-white;
+      
+      &:hover {
+        color: $color-white !important;
+        background-color: $color-grey;
+      }
+    }
+  }
+  
+  .auth-switch-btn {
+    &.btn-outline-primary {
+      color: $color-black;
+      
+      &:hover {
+        color: $color-black !important;
+        background-color: $color-grey-light;
+      }
+    }
+  }
+}
+

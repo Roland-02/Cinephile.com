@@ -1,0 +1,44 @@
+// Colors
+$color-white: #ffffff;
+$color-black: #000000;
+$color-orange: #ffa600;
+$color-orange-light: rgba(255, 166, 0, 0.7);
+$color-red: #ff0000;
+$color-blue: #3498db;
+$color-grey: #808080;
+$color-grey-light: #f3f3f3;
+
+// Spacing
+$spacing-xs: 5px;
+$spacing-sm: 10px;
+$spacing-md: 15px;
+$spacing-lg: 20px;
+$spacing-xl: 30px;
+
+// Typography
+$font-size-xs: 12px;
+$font-size-sm: 14px;
+$font-size-base: 16px;
+$font-size-md: 16.5px;
+$font-size-lg: 18px;
+$font-size-xl: 22px;
+$font-size-xxl: 32px;
+
+// Layout
+$navbar-height: 70px;
+$navbar-z-index: 100;
+$filter-z-index: 9999;
+$back-to-top-z-index: 1000;
+
+// Borders
+$border-width: 1px;
+$border-style: solid;
+$border-color: $color-black;
+$border-radius: 4px;
+
+// Transitions
+$transition-fast: 0.3s ease;
+
+// Breakpoints
+$breakpoint-md: 991px;
+

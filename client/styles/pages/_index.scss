@@ -1,0 +1,180 @@
+@use '../variables' as *;
+@use '../mixins' as *;
+
+// Index page specific styles
+
+// Cast names styling
+.actor {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius;
+  transition: all $transition-fast;
+  display: inline-flex;
+  align-items: center;
+  
+  &:hover {
+    background-color: $color-grey-light;
+    transform: translateY(-2px);
+  }
+  
+  &.liked {
+    background-color: $color-orange-light;
+    
+    &:hover {
+      background-color: $color-orange;
+    }
+  }
+}
+
+// Film attribute boxes hover effects
+#_filmRating,
+#_filmGenre,
+#_filmRuntime,
+#_filmYear,
+#_filmDirector,
+#_filmCamera,
+#_filmWriter,
+#_filmProducer,
+#_filmEditor,
+#_filmComposer {
+  transition: all $transition-fast;
+  border-radius: $border-radius;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100px;
+
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .h5 {
+    width: 100%;
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: $spacing-sm;
+    padding-bottom: $spacing-xs;
+  }
+  
+  .medium-text {
+    text-align: center;
+    margin-bottom: $spacing-xs;
+  }
+}
+
+#_filmTitle {
+  transition: all $transition-fast;
+  border-radius: $border-radius;
+  padding: 2px $spacing-xs;
+  display: inline-block;
+  margin-bottom: 4px;
+  
+  strong {
+    font-size: $font-size-xxl;
+  }
+  
+  &:hover {
+    background-color: $color-grey-light;
+    transform: translateY(-2px);
+  }
+  
+  &.liked {
+    background-color: $color-orange-light;
+    
+    &:hover {
+      background-color: $color-orange;
+    }
+  }
+}
+
+#_filmPlot {
+  transition: all $transition-fast;
+  border-radius: $border-radius;
+  padding: 2px $spacing-xs;
+  display: inline-block;
+  margin-top: 4px;
+  
+  p {
+    line-height: 1.6;
+    margin: 0;
+  }
+  
+  &:hover {
+    background-color: $color-grey-light;
+    transform: translateY(-2px);
+  }
+  
+  &.liked {
+    background-color: $color-orange-light;
+    
+    &:hover {
+      background-color: $color-orange;
+    }
+  }
+}
+
+// Crew boxes - uniform size and positioning
+.crew-box {
+  min-width: 150px;
+  width: 150px;
+  min-height: 100px;
+  padding: $spacing-sm $spacing-md !important;
+  margin: $spacing-sm !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  flex-shrink: 0;
+  transition: all $transition-fast;
+  border-radius: $border-radius;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .h5 {
+    width: 100%;
+    text-align: center;
+    margin-bottom: $spacing-sm;
+    padding-bottom: $spacing-xs;
+  }
+
+  .medium-text {
+    margin-bottom: $spacing-xs;
+  }
+
+  // Empty state styling
+  &.crew-box-empty {
+    opacity: 0.6;
+    cursor: default !important;
+  }
+}
+
+// Love and Watchlist buttons hover effects
+#heart-filled,
+#heart-blank {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  fill: #000;
+  
+  &:hover {
+    transform: scale(1.2);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  }
+}
+
+#watchlist-filled,
+#watchlist-blank {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  fill: #000;
+  
+  &:hover {
+    transform: scale(1.2);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  }
+}
+

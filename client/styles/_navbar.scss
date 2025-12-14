@@ -1,0 +1,329 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// Navbar container
+.nav-container {
+  @include flex-between;
+  width: 100%;
+}
+
+.nav-bar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: $navbar-height;
+  z-index: $navbar-z-index;
+  @include flex-between;
+  background-color: $color-white;
+  border-bottom: $border-width $border-style $color-black;
+  box-sizing: border-box;
+  padding: 0 $spacing-xl;
+  min-width: 0; // Allow flex items to shrink
+}
+
+.nav-left,
+.nav-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0; // Prevent shrinking
+  min-width: 0;
+}
+
+.nav-left {
+  justify-content: flex-start;
+  flex: 0 0 auto;
+}
+
+.nav-right {
+  justify-content: flex-end;
+  gap: $spacing-xs;
+  flex: 0 0 auto;
+  
+  .menu-item:not(:last-child) {
+    margin-right: $spacing-md;
+  }
+}
+
+.nav-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  @include flex-center;
+  cursor: pointer;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: calc(100% - 300px); // Reserve space for buttons
+  padding: 0 $spacing-sm;
+  z-index: 1;
+  
+  h1 {
+    white-space: nowrap;
+    font-size: clamp(20px, 3vw, 28px); // Keep title bigger
+    margin: 0;
+    letter-spacing: 2px;
+  }
+  
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+// Menu buttons - fix double border issue
+.menu-btn {
+  width: auto;
+  height: auto;
+  margin: $spacing-xs 4px;
+  padding: $spacing-xs $spacing-sm;
+  @include border-black;
+  background-color: $color-white;
+  cursor: pointer;
+  border-radius: $border-radius;
+  transition: all $transition-fast;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: 500;
+  flex-shrink: 1;
+  white-space: nowrap;
+  min-width: 0;
+  
+  &:hover {
+    cursor: pointer;
+    background-color: $color-grey-light;
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  // Remove Bootstrap's border class effect to prevent double borders
+  &.border {
+    border: $border-width $border-style $color-black !important;
+  }
+  
+  p {
+    font-size: clamp(11px, 1.2vw, $font-size-base);
+    margin: 0;
+    font-weight: 500;
+    color: $color-black;
+  }
+  
+  // Active state
+  &.active {
+    background-color: $color-orange;
+    font-weight: 600;
+    
+    p {
+      font-weight: 600;
+      color: $color-black;
+    }
+    
+    &:hover {
+      background-color: $color-orange;
+      opacity: 0.9;
+    }
+  }
+}
+
+// Login and logout icons - grow on hover
+.nav-left {
+  .nav-link {
+    // border: none !important;
+    // background: none !important;
+    padding: $spacing-xs;
+    display: inline-block;
+    transition: transform $transition-fast;
+    
+    svg {
+      transition: transform $transition-fast;
+      transform-origin: center;
+      display: block;
+    }
+    
+    &:hover svg {
+      transform: scale(1.1);
+    }
+  }
+  
+  // Login icon link - no border
+  .nav-link[style*="border: none"] {
+    @include border-none;
+  }
+  
+  // Logout button
+  form button.nav-link {
+    border: none !important;
+    background: none !important;
+    
+    svg {
+      transition: transform $transition-fast;
+      transform-origin: center;
+      display: block;
+    }
+    
+    &:hover svg {
+      transform: scale(1.1);
+    }
+  }
+}
+
+// Responsive adjustments for medium screens
+@media (max-width: 1400px) {
+  .nav-bar {
+    padding: 0 $spacing-md;
+  }
+  
+  .nav-center {
+    max-width: calc(100% - 280px);
+    
+    h1 {
+      font-size: clamp(18px, 2.5vw, 26px);
+    }
+  }
+  
+  .menu-btn {
+    margin: $spacing-xs 3px;
+    padding: $spacing-xs 8px;
+    
+    p {
+      font-size: clamp(11px, 1.1vw, 14px);
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .nav-bar {
+    padding: 0 $spacing-sm;
+  }
+  
+  .nav-center {
+    max-width: calc(100% - 260px);
+    
+    h1 {
+      font-size: clamp(16px, 2.2vw, 24px);
+      letter-spacing: 1.5px;
+    }
+  }
+  
+  .menu-btn {
+    margin: $spacing-xs 2px;
+    padding: $spacing-xs 6px;
+    
+    p {
+      font-size: clamp(10px, 1vw, 13px);
+    }
+  }
+}
+
+@media (max-width: 992px) {
+  .nav-bar {
+    padding: 0 $spacing-xs;
+  }
+  
+  .nav-center {
+    max-width: calc(100% - 240px);
+    
+    h1 {
+      font-size: clamp(14px, 2vw, 22px);
+      letter-spacing: 1px;
+    }
+  }
+  
+  .menu-btn {
+    margin: $spacing-xs 1px;
+    padding: 4px 5px;
+    
+    p {
+      font-size: clamp(9px, 0.9vw, 12px);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-bar {
+    padding: 0 $spacing-xs;
+    height: auto;
+    min-height: $navbar-height;
+  }
+  
+  .nav-center {
+    position: relative;
+    left: auto;
+    transform: none;
+    max-width: 100%;
+    order: 2;
+    flex: 1 1 100%;
+    padding: $spacing-xs 0;
+    
+    h1 {
+      font-size: clamp(18px, 4vw, 24px);
+      letter-spacing: 2px;
+    }
+  }
+  
+  .nav-left {
+    order: 1;
+    flex: 0 0 auto;
+  }
+  
+  .nav-right {
+    order: 3;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  
+  .menu-btn {
+    margin: 2px;
+    padding: 4px 6px;
+    
+    p {
+      font-size: 10px;
+    }
+  }
+}
+
+// Very small screens - stack vertically if needed
+@media (max-width: 576px) {
+  .nav-bar {
+    flex-direction: column;
+    height: auto;
+    padding: $spacing-xs;
+  }
+  
+  .nav-left,
+  .nav-right {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .nav-center {
+    order: 1;
+    width: 100%;
+    margin: $spacing-xs 0;
+    
+    h1 {
+      font-size: 20px;
+    }
+  }
+  
+  .nav-left {
+    order: 2;
+  }
+  
+  .nav-right {
+    order: 3;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .menu-btn {
+    margin: 2px;
+    padding: 4px 8px;
+    
+    p {
+      font-size: 11px;
+    }
+  }
+}
+

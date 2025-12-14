@@ -1,0 +1,169 @@
+@use '../variables' as *;
+@use '../mixins' as *;
+
+// Profile page styles
+.poster-container {
+  width: 100%;
+  height: 80vh;
+}
+
+.film-poster {
+  width: 22%;
+  height: auto;
+  margin: $spacing-xs;
+}
+
+.main-title {
+  font-size: $font-size-xxl;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: $spacing-xs;
+}
+
+.secondary-title {
+  font-size: $font-size-xl + 5px;
+  font-weight: 400;
+  text-align: left;
+  text-decoration: underline;
+  margin-bottom: $spacing-sm;
+  margin-top: $spacing-md;
+  
+  &:first-of-type {
+    margin-top: 0;
+  }
+}
+
+.clickable-film {
+  cursor: pointer;
+  
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+// Flip card styles
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+  
+  &.flipped {
+    transform: rotateY(180deg);
+  }
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
+}
+
+.flipped {
+  transform: rotateY(180deg);
+  display: block;
+}
+
+// Profile stats
+.favourite-item {
+  width: 100%;
+  min-height: auto;
+  margin-bottom: $spacing-md;
+  padding: $spacing-xs 0;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+  }
+  
+  p {
+    margin: $spacing-xs 0;
+    line-height: 1.2;
+    font-size: 1.15em;
+  }
+}
+
+ol {
+  column-count: 2;
+}
+
+li {
+  margin: $spacing-xs;
+}
+
+// Spinner
+.spinner {
+  @include spinner(75px, 4px);
+  margin: auto;
+  margin-top: 20%;
+}
+
+.notFound {
+  height: 100%;
+  width: 100%;
+}
+
+.notFound-ctg {
+  height: 100%;
+  width: 50%;
+}
+
+#analyticsContent {
+  position: relative;
+  padding: $spacing-md;
+  height: 100%;
+  
+  .container {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+}
+
+#loved,
+#liked {
+  background-color: $color-white;
+  position: sticky;
+  top: 60px;
+}
+
+// Smaller caption for Profile page film cards
+#loved-films,
+#liked-films {
+  .poster-wrapper {
+    figcaption.caption {
+      font-size: 0.7em !important;
+      padding: 6px !important;
+      line-height: 1.2 !important;
+      overflow-y: auto;
+      max-height: 100%;
+      
+      p {
+        margin: 3px 0 !important;
+        font-size: 0.85em !important;
+        line-height: 1.2 !important;
+      }
+      
+      p:last-child {
+        // Plot text - make it smaller and limit lines
+        font-size: 0.75em !important;
+        line-height: 1.1 !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-height: 2.2em;
+        margin-top: 4px !important;
+      }
+    }
+  }
+}
+
