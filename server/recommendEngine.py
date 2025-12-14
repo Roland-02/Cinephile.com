@@ -1,4 +1,3 @@
-# general
 import os
 import time
 import json
@@ -8,14 +7,10 @@ import numpy as np
 import pandas as pd
 import mysql.connector
 from dotenv import load_dotenv
-
-# ml
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import euclidean_distances, cosine_similarity
-
-# initalising dataset
 import gzip
 import requests as req
 import concurrent.futures
@@ -24,36 +19,23 @@ from langdetect import detect
 from collections import Counter
 from multiprocessing import Manager
 from sqlalchemy import create_engine
-
-# flask server
 import schedule
-import threading
 from flask_caching import Cache
 from flask import Blueprint, jsonify, request
 
-# Load environment variables
 load_dotenv()
-
-# Ignore warnings
 warnings.filterwarnings("ignore")
 
-# TF-IDF vectorizer for text similarity calculations
 tfidf_vectorizer = TfidfVectorizer()
-
-# Flask blueprint for recommendation routes
 recommend_bp = Blueprint('recommend', __name__)
-
-# TMDB API configuration
 MAX_REQUESTS_PER_SECOND = 50
-
-# TMDB API key
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 # Thread-local storage for database connections (thread-safe)
 _thread_local = threading.local()
 
+# Get thread-local database connection
 def get_db_connection():
-    """Get thread-local database connection"""
     if not hasattr(_thread_local, 'mydb') or not _thread_local.mydb.is_connected():
         _thread_local.mydb = mysql.connector.connect(
             host=os.getenv("DB_HOST"),
@@ -64,25 +46,22 @@ def get_db_connection():
     return _thread_local.mydb
 
 def get_db_cursor():
-    """Get thread-local database cursor"""
     if not hasattr(_thread_local, 'mycursor'):
         _thread_local.mycursor = get_db_connection().cursor()
     return _thread_local.mycursor
 
-# Global cache variable (will be initialized by init_recommend_cache)
 cache = None
 
 def init_recommend_cache(app_instance):
-    """Initialize cache with the Flask app instance"""
     global cache
-    config = {         
-        "CACHE_TYPE": "SimpleCache",     # Flask-Caching related configs
-        "CACHE_DEFAULT_TIMEOUT": 2073600 # 1 day
+    config = {
+        "CACHE_TYPE": "SimpleCache",
+        "CACHE_DEFAULT_TIMEOUT": 2073600
     }
     app_instance.config.from_mapping(config)
     cache = Cache(app_instance)
 
-# ensure no duplicate cast members
+# Remove duplicate cast members from comma-separated string
 def remove_duplicates(names):
     if isinstance(names, str):
         unique_names = set(name.strip() for name in names.split(','))
@@ -90,7 +69,6 @@ def remove_duplicates(names):
     else:
         return names
 
-# langdetec check if film title is in english
 def is_english(text):
     try:
         lang = detect(text)
@@ -98,33 +76,25 @@ def is_english(text):
     except:
         return False
 
-# TMDB API call for film plot summary and poster
+# Fetch film plot and poster from TMDB API
 def fetchDetails(film_id):
-    """Fetch film details from TMDB API"""
     url = f'https://api.themoviedb.org/3/movie/{film_id}'
-    
-    headers = { 
+    headers = {
         "accept": "application/json",
         "Authorization": f'Bearer {TMDB_API_KEY}'
     }
-
     response = req.get(url, headers=headers)
     return response
 
-# Call API with rate limiting
 def doFetch(film_id):
-    """Fetch film details with rate limiting"""
-    time.sleep(1 / MAX_REQUESTS_PER_SECOND)  # Introduce delay to respect rate limits
+    time.sleep(1 / MAX_REQUESTS_PER_SECOND)
     return fetchDetails(film_id)
 
-# Get film poster and plot for given batch of films
+# Process batch of films to fetch TMDB details using multi-threading
 def doBatch(shared_data):
-    """Process a batch of films to fetch TMDB details using multi-threading"""
-    film_data = shared_data.film_data  # Access the DataFrame from the shared namespace
-
+    film_data = shared_data.film_data
     MAX_THREADS = min(os.cpu_count(), 1000)
 
-    # Use ThreadPoolExecutor for multi-threading within each process
     try:
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
             results = list(executor.map(doFetch, film_data['tconst']))
@@ -132,20 +102,17 @@ def doBatch(shared_data):
             for index, details in zip(film_data.index, results):
                 if details.ok:
                     details = details.json()
-
                     if details.get('overview'):
                         film_data.loc[index, 'plot'] = details['overview']
-
                     if details.get('poster_path'):
                         film_data.loc[index, 'poster'] = details['poster_path']
                 else:
-                    time.sleep(1 / MAX_REQUESTS_PER_SECOND)  # Introduce delay if rate limit is exceeded
+                    time.sleep(1 / MAX_REQUESTS_PER_SECOND)
 
         shared_data.film_data = film_data
-
     except Exception as e:
         print(f"Error in ThreadPoolExecutor: {e}")
-        time.sleep(1 / MAX_REQUESTS_PER_SECOND)  # Introduce delay if rate limit is exceeded
+        time.sleep(1 / MAX_REQUESTS_PER_SECOND)
     
 # export film data to mysql
 def save_mySQL(data):
@@ -190,35 +157,27 @@ def save_interaction(user_id, tconst, position, similarity):
     mycursor.execute(insert_query, (user_id, tconst, position, similarity))
     mydb.commit()
 
-# download, process and filter IMDB non-commercial dataset, save to mysql db
 def INITIALISE_FILM_DATASET():
-
     print('Downloading tables...')
 
-    #get film datasets ~ 10-30mins
+    url_title_basics = 'https://datasets.imdbws.com/title.basics.tsv.gz'
+    url_crew = 'https://datasets.imdbws.com/title.principals.tsv.gz'
+    url_ratings = 'https://datasets.imdbws.com/title.ratings.tsv.gz'
+    url_names = 'https://datasets.imdbws.com/name.basics.tsv.gz'
+    url_langs = 'https://datasets.imdbws.com/title.akas.tsv.gz'
 
-    #set urls
-    url_title_basics = 'https://datasets.imdbws.com/title.basics.tsv.gz' #film name, year, runtime, genres
-    url_crew = 'https://datasets.imdbws.com/title.principals.tsv.gz' #actors, actresses, cinematographers, directors (redundant)
-    url_ratings = 'https://datasets.imdbws.com/title.ratings.tsv.gz' #ratings for films (not all)
-    url_names = 'https://datasets.imdbws.com/name.basics.tsv.gz' #link table for names against nconst
-    url_langs = 'https://datasets.imdbws.com/title.akas.tsv.gz' #link table for names against nconst
-
-    #download from url
     res_title_basics = req.get(url_title_basics).content
     res_crew = req.get(url_crew).content
     res_ratings = req.get(url_ratings).content
     res_names = req.get(url_names).content
     res_lang = req.get(url_langs).content
 
-    #decompress
     title_basics_gzip = gzip.decompress(res_title_basics)
     crew_basics_gzip = gzip.decompress(res_crew)
     title_ratings_gzip = gzip.decompress(res_ratings)
     names_gzip = gzip.decompress(res_names)
     title_langs_gzip = gzip.decompress(res_lang)
 
-    #read csv into dataframes
     titles = pd.read_csv(BytesIO(title_basics_gzip), delimiter='\t',low_memory=False)
     crew = pd.read_csv(BytesIO(crew_basics_gzip), delimiter='\t',low_memory=False)
     ratings = pd.read_csv(BytesIO(title_ratings_gzip), delimiter='\t',low_memory=False)
@@ -227,9 +186,6 @@ def INITIALISE_FILM_DATASET():
 
     print('Cleaning data...')
 
-    #first data clean
-
-    # #filter only english films
     desired_langs = ['en']
     filtered_langs = langs[langs['language'].isin(desired_langs)]
     tconsts_filtered_langs = filtered_langs['titleId'].tolist()
@@ -237,7 +193,6 @@ def INITIALISE_FILM_DATASET():
     filtered_regions = langs[langs['region'].isin(desired_regions)]
     tconsts_filtered_regions = filtered_regions['titleId'].tolist()
 
-    #remove unsuitable titles
     titles = titles[titles['titleType'] == 'movie']
     titles = titles[titles['genres'] != r'\N']
     titles['isAdult'] = pd.to_numeric(titles['isAdult'], errors='coerce')
@@ -245,18 +200,15 @@ def INITIALISE_FILM_DATASET():
     titles = titles[(titles['startYear'] >= '1955') & (titles['startYear'] != '\\N')]
     titles = titles[(titles['tconst'].isin(tconsts_filtered_langs) & (titles['tconst'].isin(tconsts_filtered_regions)))]
 
-    #get tconsts for remaining non-film rows, and remove corresponding non-film rows
     film_tconsts = titles['tconst'].tolist()
     crew = crew[crew['tconst'].isin(film_tconsts)]
     ratings = ratings[ratings['tconst'].isin(film_tconsts)]
 
-    #set columns to remove from dataset
     remove_from_titles = ['originalTitle', 'endYear', 'titleType', 'isAdult']
     remove_from_crew = ['ordering','job','characters']
     remove_from_ratings = ['numVotes']
     remove_from_names = ['birthYear', 'deathYear', 'primaryProfession', 'knownForTitles']
 
-    #remove unneeded columns
     titles = titles.drop(columns=remove_from_titles)
     crew = crew.drop(columns=remove_from_crew)
     ratings = ratings.drop(columns=remove_from_ratings)
@@ -264,10 +216,7 @@ def INITIALISE_FILM_DATASET():
 
     print('Merging tables...')
 
-    #merge relational tables
     crew_data = crew.copy()
-
-    #merge crew data with names table to get respective names rather than nconst
     crew_data['nconst'] = crew_data['nconst'].str.split(', ')
     crew_data = crew_data.explode('nconst')
     crew_data = pd.merge(crew_data, names, on='nconst', how='left')
@@ -278,131 +227,94 @@ def INITIALISE_FILM_DATASET():
         aggfunc=lambda x: ', '.join(str(item) for item in x),
     ).reset_index()
 
-    #format and restructure columns before merging
     crew_data.columns = ['_'.join(col).strip() for col in crew_data.columns.values]
     crew_data.columns = [col.replace('primaryName_', '') for col in crew_data.columns]
     crew_data = crew_data.rename(columns={'tconst_': 'tconst'})
     columns_to_keep = ['tconst', 'actor', 'actress', 'cinematographer', 'composer', 'director', 'editor', 'producer', 'writer']
     crew_data = crew_data[columns_to_keep]
 
-    #merge film and cast datasets for one complete table
     film_data = pd.merge(titles, ratings, on='tconst', how='left')
     film_data = pd.merge(film_data, crew_data, on='tconst', how='left')
 
     print('Further cleaning data...')
 
-    # second data clean, drop data sparse rows
-
     columns_check = ['director', 'cinematographer', 'editor', 'writer', 'composer', 'producer']
-    film_data = film_data[film_data[columns_check].isna().sum(axis=1) == 0] #don't allow films with any missing data
+    film_data = film_data[film_data[columns_check].isna().sum(axis=1) == 0]
     film_data = film_data.dropna(subset=['actor', 'actress', 'runtimeMinutes', 'averageRating', 'genres'])
 
-    # double-check for null columns
     film_data = film_data[film_data['runtimeMinutes'] != '\\N']
     film_data = film_data[film_data['startYear'] != '\\N']
     film_data = film_data[film_data['averageRating'] != '\\N']
 
-    # combine actor and actress into 1 column ~ 10 cast member (can reduce)
     film_data['cast'] = film_data['actor'] + ', ' + film_data['actress']
     film_data.drop(['actor', 'actress'], axis=1, inplace=True)
-    film_data['cast'] = film_data['cast'].apply(remove_duplicates) # double-check for duplicate cast members from merging
+    film_data['cast'] = film_data['cast'].apply(remove_duplicates)
 
-    # remove data-sparse films
     print('EDL testing...')
 
-    # check titles are in english (filter out MFL films release in West or mis-labelled)
     english_titles = film_data['primaryTitle'].apply(is_english)
     film_data = film_data[english_titles]
 
-    #add columns for plot and poster path
     film_data['plot'] = np.nan
     film_data['poster'] = np.nan
 
     print('Films: ' + str(len(film_data)))
     print('Fetching plot summaries and posters...')
 
-    # get film plot and poster with tmdb api ~ inconsistent runtime (<2Hrs)
-
-    #call api/details for each film with multiprocessing and mutlithreading
     if __name__ == '__main__':
-
         manager = Manager()
-        shared_data = manager.Namespace() #allow data to be shared with external function
+        shared_data = manager.Namespace()
         agg_list = []
         batch_size = 1000
         num_batches = (len(film_data) // batch_size) + 1
 
         with concurrent.futures.ProcessPoolExecutor(8) as process_executor:
-
             for i in range(num_batches):
-
                 start_index = i * batch_size
                 end_index = (i + 1) * batch_size
-                
                 shared_data.film_data = film_data.iloc[start_index:end_index]
-
                 future = process_executor.submit(doBatch, shared_data)
-
                 concurrent.futures.wait([future])
-
                 agg_list.append(shared_data.film_data)
-
                 print(f"Batch {i+1}/{num_batches} completed")
-                    
+
         film_data = pd.concat(agg_list, ignore_index=True)
 
-    # #remove films with no plot
     film_data = film_data.dropna(subset=['plot', 'poster'])
 
     final_order = ['tconst','primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes', 'startYear', 'cast', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer', 'poster']
     film_data = film_data[final_order]
 
     print('Exporting to sql...')
-
-    #shuffle order
     film_data = film_data.sample(frac=1)
-
-    # export film data to sql db
     save_mySQL(film_data)
-
     print('Films saved to database!')
 
-# load whole films dataset from db
+# Load all films from database into DataFrame
 def loadAllFilms():
-    # Get thread-local connection
     mydb = get_db_connection()
     mycursor = get_db_cursor()
-
     sql_query = "SELECT * FROM films"
-
     mycursor.execute(sql_query)
-    
     columns = [col[0] for col in mycursor.description]
-
     films = mycursor.fetchall()
-
     films_data = pd.DataFrame(films, columns=columns)
-    
-    # Convert averageRating to float if it exists
     films_data['averageRating'] = films_data['averageRating'].astype(float)
-
     return films_data
 
-# join and concatenate inputted columns
+# Join and concatenate inputted columns into a single string for TF-IDF
 def create_soup(x, features):
-    soup_parts = [str(x[feature]) for feature in features if x[feature] is not None]  # Convert to string and filter out None values
+    soup_parts = [str(x[feature]) for feature in features if x[feature] is not None]
     return ' '.join(soup_parts)
 
-# count number of likeable elements for film
 def count_likeable(row):
     features = ['primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes', 'startYear', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer']
     atts = sum(1 for col in row[features] if col is not None)
     cast = len(row['cast'].split(','))
     return atts+cast
 
-# get user loved films from db
+# Get user's loved films from database
 def get_loved_films(user_id):
-    # Get thread-local connection
     mydb = get_db_connection()
     mycursor = get_db_cursor()
 
@@ -468,9 +380,8 @@ def get_liked_cast(user_id):
 
     return liked_cast_df
 
-# get user watchlist from db
+# Get user watchlist from database
 def get_watchlist(user_id):
-    # Get thread-local connection
     mydb = get_db_connection()
     mycursor = get_db_cursor()
 

@@ -1,3 +1,4 @@
+// Watchlist page - displays user's saved watchlist films
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -29,6 +30,7 @@ const Watchlist = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [user_id]);
 
+  // Load user's watchlist from API
   const loadWatchlist = async () => {
     try {
       const response = await axios.get(`/api/get_user_watchlist?user_id=${user_id}`);
@@ -42,9 +44,7 @@ const Watchlist = () => {
   };
 
   const handleFilmClick = (film, filmIndex) => {
-    // Set the film index that Index.jsx expects
     localStorage.setItem('filmIndex', filmIndex.toString());
-    // Store the film list so Index.jsx knows we're coming from another page
     localStorage.setItem('films-source', JSON.stringify(films));
     navigate('/index');
   };
