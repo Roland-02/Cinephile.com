@@ -33,6 +33,7 @@ const Profile = () => {
     loadProfileData();
   }, [user_id]);
 
+  // Load user's loved/liked films and analytics stats
   const loadProfileData = async () => {
     setLoading(true);
     try {
@@ -48,13 +49,11 @@ const Profile = () => {
 
       setLovedFilms(loved);
       setLikedFilms(liked);
-
-      // Set stats regardless of message flag - handle empty arrays properly
-        setStats({
+      setStats({
         cast: Array.isArray(profileStats.cast) ? profileStats.cast : [],
         crew: Array.isArray(profileStats.crew) ? profileStats.crew : [],
         genre: Array.isArray(profileStats.genre) ? profileStats.genre : (profileStats.genre || {}),
-        });
+      });
     } catch (error) {
       console.error('Error loading profile data:', error);
     } finally {
@@ -63,9 +62,7 @@ const Profile = () => {
   };
 
   const handleFilmClick = (film, filmIndex, filmList) => {
-    // Set the film index that Index.jsx expects
     localStorage.setItem('filmIndex', filmIndex.toString());
-    // Store the film list so Index.jsx knows we're coming from another page
     localStorage.setItem('films-source', JSON.stringify(filmList));
     navigate('/index');
   };
@@ -74,14 +71,13 @@ const Profile = () => {
     navigate(`/search?query=${encodeURIComponent(name)}`);
   };
 
+  // Display top 5 items (actors, filmmakers) with numbering
   const displayStats = (items) => {
     if (!items || items.length === 0) return <p></p>;
 
     return (
       <div>
         {items.slice(0, 5).map((item, index) => {
-          // Handle both object format {name, count} and string format (legacy)
-          
           return (
             <div 
               key={index} 
@@ -100,27 +96,20 @@ const Profile = () => {
     );
   };
 
+  // Display genre pie chart with legend
   const displayGenreChart = () => {
     if (!stats.genre) return <p></p>;
 
-    // Handle array format from backend: [{'Genres': genre, 'Count': count}, ...]
-    let genreEntries = [];
-    
-    // Backend returns array of objects
-    genreEntries = stats.genre.map(item => ({
+    let genreEntries = stats.genre.map(item => ({
       genre: item.Genres,
       count: item.Count
     })).sort((a, b) => b.count - a.count);
     if (genreEntries.length === 0) {
       return <p></p>;
     }
-    
+
     const total = genreEntries.reduce((sum, item) => sum + item.count, 0);
-    
-    // Colors for pie chart
     const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-    
-    // Prepare data for Chart.js
     const chartData = {
       labels: genreEntries.map(item => item.genre),
       datasets: [
@@ -138,7 +127,7 @@ const Profile = () => {
       maintainAspectRatio: true,
       plugins: {
         legend: {
-          display: false, // We'll use our custom legend
+          display: false,
         },
         tooltip: {
           callbacks: {
@@ -155,14 +144,12 @@ const Profile = () => {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-        {/* Pie Chart */}
         <div style={{ flexShrink: 0 }}>
           <div style={{ width: '250px', height: '250px' }}>
             <Pie data={chartData} options={chartOptions} />
           </div>
         </div>
-        
-        {/* Legend with numbers */}
+
         <div style={{ flex: 1, minWidth: '200px' }}>
           {genreEntries.map((item, index) => {
             const percentage = Math.round((item.count / total) * 100);
@@ -330,34 +317,30 @@ const Profile = () => {
         <div className="col-lg-6 col-md-6 col-sm-12" id="analyticsContent">
           <div className="main-title">my analytics</div>
           <div className="container d-flex flex-column" style={{ padding: '20px', maxHeight: '80vh', overflowY: 'auto' }}>
-            {/* Top actors and Top film-makers side by side */}
             <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', flexWrap: 'wrap' }}>
-            {/* Top actors */}
               <div style={{ flex: 1, minWidth: '250px' }}>
-            <div className="secondary-title">Top actors</div>
+                <div className="secondary-title">Top actors</div>
                 <div id="cast-box">
-              {stats.cast && stats.cast.length > 0 ? (
-                displayStats(stats.cast)
-              ) : (
-                <p></p>
-              )}
+                  {stats.cast && stats.cast.length > 0 ? (
+                    displayStats(stats.cast)
+                  ) : (
+                    <p></p>
+                  )}
                 </div>
-            </div>
+              </div>
 
-            {/* Top film-makers */}
               <div style={{ flex: 1, minWidth: '250px' }}>
-            <div className="secondary-title">Top film-makers</div>
+                <div className="secondary-title">Top film-makers</div>
                 <div id="crew-box">
-              {stats.crew && stats.crew.length > 0 ? (
-                displayStats(stats.crew)
-              ) : (
-                <p></p>
-              )}
+                  {stats.crew && stats.crew.length > 0 ? (
+                    displayStats(stats.crew)
+                  ) : (
+                    <p></p>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Top genres */}
             <div className="secondary-title" style={{ marginTop: '20px', textAlign: 'center' }}>Top genres</div>
             <div id="genre-box">
               {stats.genre && (Array.isArray(stats.genre) ? stats.genre.length > 0 : Object.keys(stats.genre).length > 0) ? (

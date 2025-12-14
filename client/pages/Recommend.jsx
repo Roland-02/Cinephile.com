@@ -20,12 +20,13 @@ const Recommend = () => {
   const refreshProfile = searchParams.get('refreshProfile') === 'true';
   const observerTarget = useRef(null);
   const currentPageRef = useRef(1);
-  
-  // Keep ref in sync with state
+
+  // Keep ref in sync with state for pagination
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
 
+  // Load initial batch of recommended films
   const loadFilms = async () => {
     setLoading(true);
     
@@ -37,15 +38,7 @@ const Recommend = () => {
       
       setFilms(filmsData);
       setCurrentPage(1);
-      
-      // Check if there are more pages
-      if (filmsData.length === 0) {
-        setHasMore(false);
-      } else if (filmsData.length < 100) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
+      setHasMore(filmsData.length >= 100);
     } catch (error) {
       console.error('Error loading recommended films:', error);
       setFilms([]);
@@ -55,6 +48,7 @@ const Recommend = () => {
     }
   };
 
+  // Update user profile vectors and reload recommendations
   const updateProfileAndLoad = async () => {
     setLoading(true);
     try {
@@ -86,21 +80,7 @@ const Recommend = () => {
               return [...prevFilms, ...newFilms];
             });
             setCurrentPage(nextPage);
-            
-            // Check if there are more pages
-            // Backend returns PAGE_SIZE films per page (typically 100)
-            // If we got 0 films, we're at the end
-            // If we got fewer than 100 films, we're at the end (partial batch)
-            // If we got exactly 100 films, there might be more
-            if (filmsData.length === 0) {
-              setHasMore(false);
-            } else if (filmsData.length < 100) {
-              // Partial batch means we're at the end
-              setHasMore(false);
-            } else {
-              // Full batch (100 films) means there might be more
-              setHasMore(true);
-            }
+            setHasMore(filmsData.length >= 100);
           } else {
             setHasMore(false);
           }
@@ -137,7 +117,6 @@ const Recommend = () => {
 
   useEffect(() => {
     if (user_id) {
-      // Reset pagination when category changes
       setCurrentPage(1);
       setHasMore(true);
       setFilms([]);
@@ -159,7 +138,7 @@ const Recommend = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Intersection Observer for infinite scroll
+  // Intersection Observer for infinite scrolling
   useEffect(() => {
     if (!hasMore || isLoadingMore || loading || films.length === 0) return;
 
@@ -251,7 +230,6 @@ const Recommend = () => {
                   />
                 </figure>
               ))}
-              {/* Observer target for infinite scroll */}
               <div ref={observerTarget} style={{ height: '20px', width: '100%' }} />
               {isLoadingMore && (
                 <div className="loading-spinner" style={{ display: 'block', margin: '20px auto' }}></div>

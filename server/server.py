@@ -1,9 +1,3 @@
-"""
-Main Flask Server
-Handles all API routes (auth, films, user interactions) and serves React app.
-Recommendation engine routes are integrated via blueprint on the same port.
-"""
-
 import os
 import json
 import random
@@ -12,8 +6,6 @@ import mysql.connector
 from flask import Flask, jsonify, request, make_response, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
-
-# Import recommendation engine blueprint
 from recommendEngine import recommend_bp, init_recommend_cache, start_recommendation_scheduler
 
 load_dotenv()
@@ -21,26 +13,20 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# Initialize recommendation engine cache
 init_recommend_cache(app)
-# Import cache after initialization
 from recommendEngine import cache
 
-# Register recommendation blueprint with /api prefix
 app.register_blueprint(recommend_bp, url_prefix='/api')
-
-# Start recommendation scheduler
 start_recommendation_scheduler()
 
-# Global variables
 hasUserInteracted = False
 allFilms_global = []
 filteredFilms_global = []
 PAGE_SIZE = int(os.getenv("PAGE_SIZE"))
 films_loaded = False
 
+# Create MySQL database connection
 def create_db_connection():
-    """Create MySQL database connection"""
     return mysql.connector.connect(
         host=os.getenv("DB_HOST"),
         user=os.getenv("DB_USER"),
@@ -50,7 +36,6 @@ def create_db_connection():
     )
 
 def load_films_from_db():
-    """Load all films from database for index page"""
     global allFilms_global, films_loaded
     try:
         conn = create_db_connection()
@@ -67,13 +52,9 @@ def load_films_from_db():
         allFilms_global = []
         films_loaded = False
 
-# Load films on startup
 load_films_from_db()
 
-# ============================================================================
-# AUTHENTICATION ROUTES
-# ============================================================================
-
+# Authentication routes
 @app.route('/api/login', methods=['POST'])
 def login():
     try:
@@ -98,16 +79,14 @@ def login():
         if bcrypt.checkpw(password.encode('utf-8'), result['password'].encode('utf-8')):
             user_id = result['user_id']
             
-            # Update profile and cache films in recommendation engine
             try:
                 request.post(f'/api/update_profile_and_vectors?user_id={user_id}', timeout=10)
             except Exception as e:
                 print(f"Warning: Could not update profile: {e}")
-            
+
             cursor.close()
             conn.close()
-            
-            # Set cookies
+
             response = make_response(jsonify({'success': True, 'message': 'Login successful'}))
             response.set_cookie('sessionEmail', email, max_age=86400)
             response.set_cookie('sessionID', str(user_id), max_age=86400)
@@ -135,30 +114,26 @@ def create_account():
         
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
-        
-        # Check if user exists
+
         cursor.execute("SELECT * FROM login WHERE email = %s", (email,))
         if cursor.fetchone():
             cursor.close()
             conn.close()
             return jsonify({'message': 'User already exists'}), 409
-        
-        # Create new user
+
         cursor.execute("INSERT INTO login (user_id, email, password) VALUES (0, %s, %s)", 
                        (email, hash_password))
         user_id = cursor.lastrowid
-        
-        # Update profile in recommendation engine
+
         try:
             request.post(f'/api/update_profile_and_vectors?user_id={user_id}', timeout=10)
         except Exception as e:
             print(f"Warning: Could not update profile: {e}")
-        
+
         conn.commit()
         cursor.close()
         conn.close()
-        
-        # Set cookies
+
         response = make_response(jsonify({'success': True, 'message': 'Account created successfully'}))
         response.set_cookie('sessionEmail', email, max_age=86400)
         response.set_cookie('sessionID', str(user_id), max_age=86400)
@@ -180,10 +155,6 @@ def get_session():
     email = request.cookies.get('sessionEmail')
     user_id = request.cookies.get('sessionID')
     return jsonify({'session': {'email': email, 'id': user_id}})
-
-# ============================================================================
-# FILM ROUTES
-# ============================================================================
 
 @app.route('/api/indexPageFilms', methods=['GET'])
 def get_index_page_films():
@@ -292,8 +263,6 @@ def shuffle_films():
             load_films_from_db()
         
         user_id = request.args.get('user_id')
-        
-        # Get user's films to exclude from recommendation engine
         exclude_tconsts = []
         if user_id:
             try:
@@ -301,12 +270,9 @@ def shuffle_films():
                 exclude_tconsts = exclude_res.json().get('tconsts', [])
             except:
                 pass
-        
-        # Shuffle
+
         shuffled = allFilms_global.copy()
         random.shuffle(shuffled)
-        
-        # Separate included and excluded
         included = [f for f in shuffled if f.get('tconst') not in exclude_tconsts]
         excluded = [f for f in shuffled if f.get('tconst') in exclude_tconsts]
         
@@ -444,8 +410,7 @@ def get_liked_elements():
                 for key, value in result.items():
                     if value == 1:
                         elements.append(key)
-        
-        # Get liked cast
+
         cursor.execute("SELECT name FROM liked_cast WHERE user_id = %s AND tconst = %s", 
                       (user_id, film_id))
         cast_results = cursor.fetchall()
@@ -458,6 +423,7 @@ def get_liked_elements():
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
 
+# User interaction routes - love/unlove films, save liked elements, watchlist
 @app.route('/api/loveFilm', methods=['POST'])
 def love_film():
     try:
@@ -468,22 +434,18 @@ def love_film():
         
         conn = create_db_connection()
         cursor = conn.cursor()
-        
-        # Delete existing liked attributes and cast
-        cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s", 
+
+        cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s",
                       (user_id, tconst))
-        cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s", 
+        cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s",
                       (user_id, tconst))
-        
-        # Insert loved film
-        cursor.execute("INSERT INTO loved_films (user_id, tconst) VALUES (%s, %s)", 
+        cursor.execute("INSERT INTO loved_films (user_id, tconst) VALUES (%s, %s)",
                       (user_id, tconst))
-        
+
         conn.commit()
         cursor.close()
         conn.close()
-        
-        # Clear recommendation cache since user profile changed
+
         cache.delete(f'user_content_recommended{user_id}')
         cache.delete(f'user_plot_recommended{user_id}')
         cache.delete(f'user_cast_recommended{user_id}')
@@ -515,8 +477,7 @@ def unlove_film():
         conn.commit()
         cursor.close()
         conn.close()
-        
-        # Clear recommendation cache since user profile changed
+
         cache.delete(f'user_content_recommended{user_id}')
         cache.delete(f'user_plot_recommended{user_id}')
         cache.delete(f'user_cast_recommended{user_id}')
@@ -524,7 +485,7 @@ def unlove_film():
         cache.delete(f'user_genre_recommended{user_id}')
         cache.delete(f'user_profile_{user_id}')
         cache.delete(f'similarity_vectors_{user_id}')
-        
+
         hasUserInteracted = True
         return jsonify('Removed successfully')
     except Exception as e:
@@ -553,33 +514,29 @@ def save_liked_elements():
                 attribute_values[attr_name] = 1
         
         conn = create_db_connection()
-        cursor = conn.cursor()
-        
-        # Delete existing
-        cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s", 
+        cursor = conn.cursor();
+
+        cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s",
                       (user_id, tconst))
-        cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s", 
-                      (user_id, tconst))
-        
-        # Insert attributes
+        cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s",
+                      (user_id, tconst));
+
         if liked_elements:
             cursor.execute("""
                 INSERT INTO liked_attributes 
                 (user_id, tconst, Title, Plot, Rating, Genre, Runtime, Year, Director, Camera, Writer, Producer, Editor, Composer) 
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (user_id, tconst, *attribute_values.values()))
-        
-        # Insert cast
+            """, (user_id, tconst, *attribute_values.values()));
+
         if liked_cast:
             cast_values = [(user_id, tconst, name) for name in liked_cast]
-            cursor.executemany("INSERT INTO liked_cast (user_id, tconst, name) VALUES (%s, %s, %s)", 
-                             cast_values)
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-        
-        # Clear recommendation cache since user profile changed
+            cursor.executemany("INSERT INTO liked_cast (user_id, tconst, name) VALUES (%s, %s, %s)",
+                             cast_values);
+
+        conn.commit();
+        cursor.close();
+        conn.close();
+
         cache.delete(f'user_content_recommended{user_id}')
         cache.delete(f'user_plot_recommended{user_id}')
         cache.delete(f'user_cast_recommended{user_id}')
@@ -668,29 +625,24 @@ def serve_client_files(filename):
 @app.route('/<path:path>')
 def serve_react_app(path):
     """Serve React app - all non-API routes go to React"""
-    # Don't interfere with API routes
     if path.startswith('api/'):
         return "API route not found", 404
-    
-    # Serve static files
+
     if path.startswith('images/'):
         try:
             return send_from_directory('.', path)
         except:
             return "File not found", 404
-    
-    # Serve React client files
+
     if path.startswith('client/'):
         try:
             return send_from_directory('.', path)
         except:
             return "File not found", 404
-    
-    # Serve index.html for all other routes (React Router will handle routing)
+
     if os.path.exists('index.html'):
         return send_from_directory('.', 'index.html')
     elif os.path.exists('dist/index.html'):
-        # Fallback to built version if it exists
         return send_from_directory('dist', 'index.html')
     else:
         return """

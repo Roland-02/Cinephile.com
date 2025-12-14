@@ -7,9 +7,9 @@ const CACHE_SIZE = 250;
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
 const Index = () => {
-  const [filmCache, setFilmCache] = useState([]); // Cache of 250 films
-  const [cacheStartIndex, setCacheStartIndex] = useState(0); // Global index where cache starts
-  const [filmIndex, setFilmIndex] = useState(0); // Single global index for current film
+  const [filmCache, setFilmCache] = useState([]);
+  const [cacheStartIndex, setCacheStartIndex] = useState(0);
+  const [filmIndex, setFilmIndex] = useState(0);
   const [currentFilm, setCurrentFilm] = useState(null);
   const [isClickLocked, setIsClickLocked] = useState(false);
   const [filtered, setFiltered] = useState(false);
@@ -30,13 +30,12 @@ const Index = () => {
     year: 'Any'
   });
   const isLoadingRef = useRef(false);
-  
+
   const session = getSession();
   const user_id = session?.id;
   const location = useLocation();
 
-
-  // Load user data once on mount or when user_id changes
+  // Load user's watchlist, liked, and loved films from cache or API
   const loadUserData = async () => {
     if (!user_id) return;
     
@@ -46,30 +45,22 @@ const Index = () => {
       try {
         const data = JSON.parse(cached);
         setWatchList(data.watchlist || []);
-        // Convert liked dictionary to array for state
-        // Dictionary items are { tconst, ...filmProps, elements, cast }
-        // Extract just the film properties (excluding elements and cast) for state
         const likedDict = data.liked || {};
         setMyLiked(Object.values(likedDict).map(item => {
-          // Handle both old structure (item.film) and new structure (item.tconst)
           if (item.film) {
-            // Old structure: { film: {...}, elements: [], cast: [] }
             return item.film;
           } else {
-            // New structure: { tconst: "...", ...filmProps, elements: [], cast: [] }
             const { elements, cast, ...film } = item;
             return film;
           }
         }));
         setMyLoved(data.loved || []);
-        return; // Use cached data, no API calls needed
+        return;
       } catch (e) {
         console.error('Error parsing cached user data:', e);
-        // Fall through to fetch from API if cache is corrupted
       }
     }
-    
-    // Only fetch from API if not in cache
+
     try {
       const [watchListRes, likedRes, lovedRes] = await Promise.all([
         axios.get(`/api/getWatchlist?user_id=${user_id}`),
@@ -77,8 +68,6 @@ const Index = () => {
         axios.get(`/api/getLovedFilms?user_id=${user_id}`),
       ]);
 
-      // Convert liked array to dictionary with tconst as key
-      // Store full film object, elements, and cast
       const likedDict = {};
       likedRes.data.forEach(film => {
         likedDict[film.tconst] = { ...film, elements: [], cast: [] };
@@ -86,12 +75,12 @@ const Index = () => {
 
       const userData = {
         watchlist: watchListRes.data,
-        liked: likedDict, // Dictionary: { tconst: { film, elements, cast } }
+        liked: likedDict,
         loved: lovedRes.data,
       };
 
       setWatchList(userData.watchlist);
-      setMyLiked(likedRes.data); // Keep array for state
+      setMyLiked(likedRes.data);
       setMyLoved(userData.loved);
       
       localStorage.setItem('user_data', JSON.stringify(userData));
@@ -109,11 +98,10 @@ const Index = () => {
     
     if (shouldShuffle === 'true') {
       localStorage.removeItem('shouldShuffle');
-      // Immediately show loading and clear current film for smooth UX
       setLoading(true);
       setCurrentFilm(null);
       setFilmCache([]);
-      
+
       const shuffleAndReset = async () => {
         try {
           const currentUserId = getSession()?.id;
@@ -128,7 +116,6 @@ const Index = () => {
         setCacheStartIndex(0);
         localStorage.setItem('filmIndex', 0);
         localStorage.removeItem('films-source');
-        // Reset filters
         const defaultFilters = { rating: 'Any', genre: 'Any', runtime: 'Any', year: 'Any' };
         setFilterValues(defaultFilters);
         localStorage.setItem('activeFilters', JSON.stringify(defaultFilters));
@@ -137,8 +124,6 @@ const Index = () => {
       shuffleAndReset();
       return;
     }
-
-    // Normal page load - restore saved state
     const savedIndex = localStorage.getItem('filmIndex');
     const initialIndex = savedIndex ? parseInt(savedIndex) : 0;
     
@@ -154,28 +139,23 @@ const Index = () => {
       // For outside films, calculate cache start based on the actual film list size
       const films_JSON = JSON.parse(hasFilmsSource);
       const totalFilms = films_JSON.length;
-      // If the list is smaller than cache size, load from 0. Otherwise, load the chunk containing the target film
       initialCacheStart = totalFilms < CACHE_SIZE 
         ? 0 
         : Math.floor(initialIndex / CACHE_SIZE) * CACHE_SIZE;
-      
       setFilmIndex(initialIndex);
       setCacheStartIndex(initialCacheStart);
     } else {
-      // Normal behavior for regular films
       initialCacheStart = Math.floor(initialIndex / CACHE_SIZE) * CACHE_SIZE;
       setFilmIndex(initialIndex);
       setCacheStartIndex(initialCacheStart);
     }
 
-    // Restore filter values from localStorage (only if not coming from another page)
     if (!localStorage.getItem('films-source')) {
       const savedFilters = localStorage.getItem('activeFilters');
       if (savedFilters) {
         try {
           const filters = JSON.parse(savedFilters);
           setFilterValues(filters);
-          // Check if filters are active (not all "Any")
           const hasActiveFilters = !(filters.rating === 'Any' && filters.genre === 'Any' && 
                                      filters.runtime === 'Any' && filters.year === 'Any');
           if (hasActiveFilters) {
@@ -187,33 +167,25 @@ const Index = () => {
       }
     }
 
-    // Load user data once (only if not cached)
     loadUserData();
-
-    // Load initial films once
     loadFilms(initialCacheStart);
   }, [location.key]);
 
+  // Check if current film is in cache, load new cache if needed
   useEffect(() => {
-    // Check if current film is in cache, if not load new cache
     const cacheEndIndex = cacheStartIndex + filmCache.length;
-    
-    // If we're outside (from Profile/other pages), check bounds against the source films
+
     if (outside) {
       const films_JSON = JSON.parse(localStorage.getItem('films-source') || '[]');
       const totalFilms = films_JSON.length;
-      
-      // Ensure filmIndex is within bounds
+
       if (filmIndex >= totalFilms) {
         setFilmIndex(Math.max(0, totalFilms - 1));
         return;
       }
-      
-      // For outside films, if the current film is not in cache, load the correct chunk
+
       if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
-        // Skip if already loading to prevent duplicate calls
         if (!loading) {
-          // For small sets, load from 0. For larger sets, load the chunk containing the target film
           const newCacheStart = totalFilms < CACHE_SIZE 
             ? 0 
             : Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
@@ -223,9 +195,7 @@ const Index = () => {
         updateFilm();
       }
     } else {
-      // Normal behavior for non-outside films
       if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
-        // Skip if already loading to prevent duplicate calls
         if (!loading) {
           const newCacheStart = Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
           loadFilms(newCacheStart);
@@ -237,19 +207,15 @@ const Index = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filmIndex, cacheStartIndex, outside, loading]);
 
+  // Fetch films from API or localStorage based on filter state
   const getFilms = async (startGlobalIndex) => {
     try {
-      // Check if we have films-source in localStorage (coming from Profile/other pages)
-      // Check this directly instead of relying on state which might not be updated yet
       const filmsSource = localStorage.getItem('films-source');
-      
       let allFilmsData = [];
-      
+
       if (filtered) {
-        // Calculate which pages we need to load (may need multiple pages to get 250 films)
         const startPage = Math.floor(startGlobalIndex / 100) + 1;
         const endPage = Math.floor((startGlobalIndex + CACHE_SIZE - 1) / 100) + 1;
-        // Load all pages needed for 250 films
         for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
           const response = await fetch(`/api/filteredPageFilms?page=${pageNum}`);
           if (response.ok) {
@@ -258,22 +224,16 @@ const Index = () => {
           }
         }
       } else if (filmsSource) {
-        // Coming from Profile/other pages - load from stored list
         const films_JSON = JSON.parse(filmsSource);
-        // If the list is smaller than cache size, load all films from 0
         if (films_JSON.length < CACHE_SIZE) {
           allFilmsData = films_JSON.slice(0);
         } else {
-          // Make sure we don't go beyond the array length
           const endIndex = Math.min(startGlobalIndex + CACHE_SIZE, films_JSON.length);
           allFilmsData = films_JSON.slice(startGlobalIndex, endIndex);
         }
       } else {
-        // Normal behavior - load from API
-        // Calculate which pages we need to load (may need multiple pages to get 250 films)
         const startPage = Math.floor(startGlobalIndex / 100) + 1;
         const endPage = Math.floor((startGlobalIndex + CACHE_SIZE - 1) / 100) + 1;
-        // Load all pages needed for 250 films
         for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
           const response = await fetch(`/api/indexPageFilms?page=${pageNum}`);
           if (response.ok) {
@@ -283,7 +243,6 @@ const Index = () => {
         }
       }
 
-      // Return exactly CACHE_SIZE films (or less if we've reached the end)
       return allFilmsData.slice(0, CACHE_SIZE);
     } catch (error) {
       console.error('Error fetching films:', error);
@@ -301,7 +260,6 @@ const Index = () => {
       setLikedElements(elements);
       setLikedCast(cast);
       
-      // Check if all attributes are liked - if so, ensure film is marked as loved
       setTimeout(() => {
         const totalLikeables = document.querySelectorAll('.likeable').length;
         const likedCount = elements.length + cast.length;
@@ -312,22 +270,18 @@ const Index = () => {
           }
         }
       }, 0);
-      
-      // Update cache in user_data.liked dictionary
+
       const cached = localStorage.getItem('user_data');
       if (cached) {
         try {
           const data = JSON.parse(cached);
           data.liked = data.liked || {};
           if (data.liked[filmTconst]) {
-            // Update existing entry with elements and cast
             data.liked[filmTconst].elements = elements;
             data.liked[filmTconst].cast = cast;
           } else {
-            // If film not in liked dict, find it from myLiked state
             const film = myLiked.find(f => f.tconst === filmTconst);
             if (film) {
-              // Store film properties directly (not nested in film object)
               data.liked[filmTconst] = { ...film, elements, cast };
             }
           }
@@ -344,9 +298,8 @@ const Index = () => {
   };
 
   const loadFilms = async (startIndex) => {
-    // Prevent duplicate calls
     if (isLoadingRef.current) return;
-    
+
     isLoadingRef.current = true;
     setLoading(true);
     try {
@@ -361,59 +314,46 @@ const Index = () => {
     }
   };
 
+  // Update displayed film info and user interaction state
   const updateFilm = async () => {
     const localIndex = filmIndex - cacheStartIndex;
     if (filmCache.length === 0 || localIndex < 0 || localIndex >= filmCache.length) return;
 
     const film = filmCache[localIndex];
-    
-    // Preload image to ensure it's ready before rendering
     const imageUrl = film.poster ? baseImagePath + film.poster : "/images/MissingPoster.jpeg";
     const imagePreload = new Image();
-    
-    // Wait for image to load, then update everything together
+
     await new Promise((resolve, reject) => {
       imagePreload.onload = resolve;
-      imagePreload.onerror = resolve; // Resolve even on error to show fallback
+      imagePreload.onerror = resolve;
       imagePreload.src = imageUrl;
     });
 
-    // Now update all state together
     setCurrentFilm(film);
-
-    // Save current position
     localStorage.setItem('filmIndex', filmIndex);
 
-    // Use cached user data if authenticated
     if (user_id) {
-      // Check if film is in watchlist (from cache)
       setIsInWatchlist(watchList.some((f) => f.tconst === film.tconst));
 
-      // Check localStorage cache for most up-to-date loved status
       const cached = localStorage.getItem('user_data');
       let isLovedFilm = false;
-      
+
       if (cached) {
         try {
           const data = JSON.parse(cached);
-          // Check both state and cache for loved status
           isLovedFilm = myLoved.some((f) => f.tconst === film.tconst) || 
                        (data.loved && data.loved.some((f) => f.tconst === film.tconst));
         } catch (e) {
-          // Fallback to state if cache parse fails
           isLovedFilm = myLoved.some((f) => f.tconst === film.tconst);
         }
       } else {
-        // No cache, use state
         isLovedFilm = myLoved.some((f) => f.tconst === film.tconst);
       }
-      
+
       setIsLoved(isLovedFilm);
 
-      // Load liked elements if film is liked (from cache)
       const isFilmLiked = myLiked.some((f) => f.tconst === film.tconst);
       if (isFilmLiked) {
-        // Check localStorage cache for liked elements in liked dictionary
         if (cached) {
           try {
             const data = JSON.parse(cached);
@@ -423,9 +363,7 @@ const Index = () => {
               const cast = likedFilm.cast || [];
               setLikedElements(elements);
               setLikedCast(cast);
-              
-              // If all attributes are liked, ensure film is marked as loved
-              // Use setTimeout to ensure DOM is ready
+
               setTimeout(() => {
                 const totalLikeables = document.querySelectorAll('.likeable').length;
                 const likedCount = elements.length + cast.length;
@@ -434,15 +372,12 @@ const Index = () => {
                 }
               }, 0);
             } else {
-              // Not in cache, fetch from API
               fetchLikedElements(film.tconst);
             }
           } catch (e) {
-            // If cache parse fails, fetch from API
             fetchLikedElements(film.tconst);
           }
         } else {
-          // Not in cache, fetch from API
           fetchLikedElements(film.tconst);
         }
       } else {
@@ -454,16 +389,15 @@ const Index = () => {
     setIsClickLocked(false);
   };
 
+  // Navigate to next film with looping support
   const handleNext = async () => {
     if (isClickLocked) return;
     setIsClickLocked(true);
-    
+
     setFilmIndex(prev => {
-      // If we're outside (from Profile/other pages), check bounds
       if (outside) {
         const films_JSON = JSON.parse(localStorage.getItem('films-source') || '[]');
         const totalFilms = films_JSON.length;
-        // Loop back to 0 if we reach the end
         if (prev + 1 >= totalFilms) {
           return 0;
         }
@@ -535,29 +469,23 @@ const Index = () => {
       setLikedElements(newLikedElements);
     }
 
-    // Check if all elements are liked
+    // Auto-love if all elements liked, auto-unlove if loved film has unliked elements
     setTimeout(async () => {
       const totalLikeables = document.querySelectorAll('.likeable').length;
       const likedCount = newLikedElements.length + newLikedCast.length;
 
       if (likedCount === totalLikeables && !isLoved) {
-        // All elements liked - automatically love the film
         await handleLoveFilm();
       } else if (isLoved && likedCount < totalLikeables) {
-        // Loved film but not all elements are liked - automatically unlove but keep current liked elements
-        // Don't call handleUnloveFilm as that clears all elements - just unlove but keep current state
         try {
           await axios.post(`/api/unloveFilm`, {
             film_id: currentFilm.tconst,
             user_id: user_id,
           });
           setIsLoved(false);
-          
-          // Update cache
           const newLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
           setMyLoved(newLoved);
-          
-          // Keep current liked elements (film goes from loved to liked, other attributes stay highlighted)
+
           const cached = localStorage.getItem('user_data');
           if (cached) {
             try {
@@ -565,7 +493,6 @@ const Index = () => {
               data.liked = data.liked || {};
               const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
               data.liked[currentFilm.tconst] = { ...film, elements: newLikedElements, cast: newLikedCast };
-              // Update myLiked state if not already there
               if (!myLiked.some(f => f.tconst === currentFilm.tconst)) {
                 setMyLiked([...myLiked, film]);
               }
@@ -574,7 +501,7 @@ const Index = () => {
               console.error('Error updating cache:', e);
             }
           }
-          
+
           await saveElements(newLikedElements, newLikedCast);
         } catch (error) {
           console.error('Error unloving film:', error);
@@ -594,29 +521,22 @@ const Index = () => {
         user_id: user_id,
       });
       setIsLoved(true);
-      
-      // Update cache
       const newLoved = [...myLoved, { tconst: currentFilm.tconst }];
       setMyLoved(newLoved);
-      
-      // Automatically like all attributes
+
       const allElements = ['Title', 'Plot', 'Rating', 'Genre', 'Runtime', 'Year', 'Director', 'Camera', 'Writer', 'Producer', 'Editor', 'Composer'];
       const allCast = currentFilm.cast ? currentFilm.cast.split(',').map(c => c.trim()) : [];
-      
-      // Add all elements and cast to liked arrays
       const newLikedElements = [...new Set([...likedElements, ...allElements])];
       const newLikedCast = [...new Set([...likedCast, ...allCast])];
-      
+
       setLikedElements(newLikedElements);
       setLikedCast(newLikedCast);
-      
-      // Update liked dictionary in cache
+
       const cached = localStorage.getItem('user_data');
       if (cached) {
         try {
           const data = JSON.parse(cached);
           data.liked = data.liked || {};
-          // Find or use current film, store film properties directly (not nested)
           const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
           data.liked[currentFilm.tconst] = { ...film, elements: newLikedElements, cast: newLikedCast };
           updateUserDataCache(watchList, data.liked, newLoved);
@@ -624,14 +544,14 @@ const Index = () => {
           console.error('Error updating cache:', e);
         }
       }
-      
-      // Save all liked elements
+
       await saveElements(newLikedElements, newLikedCast);
     } catch (error) {
       console.error('Error loving film:', error);
     }
   };
 
+  // Unlove film and remove all highlights
   const handleUnloveFilm = async () => {
     if (!user_id || !currentFilm) return;
 
@@ -641,24 +561,17 @@ const Index = () => {
         user_id: user_id,
       });
       setIsLoved(false);
-      
-      // Update cache
       const newLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
       setMyLoved(newLoved);
-      
-      // Remove all highlights (clear all liked elements and cast) when button is pressed
       setLikedElements([]);
       setLikedCast([]);
-      
-      // Update cache - remove from liked dictionary since all elements are unliked
+
       const cached = localStorage.getItem('user_data');
       if (cached) {
         try {
           const data = JSON.parse(cached);
           data.liked = data.liked || {};
-          // Remove from liked dictionary since all elements are unliked
           delete data.liked[currentFilm.tconst];
-          // Update myLiked state - remove if it was there
           const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
           setMyLiked(newLiked);
           updateUserDataCache(watchList, data.liked, newLoved);
@@ -666,8 +579,7 @@ const Index = () => {
           console.error('Error updating cache:', e);
         }
       }
-      
-      // Save empty elements (remove all highlights)
+
       await saveElements([], []);
     } catch (error) {
       console.error('Error unloving film:', error);
@@ -683,7 +595,6 @@ const Index = () => {
           film_id: currentFilm.tconst,
           user_id: user_id,
         });
-        // Update cache
         const newWatchlist = watchList.filter(f => f.tconst !== currentFilm.tconst);
         setWatchList(newWatchlist);
         const cached = localStorage.getItem('user_data');
@@ -700,7 +611,6 @@ const Index = () => {
           film_id: currentFilm.tconst,
           user_id: user_id,
         });
-        // Update cache
         const newWatchlist = [...watchList, { tconst: currentFilm.tconst }];
         setWatchList(newWatchlist);
         const cached = localStorage.getItem('user_data');
@@ -730,32 +640,26 @@ const Index = () => {
         cast: cast,
       });
       
-      // Update liked dictionary in cache
       const cached = localStorage.getItem('user_data');
       if (cached) {
         try {
           const data = JSON.parse(cached);
           data.liked = data.liked || {};
           const isFilmLiked = myLiked.some((f) => f.tconst === currentFilm.tconst);
-          
+
           if (elements.length > 0 || cast.length > 0) {
-            // Film has liked elements - add/update in liked dictionary
             const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
-            // Store film properties directly (not nested in film object)
             data.liked[currentFilm.tconst] = { ...film, elements, cast };
-            
-            // Update state if film wasn't in liked list
             if (!isFilmLiked) {
               const newLiked = [...myLiked, film];
               setMyLiked(newLiked);
             }
           } else if (isFilmLiked) {
-            // Film is liked but has no elements - remove from liked dictionary
             delete data.liked[currentFilm.tconst];
             const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
             setMyLiked(newLiked);
           }
-          
+
           updateUserDataCache(watchList, data.liked, myLoved);
         } catch (e) {
           console.error('Error updating cache:', e);
@@ -767,8 +671,7 @@ const Index = () => {
   };
 
   const handleFilterSubmit = async (e) => {
-    e.preventDefault();    
-    // Use current filter values from state
+    e.preventDefault();
     const filter = {
       rating: filterValues.rating,
       genre: filterValues.genre,
@@ -776,20 +679,16 @@ const Index = () => {
       year: filterValues.year,
     };
 
-    // Save filter values to localStorage
     localStorage.setItem('activeFilters', JSON.stringify(filter));
 
     try {
-      // Send filter as JSON string (backend expects JSON string in query params)
       const response = await axios.post('/api/filter', null, {
         params: { filter: JSON.stringify(filter) }
       });
-      // Backend returns the count of filtered films
       if (response.data !== undefined && response.data !== null) {
         setFiltered(true);
         setFilmIndex(0);
         setCacheStartIndex(0);
-        // Clear cache to force reload with filtered films
         setFilmCache([]);
         await loadFilms(0);
       }
@@ -800,7 +699,6 @@ const Index = () => {
     setShowFilters(false);
   };
 
-
   if (loading || !currentFilm) {
     return (
       <div className="view-container" style={{ paddingTop: '75px' }}>
@@ -810,12 +708,13 @@ const Index = () => {
   }
 
 
+  // Render film details with likeable attributes
   const renderFilmInfo = () => {
     if (!currentFilm) return null;
 
     const likeableClass = user_id ? 'likeable' : '';
-    
-    // Format runtime
+
+    // Format runtime minutes to readable format
     const formatRuntime = (runtimeMinutes) => {
       if (runtimeMinutes === '\\N' || !runtimeMinutes) return '-';
       const hours = Math.floor(runtimeMinutes / 60);
@@ -826,7 +725,6 @@ const Index = () => {
       return '-';
     };
 
-    // Parse arrays
     const genres = currentFilm.genres ? currentFilm.genres.split(',').map(g => g.trim()) : [];
     const cast = currentFilm.cast ? currentFilm.cast.split(',').map(c => c.trim()) : [];
     const directors = currentFilm.director ? currentFilm.director.split(',').map(d => d.trim()) : [];
@@ -838,7 +736,6 @@ const Index = () => {
 
     return (
       <div id="film-info" className="h3 text-center" data-email={session?.email} data-id={user_id}>
-        {/* Title */}
         <div
             id="_filmTitle"
             className={`${likeableClass} ${likedElements.includes('Title') ? 'liked' : ''}`}
@@ -848,7 +745,6 @@ const Index = () => {
             <strong>{currentFilm.primaryTitle || ''}</strong>
           </div>
 
-          {/* Plot */}
           <div
             id="_filmPlot"
             className={`small-text py-1 mb-1 ${likeableClass} ${likedElements.includes('Plot') ? 'liked' : ''}`}
@@ -858,9 +754,7 @@ const Index = () => {
             <p>{currentFilm.plot || ''}</p>
           </div>
 
-        {/* Rating, Genre, Runtime, Year */}
         <div className="row d-flex">
-          {/* Rating */}
           <div
             id="_filmRating"
             className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${likeableClass} ${likedElements.includes('Rating') ? 'liked' : ''}`}
@@ -871,7 +765,6 @@ const Index = () => {
             <div className="p text-center">{currentFilm.averageRating || '-'}</div>
           </div>
 
-          {/* Genre */}
           <div
             id="_filmGenre"
             className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${likeableClass} ${likedElements.includes('Genre') ? 'liked' : ''}`}
@@ -886,7 +779,6 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Runtime */}
           <div
             id="_filmRuntime"
             className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${likeableClass} ${likedElements.includes('Runtime') ? 'liked' : ''}`}
@@ -897,7 +789,6 @@ const Index = () => {
             <div className="p text-center">{formatRuntime(currentFilm.runtimeMinutes)}</div>
           </div>
 
-          {/* Year */}
           <div
             id="_filmYear"
             className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${likeableClass} ${likedElements.includes('Year') ? 'liked' : ''}`}
@@ -909,7 +800,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Cast */}
         <div className="col-lg col-md col-sm-12 py-3">
           <div className="h5 text-center">CAST</div>
           <div className="container px-2">
@@ -929,9 +819,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Director, Camera, Writer */}
         <div className="row d-flex justify-content-center py-2">
-          {/* Director */}
           <div
             id="_filmDirector"
             className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Director') ? 'liked' : ''}`}
@@ -946,7 +834,6 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Camera */}
           <div
             id="_filmCamera"
             className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Camera') ? 'liked' : ''}`}
@@ -961,7 +848,6 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Writer */}
           <div
             id="_filmWriter"
             className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Writer') ? 'liked' : ''}`}
@@ -977,9 +863,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Producer, Editor, Composer */}
         <div className="row d-flex justify-content-center py-2" style={{ paddingBottom: '40px' }}>
-          {/* Producer */}
           <div
             id="_filmProducer"
             className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Producer') ? 'liked' : ''}`}
@@ -994,7 +878,6 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Editor */}
           <div
             id="_filmEditor"
             className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Editor') ? 'liked' : ''}`}
@@ -1009,7 +892,6 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Composer */}
           <div
             id="_filmComposer"
             className={`col-lg col-md col-sm border border-3 mx-3 px-2 ${user_id ? 'likeable' : ''} ${likedElements.includes('Composer') ? 'liked' : ''}`}

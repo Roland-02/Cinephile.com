@@ -1,3 +1,4 @@
+// Search page - search films by title, actor, director, etc. with infinite scrolling
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -21,19 +22,17 @@ const Search = () => {
   const observerTarget = useRef(null);
 
   useEffect(() => {
-    // Load queries from URL params on mount
     const queryParam = searchParams.get('query');
     if (queryParam) {
       const queries = queryParam.split(',').filter(q => q.trim() !== '');
       if (queries.length > 0) {
         setSearchQueries(queries);
-        // Search for all queries if we don't have films yet
         if (films.length === 0) {
           handleSearchForQueries(queries);
         }
       }
     }
-  }, []); // Only run on mount
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,6 +43,7 @@ const Search = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Search for multiple queries and combine results with pagination
   const handleSearchForQueries = async (queries, append = false) => {
     if (!queries || queries.length === 0) return;
 
@@ -56,42 +56,38 @@ const Search = () => {
     }
 
     try {
-      // Search for all queries and combine results
       let allFilms = [];
       if (append) {
         setFilms(prevFilms => {
           allFilms = [...prevFilms];
-          return prevFilms; // Return immediately, we'll update below
+          return prevFilms;
         });
       }
-      
+
       const newPages = { ...currentPages };
       let hasNewResults = false;
-      
+
       for (const searchQuery of queries) {
         if (searchQuery.trim() !== '') {
           const queryKey = searchQuery.trim();
           const currentPage = newPages[queryKey] || 0;
           const pageToLoad = append ? currentPage + 1 : 1;
-          
+
           const response = await axios.get(`/api/search_general?query=${queryKey}&page=${pageToLoad}`);
           const filmsData = response.data.films || [];
-          
+
           if (filmsData.length > 0) {
             hasNewResults = true;
-            // Combine films, avoiding duplicates
             filmsData.forEach(film => {
               if (!allFilms.find(f => f.tconst === film.tconst)) {
                 allFilms.push(film);
               }
             });
-            
-            // Update page tracking
             newPages[queryKey] = pageToLoad;
           }
         }
       }
-      
+
       if (append) {
         setFilms(prevFilms => {
           const existingIds = new Set(prevFilms.map(f => f.tconst));
@@ -101,15 +97,9 @@ const Search = () => {
       } else {
         setFilms(allFilms);
       }
-      
+
       setCurrentPages(newPages);
-      
-      // Check if we got results - if no new results, no more pages
-      if (!hasNewResults) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
+      setHasMore(hasNewResults);
     } catch (error) {
       console.error('Error searching films:', error);
       setHasMore(false);
@@ -119,6 +109,7 @@ const Search = () => {
     }
   };
 
+  // Add new search query and perform search
   const handleSearch = async (searchQuery) => {
     if (!searchQuery || searchQuery.trim() === '') return;
 
@@ -129,8 +120,7 @@ const Search = () => {
     try {
       const response = await axios.get(`/api/search_general?query=${searchQuery.trim()}&page=1`);
       const filmsData = response.data.films || [];
-      
-      // Add new films to existing results, avoiding duplicates
+
       setFilms(prevFilms => {
         const combined = [...prevFilms];
         filmsData.forEach(film => {
@@ -140,8 +130,7 @@ const Search = () => {
         });
         return combined;
       });
-      
-      // Update page tracking
+
       if (filmsData.length > 0) {
         setCurrentPages({ [searchQuery.trim()]: 1 });
         setHasMore(true);
@@ -167,34 +156,25 @@ const Search = () => {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) return;
 
-    // Add to search queries if not already present
     if (!searchQueries.includes(trimmedQuery)) {
       const newQueries = [...searchQueries, trimmedQuery];
       setSearchQueries(newQueries);
-      
-      // Update URL params
       setSearchParams({ query: newQueries.join(',') });
-      
-      // Perform search
       handleSearch(trimmedQuery);
     }
-    
-    // Clear the input
+
     setQuery('');
   };
 
   const handleRemoveQuery = (queryToRemove) => {
     const newQueries = searchQueries.filter(q => q !== queryToRemove);
     setSearchQueries(newQueries);
-    
-    // Remove page tracking for removed query
     const newPages = { ...currentPages };
     delete newPages[queryToRemove];
     setCurrentPages(newPages);
-    
+
     if (newQueries.length > 0) {
       setSearchParams({ query: newQueries.join(',') });
-      // Re-search with remaining queries
       handleSearchForQueries(newQueries);
     } else {
       setSearchParams({});
@@ -214,7 +194,6 @@ const Search = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Intersection Observer for infinite scroll
   useEffect(() => {
     if (!hasMore || isLoadingMore || loading || searchQueries.length === 0) return;
 
@@ -348,7 +327,6 @@ const Search = () => {
                   />
                 </figure>
               ))}
-              {/* Observer target for infinite scroll */}
               <div ref={observerTarget} style={{ height: '20px', width: '100%' }} />
               {isLoadingMore && (
                 <div className="loading-spinner" style={{ display: 'block', margin: '20px auto' }}></div>
