@@ -1,169 +1,70 @@
-# Cinephile.com
+# Film Recommendation App - Cinephile.com
 
-A movie discovery and recommendation platform built with React and Flask.
+## Project Overview
 
-## Architecture
+Cinephile.com is an innovative film recommendation website that leverages machine learning algorithms to provide users with personalized film suggestions. With a user-friendly interface and advanced recommendation engine, Cinephile.com helps movie enthusiasts discover films tailored to their tastes.
 
-- **Unified Flask Server (port 5000)**: Single server handling all API routes, recommendation engine, and serving React app
-  - Main server: `server/server.py`
-  - Recommendation engine: `server/recommendEngine.py` (integrated via Flask Blueprint)
-- **React Frontend**: Single Page Application with SCSS styling
-  - Source code in `client/`
-  - Built files in `dist/` (production)
-  - Dev server on port 3000 (development)
+### Tech Stack
 
-## Setup
-
-### Install Dependencies
-
-```bash
-# Node.js dependencies (for React development/build)
-npm install
-
-# Python dependencies
-pip install flask flask-cors flask-caching bcrypt mysql-connector-python requests python-dotenv schedule numpy pandas scikit-learn threadpoolctl langdetect sqlalchemy
-```
-
-### Development Mode
-
-1. **Start Flask Server** (in one terminal):
-   ```bash
-   python server/server.py
-   ```
-   This runs on port 5000 and includes:
-   - All API routes (auth, films, user interactions)
-   - Recommendation engine routes (integrated via blueprint)
-   - React app serving
-
-2. **Start React Dev Server** (optional, in another terminal for hot-reload):
-   ```bash
-   npm run dev
-   ```
-   This runs on port 3000 and proxies API calls to Flask on port 5000.
-
-**Access:**
-- Frontend (dev): http://localhost:3000
-- Backend API: http://localhost:5000/api/
-- Frontend (served by Flask): http://localhost:5000/
-
-### Production Mode
-
-1. **Build React app**:
-   ```bash
-   npm run build
-   ```
-   This creates the `dist/` folder with the production build.
-
-2. **Start Flask Server**:
-   ```bash
-   python server/server.py
-   ```
-   The Flask server will automatically serve the built React app from `dist/`.
-
-**Access:**
-- Application: http://localhost:5000/
-- API: http://localhost:5000/api/
-
-## File Structure
-
-```
-Cinephile.com/
-├── client/                    # React frontend source code
-│   ├── components/           # Reusable React components
-│   │   └── Navbar.jsx
-│   ├── pages/               # Page components
-│   │   ├── Index.jsx
-│   │   ├── Login.jsx
-│   │   ├── CreateAccount.jsx
-│   │   ├── Profile.jsx
-│   │   ├── Search.jsx
-│   │   ├── Watchlist.jsx
-│   │   └── Recommend.jsx
-│   ├── styles/              # SCSS stylesheets
-│   │   ├── _variables.scss  # SCSS variables
-│   │   ├── _mixins.scss     # SCSS mixins
-│   │   ├── _base.scss       # Base styles
-│   │   ├── _navbar.scss     # Navbar styles
-│   │   ├── _components.scss # Component styles
-│   │   ├── main.scss        # Main entry point
-│   │   └── pages/           # Page-specific styles
-│   └── utils/               # Utility functions
-│       └── auth.js
-├── server/                   # Flask backend
-│   ├── server.py            # Main Flask server (unified)
-│   ├── recommendEngine.py   # Recommendation engine (Blueprint)
-│   └── tmdb_calls.py        # TMDB API helper functions
-├── dist/                     # Built React app (generated)
-├── images/                   # Static images
-├── mysql_schema_tables/      # Database schema files
-├── index.html                # HTML entry point
-├── vite.config.js           # Vite configuration
-└── package.json             # Node.js dependencies
-```
+- **Frontend:** 
+  - HTML, CSS, JavaScript
+  - Bootstrap for responsive design
+- **Backend:**
+  - Node.js for the server-side application (running on port **8080**)
+  - Flask for the recommendation engine (running on port **8081**)
+  - MySQL for database management
+- **Machine Learning:**
+  - Python for implementing recommendation algorithms
+- **Development Tools:**
+  - npm for package management
+  - MySQL Workbench for database visualization and management
 
 ## Key Features
 
-- **Unified Backend**: Single Flask server with recommendation engine integrated via Blueprint
-- **SCSS Styling**: Modular SCSS architecture with variables, mixins, and component-based organization
-- **React Router**: Client-side routing for seamless navigation
-- **Bootstrap & MDB**: UI framework loaded via CDN in `index.html`
-- **Machine Learning**: ML-based recommendation engine using scikit-learn
+- **Personalized Recommendations:** Utilizes machine learning algorithms to analyze user preferences and suggest relevant films.
+- **User-Friendly Interface:** Easy navigation and search capabilities to enhance the user experience.
+- **API Integration:** Allows for seamless interaction with the recommendation engine through the accessible API in `RecommendEngine.py`.
+- **Multi-Server Architecture:** Operates with two servers to handle front-end requests and backend processing efficiently.
 
-## Environment Variables
+## Achievements
 
-Create a `.env` file in the project root with:
+- Developed a fully functional film recommendation system that has been tested with real user data.
+- Successfully integrated a responsive front-end design, making the application accessible across various devices.
+- Implemented robust error handling and validation mechanisms to ensure a smooth user experience.
 
-```env
-PORT=5000
-DB_HOST=your_db_host
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_DATABASE=your_db_name
-DB_PORT=3306
-PAGE_SIZE=100
-SECRET=your_secret_key
-```
+## Software Prerequisites
 
-## Technology Stack
+To run the application, you will need to have the following installed on your local machine:
 
-### Frontend
-- React 18
-- React Router DOM
-- Vite (build tool)
-- SCSS (styling)
-- Bootstrap 5.3.3
-- MDB UI Kit 4.2.0
-- Axios (HTTP client)
+- npm
+- MySQL Workbench
+- A modern web browser (Chrome is recommended)
 
-### Backend
-- Flask (Python web framework)
-- Flask-CORS (CORS support)
-- Flask-Caching (caching)
-- MySQL Connector (database)
-- bcrypt (password hashing)
-- scikit-learn (machine learning)
-- pandas & numpy (data processing)
+### Database Setup
 
-## Development Notes
+- Ensure that the packages in the `node_modules` folder are stored locally.
+- Migrate the database to your local machine by executing the SQL files located in the `/mysql_schema_tables` folder.
+  - Make sure the schema is named `users`.
+  - Update the database host and password in `database.js` to match your local credentials.
 
-- The recommendation engine runs as a Flask Blueprint, integrated into the main server
-- All routes are accessible on port 5000 with `/api/` prefix
-- React source files are in `client/` directory
-- SCSS files use the `@use` module system for better organization
-- Bootstrap and MDB are loaded via CDN in `index.html` (not via React)
+## How to Run the Application
 
-## Quick Start
+1. Start the Node.js server:
+   
+   -terminal: node app.js
 
-```bash
-# Install dependencies
-npm install
-pip install -r requirements.txt  # (if you have one) or install manually
+2. The terminal will display the status and outputs from both servers:
+    
+   -Access the frontend at http://localhost:8080
+   
+   -For direct API requests, use http://127.0.0.1:8081 
 
-# Development
-python server/server.py          # Terminal 1: Flask server
-npm run dev                      # Terminal 2: React dev server (optional)
 
-# Production
-npm run build                    # Build React app
-python server/server.py          # Start Flask server
-```
+<img width="1440" alt="Screenshot 2024-04-14 at 17 56 03" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/55ccf4f7-85a8-4abd-a466-c5e432862c1f">
+<br>
+<img width="1440" alt="Screenshot 2024-04-14 at 17 56 45" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/93066a3d-4ecd-44f7-9753-cd55314271d1">
+<br>
+<img width="1440" alt="Screenshot 2024-04-14 at 17 56 27" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/8a04787d-e22f-449a-b4e1-dab830e13232">
+<br>
+<img width="1440" alt="Screenshot 2024-04-14 at 17 56 56" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/76825720-91c8-464a-8b90-14bd2dc06a6a">
+<br>
