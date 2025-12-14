@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getSession } from '../utils/auth';
@@ -11,10 +11,14 @@ const Search = () => {
   const [searchQueries, setSearchQueries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [currentPages, setCurrentPages] = useState({}); // Track page for each query
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const session = getSession();
   const user_id = session?.id;
   const navigate = useNavigate();
+  const observerTarget = useRef(null);
 
   useEffect(() => {
     // Load queries from URL params on mount
@@ -40,30 +44,78 @@ const Search = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSearchForQueries = async (queries) => {
+  const handleSearchForQueries = async (queries, append = false) => {
     if (!queries || queries.length === 0) return;
 
-    setLoading(true);
+    if (!append) {
+      setLoading(true);
+      setCurrentPages({});
+      setHasMore(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+
     try {
       // Search for all queries and combine results
-      const allFilms = [];
+      let allFilms = [];
+      if (append) {
+        setFilms(prevFilms => {
+          allFilms = [...prevFilms];
+          return prevFilms; // Return immediately, we'll update below
+        });
+      }
+      
+      const newPages = { ...currentPages };
+      let hasNewResults = false;
+      
       for (const searchQuery of queries) {
         if (searchQuery.trim() !== '') {
-          const response = await axios.get(`/api/search_general?query=${searchQuery.trim()}&page=1`);
+          const queryKey = searchQuery.trim();
+          const currentPage = newPages[queryKey] || 0;
+          const pageToLoad = append ? currentPage + 1 : 1;
+          
+          const response = await axios.get(`/api/search_general?query=${queryKey}&page=${pageToLoad}`);
           const filmsData = response.data.films || [];
-          // Combine films, avoiding duplicates
-          filmsData.forEach(film => {
-            if (!allFilms.find(f => f.tconst === film.tconst)) {
-              allFilms.push(film);
-            }
-          });
+          
+          if (filmsData.length > 0) {
+            hasNewResults = true;
+            // Combine films, avoiding duplicates
+            filmsData.forEach(film => {
+              if (!allFilms.find(f => f.tconst === film.tconst)) {
+                allFilms.push(film);
+              }
+            });
+            
+            // Update page tracking
+            newPages[queryKey] = pageToLoad;
+          }
         }
       }
-      setFilms(allFilms);
+      
+      if (append) {
+        setFilms(prevFilms => {
+          const existingIds = new Set(prevFilms.map(f => f.tconst));
+          const newFilms = allFilms.filter(f => !existingIds.has(f.tconst));
+          return [...prevFilms, ...newFilms];
+        });
+      } else {
+        setFilms(allFilms);
+      }
+      
+      setCurrentPages(newPages);
+      
+      // Check if we got results - if no new results, no more pages
+      if (!hasNewResults) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
     } catch (error) {
       console.error('Error searching films:', error);
+      setHasMore(false);
     } finally {
       setLoading(false);
+      setIsLoadingMore(false);
     }
   };
 
@@ -71,6 +123,9 @@ const Search = () => {
     if (!searchQuery || searchQuery.trim() === '') return;
 
     setLoading(true);
+    setCurrentPages({});
+    setHasMore(true);
+    
     try {
       const response = await axios.get(`/api/search_general?query=${searchQuery.trim()}&page=1`);
       const filmsData = response.data.films || [];
@@ -85,12 +140,27 @@ const Search = () => {
         });
         return combined;
       });
+      
+      // Update page tracking
+      if (filmsData.length > 0) {
+        setCurrentPages({ [searchQuery.trim()]: 1 });
+        setHasMore(true);
+      } else {
+        setHasMore(false);
+      }
     } catch (error) {
       console.error('Error searching films:', error);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
   };
+
+  const loadMoreFilms = useCallback(() => {
+    if (!isLoadingMore && hasMore && !loading && searchQueries.length > 0) {
+      handleSearchForQueries(searchQueries, true);
+    }
+  }, [searchQueries, hasMore, isLoadingMore, loading]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -117,6 +187,11 @@ const Search = () => {
     const newQueries = searchQueries.filter(q => q !== queryToRemove);
     setSearchQueries(newQueries);
     
+    // Remove page tracking for removed query
+    const newPages = { ...currentPages };
+    delete newPages[queryToRemove];
+    setCurrentPages(newPages);
+    
     if (newQueries.length > 0) {
       setSearchParams({ query: newQueries.join(',') });
       // Re-search with remaining queries
@@ -124,6 +199,8 @@ const Search = () => {
     } else {
       setSearchParams({});
       setFilms([]);
+      setCurrentPages({});
+      setHasMore(true);
     }
   };
 
@@ -136,6 +213,31 @@ const Search = () => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    if (!hasMore || isLoadingMore || loading || searchQueries.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreFilms();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, isLoadingMore, loading, searchQueries, loadMoreFilms]);
 
   return (
     <div className="container" style={{ paddingTop: '80px' }}>
@@ -218,33 +320,40 @@ const Search = () => {
           {loading ? (
             <div className="loading-spinner" style={{ display: 'block' }}></div>
           ) : films.length > 0 ? (
-            films.map((film, index) => (
-              <figure
-                key={film.tconst}
-                className="poster-wrapper clickable"
-                data-id={film.tconst}
-                onClick={() => handleFilmClick(film, index)}
-                style={{ cursor: 'pointer' }}
-              >
-                <figcaption className="caption">
-                  <p>
-                    Released: <strong>{film.startYear}</strong>
-                  </p>
-                  <p>
-                    Genre: <strong>{film.genres}</strong>
-                  </p>
-                  <p>
-                    Starring: <strong>{film.cast}</strong>
-                  </p>
-                  <p>{film.plot}</p>
-                </figcaption>
-                <img
-                  className="film-poster"
-                  src={film.poster ? baseImagePath + film.poster : '/images/MissingPoster.jpeg'}
-                  alt={film.primaryTitle}
-                />
-              </figure>
-            ))
+            <>
+              {films.map((film, index) => (
+                <figure
+                  key={film.tconst}
+                  className="poster-wrapper clickable"
+                  data-id={film.tconst}
+                  onClick={() => handleFilmClick(film, index)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <figcaption className="caption">
+                    <p>
+                      Released: <strong>{film.startYear}</strong>
+                    </p>
+                    <p>
+                      Genre: <strong>{film.genres}</strong>
+                    </p>
+                    <p>
+                      Starring: <strong>{film.cast}</strong>
+                    </p>
+                    <p>{film.plot}</p>
+                  </figcaption>
+                  <img
+                    className="film-poster"
+                    src={film.poster ? baseImagePath + film.poster : '/images/MissingPoster.jpeg'}
+                    alt={film.primaryTitle}
+                  />
+                </figure>
+              ))}
+              {/* Observer target for infinite scroll */}
+              <div ref={observerTarget} style={{ height: '20px', width: '100%' }} />
+              {isLoadingMore && (
+                <div className="loading-spinner" style={{ display: 'block', margin: '20px auto' }}></div>
+              )}
+            </>
           ) : searchQueries.length > 0 ? (
             <img
               className="notFound"
