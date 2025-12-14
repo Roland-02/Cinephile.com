@@ -134,3 +134,36 @@ li {
   top: 60px;
 }
 
+// Smaller caption for Profile page film cards
+#loved-films,
+#liked-films {
+  .poster-wrapper {
+    figcaption.caption {
+      font-size: 0.7em !important;
+      padding: 6px !important;
+      line-height: 1.2 !important;
+      overflow-y: auto;
+      max-height: 100%;
+      
+      p {
+        margin: 3px 0 !important;
+        font-size: 0.85em !important;
+        line-height: 1.2 !important;
+      }
+      
+      p:last-child {
+        // Plot text - make it smaller and limit lines
+        font-size: 0.75em !important;
+        line-height: 1.1 !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-height: 2.2em;
+        margin-top: 4px !important;
+      }
+    }
+  }
+}
+
