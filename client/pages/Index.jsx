@@ -112,6 +112,11 @@ const Index = () => {
     
     if (shouldShuffle === 'true') {
       localStorage.removeItem('shouldShuffle');
+      // Immediately show loading and clear current film for smooth UX
+      setLoading(true);
+      setCurrentFilm(null);
+      setFilmCache([]);
+      
       const shuffleAndReset = async () => {
         try {
           const currentUserId = getSession()?.id;
