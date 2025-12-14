@@ -29,14 +29,11 @@ const Index = () => {
     runtime: 'Any',
     year: 'Any'
   });
-  const hasInitialized = useRef(false);
   const isLoadingRef = useRef(false);
   
   const session = getSession();
   const user_id = session?.id;
-  const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
 
 
   // Load user data once on mount or when user_id changes

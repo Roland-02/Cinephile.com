@@ -29,10 +29,6 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
     return password && password.trim().length !== 0;
   };
 
-  const togglePassword = (e) => {
-    setShowPassword(e.target.checked);
-  };
-
   const switchMode = () => {
     setIsSignUp(!isSignUp);
     setEmail('');
