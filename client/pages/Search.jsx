@@ -66,6 +66,7 @@ const Search = () => {
 
       const newPages = { ...currentPages };
       let hasNewResults = false;
+      const initialFilmsCount = allFilms.length;
 
       for (const searchQuery of queries) {
         if (searchQuery.trim() !== '') {
@@ -77,16 +78,25 @@ const Search = () => {
           const filmsData = response.data.films || [];
 
           if (filmsData.length > 0) {
-            hasNewResults = true;
+            let addedNewFilm = false;
             filmsData.forEach(film => {
               if (!allFilms.find(f => f.tconst === film.tconst)) {
                 allFilms.push(film);
+                addedNewFilm = true;
               }
             });
-            newPages[queryKey] = pageToLoad;
+
+            if (addedNewFilm || !append) {
+              newPages[queryKey] = pageToLoad;
+              hasNewResults = true;
+            }
           }
         }
       }
+
+      // Check if we actually got new films
+      const finalFilmsCount = allFilms.length;
+      const actuallyAddedNewFilms = finalFilmsCount > initialFilmsCount;
 
       if (append) {
         setFilms(prevFilms => {
@@ -94,12 +104,15 @@ const Search = () => {
           const newFilms = allFilms.filter(f => !existingIds.has(f.tconst));
           return [...prevFilms, ...newFilms];
         });
+        // Only set hasMore to true if we actually added new films
+        setHasMore(actuallyAddedNewFilms && hasNewResults);
       } else {
         setFilms(allFilms);
+        setHasMore(hasNewResults);
       }
 
       setCurrentPages(newPages);
-      setHasMore(hasNewResults);
+
     } catch (error) {
       console.error('Error searching films:', error);
       setHasMore(false);
