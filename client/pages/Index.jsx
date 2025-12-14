@@ -70,7 +70,12 @@ const Index = () => {
 
       const likedDict = {};
       likedRes.data.forEach(film => {
-        likedDict[film.tconst] = { ...film, elements: [], cast: [] };
+        // Preserve all film metadata including cast, and initialize elements/cast arrays if not present
+        likedDict[film.tconst] = { 
+          ...film, 
+          elements: [], 
+          cast: [] 
+        };
       });
 
       // Ensure we store full film objects with metadata
@@ -283,7 +288,12 @@ const Index = () => {
           } else {
             const film = myLiked.find(f => f.tconst === filmTconst);
             if (film) {
-              data.liked[filmTconst] = { ...film, elements, cast };
+              // Preserve all film metadata when updating liked entry
+              data.liked[filmTconst] = { 
+                ...film, 
+                elements, 
+                cast 
+              };
             }
           }
           localStorage.setItem('user_data', JSON.stringify(data));
@@ -548,7 +558,13 @@ const Index = () => {
           const data = JSON.parse(cached);
           data.liked = data.liked || {};
           const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
-          data.liked[currentFilm.tconst] = { ...film, elements: newLikedElements, cast: newLikedCast };
+          // Preserve all film metadata when updating liked entry
+          data.liked[currentFilm.tconst] = { 
+            ...film, 
+            ...currentFilm, // Ensure currentFilm metadata takes precedence
+            elements: newLikedElements, 
+            cast: newLikedCast 
+          };
           updateUserDataCache(watchList, data.liked, newLoved);
         } catch (e) {
           console.error('Error updating cache:', e);
@@ -658,8 +674,14 @@ const Index = () => {
           const isFilmLiked = myLiked.some((f) => f.tconst === currentFilm.tconst);
 
           if (elements.length > 0 || cast.length > 0) {
-            const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
-            data.liked[currentFilm.tconst] = { ...film, elements, cast };
+          const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
+          // Preserve all film metadata when updating liked entry
+          data.liked[currentFilm.tconst] = { 
+            ...film, 
+            ...currentFilm, // Ensure currentFilm metadata takes precedence
+            elements, 
+            cast 
+          };
             if (!isFilmLiked) {
               const newLiked = [...myLiked, film];
               setMyLiked(newLiked);

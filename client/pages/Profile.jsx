@@ -102,16 +102,22 @@ const Profile = () => {
         setLovedFilms(loved);
         setLikedFilms(liked);
         
-        // Update cache with full film data
+        // Update cache with full film data, preserving existing elements and cast
         try {
           const cached = localStorage.getItem('user_data');
           const data = cached ? JSON.parse(cached) : {};
           data.loved = loved;
           data.liked = data.liked || {};
-          // Convert liked array to object format
+          // Convert liked array to object format, preserving existing elements and cast
           if (Array.isArray(liked)) {
             liked.forEach(film => {
-              data.liked[film.tconst] = { ...film, elements: data.liked[film.tconst]?.elements || [], cast: data.liked[film.tconst]?.cast || [] };
+              const existing = data.liked[film.tconst] || {};
+              // Preserve all film metadata and existing liked elements/cast
+              data.liked[film.tconst] = { 
+                ...film, // Full film metadata
+                elements: existing.elements || [], 
+                cast: existing.cast || [] 
+              };
             });
           }
           localStorage.setItem('user_data', JSON.stringify(data));
