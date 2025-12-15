@@ -86,9 +86,9 @@ const Profile = () => {
       const profileStats = statsRes.data;
       
       setStats({
-        cast: Array.isArray(profileStats.cast) ? profileStats.cast : [],
-        crew: Array.isArray(profileStats.crew) ? profileStats.crew : [],
-        genre: Array.isArray(profileStats.genre) ? profileStats.genre : (profileStats.genre || {}),
+        cast: profileStats.cast,
+        crew: profileStats.crew,
+        genre: profileStats.genre,
       });
       
       // If we didn't load from cache, fetch and update films
@@ -96,30 +96,18 @@ const Profile = () => {
         const lovedRes = results[1];
         const likedRes = results[2];
         
-        const loved = lovedRes.data.films || lovedRes.data || [];
-        const liked = likedRes.data.films || likedRes.data || [];
+        const loved = lovedRes.data;
+        const liked = likedRes.data;
         
         setLovedFilms(loved);
         setLikedFilms(liked);
         
-        // Update cache with full film data, preserving existing elements and cast
+        // Update cache with full film data, preserving existing liked elements/cast
         try {
           const cached = localStorage.getItem('user_data');
           const data = cached ? JSON.parse(cached) : {};
           data.loved = loved;
-          data.liked = data.liked || {};
-          // Convert liked array to object format, preserving existing elements and cast
-          if (Array.isArray(liked)) {
-            liked.forEach(film => {
-              const existing = data.liked[film.tconst] || {};
-              // Preserve all film metadata and existing liked elements/cast
-              data.liked[film.tconst] = { 
-                ...film, // Full film metadata
-                elements: existing.elements || [], 
-                cast: existing.cast || [] 
-              };
-            });
-          }
+          data.liked = liked;
           localStorage.setItem('user_data', JSON.stringify(data));
         } catch (e) {
           console.error('Error updating cache with full film data:', e);

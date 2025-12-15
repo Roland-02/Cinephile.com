@@ -550,9 +550,23 @@ def get_content_recommendations(user_profile_groups, similarity_vectors):
 
 # return most recurring names in input data
 def most_common_names(df, top_n=5):
-    all_names = pd.Series(df.values.flatten())
-    split_names = all_names.str.split(',').explode()
-    split_names = split_names.str.strip()  # Remove whitespace
+    df_copy = df.copy()
+    if 'likeage' in df_copy.columns:
+        df_copy = df_copy.drop(columns=['likeage'])
+    
+    all_names = pd.Series(df_copy.values.flatten())
+    all_names = all_names.dropna().astype(str)
+    all_names = all_names[all_names.str.strip() != '']
+    
+    if len(all_names) == 0:
+        return []
+    
+    split_names = all_names.str.split(',').explode().str.strip()
+    split_names = split_names[split_names != '']
+    
+    if len(split_names) == 0:
+        return []
+    
     name_counts = split_names.value_counts()
     top_n_names = name_counts.head(top_n)
     # Return list of dictionaries with name and count
@@ -1022,7 +1036,7 @@ def get_batch_route():
             films_json = cache.get(f'user_{category}_recommended{user_id}')
         except Exception as e:
             print(f"Error regenerating recommendations: {e}")
-            return jsonify({"films": []})
+            return jsonify([])
 
  
     films_data = json.loads(films_json)
@@ -1033,7 +1047,7 @@ def get_batch_route():
     # Slice the films list to get the batch
     batch = films_data[start_index:end_index]
     
-    return jsonify({"films": batch})
+    return jsonify(batch)
     
 
 @recommend_bp.route('/get_liked_staff', methods=['GET'])
@@ -1063,7 +1077,8 @@ def get_loved_route():
     user_id = request.args.get("user_id")
     loved_films = get_loved_films(user_id)
     loved_films_dict = loved_films.to_dict(orient='records')
-    return jsonify({"films": loved_films_dict})
+    # Return a plain list of films (no nested "films" key)
+    return jsonify(loved_films_dict)
 
 
 @recommend_bp.route('/get_liked_films', methods=['GET'])
@@ -1074,7 +1089,8 @@ def get_liked_route():
     liked_films_tconsts = liked_films_attr[liked_films_attr['likeage'] != 1]['tconst']
     liked_films = data[data['tconst'].isin(liked_films_tconsts)]
     liked_films_dict = liked_films.to_dict(orient='records')
-    return jsonify({"films": liked_films_dict})
+    # Return a plain list of films (no nested "films" key)
+    return jsonify(liked_films_dict)
 
 
 @recommend_bp.route('/get_user_watchlist', methods=['GET'])
@@ -1152,9 +1168,9 @@ def search_general():
         # Convert paginated films to dictionary records
         paginated_films_dict = paginated_films.to_dict(orient='records')
 
-        return jsonify({'films': paginated_films_dict})
+        return jsonify(paginated_films_dict)
     else:
-        return jsonify({'films': []})
+        return jsonify([])
 
 
 @recommend_bp.route('/save_recommended_interaction', methods=['POST'])

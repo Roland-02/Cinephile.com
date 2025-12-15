@@ -335,12 +335,16 @@ def dataset_length():
 def get_liked_films():
     """
     Return all films the user has any liked interaction with, together with
-    all liked elements and liked cast for each film.
+    all liked elements and liked cast for each film, including full film metadata.
 
     Response shape:
     [
       {
         "tconst": "tt1234567",
+        "primaryTitle": "...",
+        "poster": "...",
+        "cast": "...",
+        ... (all other film fields),
         "likedElements": ["Title", "Plot", ...],
         "likedCast": ["Actor A", "Actor B", ...]
       },
@@ -387,20 +391,27 @@ def get_liked_films():
             name = row['name']
             liked_cast_by_tconst.setdefault(tconst, []).append(name)
 
-        cursor.close()
-        conn.close()
-
         # 3) Merge tconsts from both sources
         all_tconsts = set(liked_elements_by_tconst.keys()) | set(liked_cast_by_tconst.keys())
 
-        liked_films = []
-        for tconst in all_tconsts:
-            liked_films.append({
-                'tconst': tconst,
-                'likedElements': liked_elements_by_tconst.get(tconst, []),
-                'likedCast': liked_cast_by_tconst.get(tconst, []),
-            })
+        if not all_tconsts:
+            cursor.close()
+            conn.close()
+            return jsonify([])
 
+        # 4) Get full film metadata and combine with liked data
+        placeholders = ','.join(['%s'] * len(all_tconsts))
+        cursor.execute(f"SELECT * FROM films WHERE tconst IN ({placeholders})", tuple(all_tconsts))
+        
+        liked_films = []
+        for film in cursor.fetchall():
+            tconst = film['tconst']
+            film['likedElements'] = liked_elements_by_tconst.get(tconst, [])
+            film['likedCast'] = liked_cast_by_tconst.get(tconst, [])
+            liked_films.append(film)
+
+        cursor.close()
+        conn.close()
         return jsonify(liked_films)
     except Exception as e:
         print(f"Error: {e}")
@@ -425,17 +436,45 @@ def get_loved_films():
 
 @app.route('/api/getWatchlist', methods=['GET'])
 def get_watchlist():
+    """
+    Return all films in the user's watchlist with full film metadata.
+    
+    Response shape:
+    [
+      {
+        "tconst": "tt1234567",
+        "primaryTitle": "...",
+        "poster": "...",
+        "cast": "...",
+        ... (all other film fields)
+      },
+      ...
+    ]
+    """
     try:
         user_id = request.args.get('user_id')
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
         
+        # Get tconsts from watchlist table
         cursor.execute("SELECT tconst FROM watchlist WHERE user_id = %s", (user_id,))
-        results = cursor.fetchall()
+        watchlist_tconsts = cursor.fetchall()
+        
+        if not watchlist_tconsts:
+            cursor.close()
+            conn.close()
+            return jsonify([])
+        
+        # Get full film metadata for all watchlist tconsts
+        all_tconsts = [row['tconst'] for row in watchlist_tconsts]
+        placeholders = ','.join(['%s'] * len(all_tconsts))
+        cursor.execute(f"SELECT * FROM films WHERE tconst IN ({placeholders})", tuple(all_tconsts))
+        
+        watchlist_films = cursor.fetchall()
         
         cursor.close()
         conn.close()
-        return jsonify(results)
+        return jsonify(watchlist_films)
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500

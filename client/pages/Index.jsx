@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { getSession } from '../utils/auth';
 
@@ -46,21 +46,9 @@ const Index = () => {
         const data = JSON.parse(cached);
 
         // Normalise cached structures
-        const watchlist = data.watchlist;
-        const liked = data.liked;
-        const loved = data.loved;
-
-        console.log("fuck", liked);
-
-        // Convert liked dictionary back into a flat film array.
-        // const likedFilms = Object.values(likedDict)
-        //   .map((item) => {
-        //     if (!item) return null;
-        //     if (item.film) return item.film;
-        //     const { elements, likedCast, ...film } = item;
-        //     return film;
-        //   })
-        //   .filter(Boolean);
+        const watchlist = data.watchlist || [];
+        const liked = data.liked || [];
+        const loved = data.loved || [];
 
         setWatchList(watchlist);
         setMyLiked(liked);
@@ -88,7 +76,6 @@ const Index = () => {
           loved: lovedRes.data,
         };
 
-      
         setWatchList(userData.watchlist);
         setMyLiked(userData.liked);
         setMyLoved(userData.loved);
@@ -317,8 +304,7 @@ const Index = () => {
       const isLovedFilm = myLoved.some((f) => f.tconst === film.tconst);
       setIsLoved(isLovedFilm);
 
-      const likedEntry =
-        myLiked.find((f) => f.tconst === film.tconst) || null;
+      const likedEntry = myLiked.find((f) => f.tconst === film.tconst);
 
       if (isLovedFilm) {
         // Loved films: highlight everything.
@@ -331,9 +317,8 @@ const Index = () => {
         setLikedCast(allCast);
 
       } else if (likedEntry) {
-        // Liked but not loved: use likedElements / likedCast from myLiked (populated in loadUserData).
-        const elements = likedEntry.likedElements || likedEntry.elements || [];
-        const cast = likedEntry.likedCast || likedEntry.cast || [];
+        const elements = likedEntry.likedElements;
+        const cast = likedEntry.likedCast;
         setLikedElements(elements);
         setLikedCast(cast);
 
@@ -452,21 +437,15 @@ const Index = () => {
           const newLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
           setMyLoved(newLoved);
 
-          const cached = localStorage.getItem('user_data');
-          if (cached) {
-            try {
-              const data = JSON.parse(cached);
-              data.liked = data.liked || {};
-              const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
-              data.liked[currentFilm.tconst] = { ...film, elements: newLikedElements, cast: newLikedCast };
-              if (!myLiked.some(f => f.tconst === currentFilm.tconst)) {
-                setMyLiked([...myLiked, film]);
-              }
-              updateUserDataCache();
-            } catch (e) {
-              console.error('Error updating cache:', e);
-            }
-          }
+          // Remove from loved, update liked state
+          const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
+          const filmToAdd = {
+            ...currentFilm,
+            likedElements: newLikedElements,
+            likedCast: newLikedCast,
+          };
+          setMyLiked([...newLiked, filmToAdd]);
+          updateUserDataCache();
 
           await saveElements(newLikedElements, newLikedCast);
         } catch (error) {
@@ -490,6 +469,10 @@ const Index = () => {
       const newLoved = [...myLoved, currentFilm];
       setMyLoved(newLoved);
 
+      // Remove from liked list (film should only be in loved OR liked, not both)
+      const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
+      setMyLiked(newLiked);
+
       const allElements = ['Title', 'Plot', 'Rating', 'Genre', 'Runtime', 'Year', 'Director', 'Camera', 'Writer', 'Producer', 'Editor', 'Composer'];
       const allCast = currentFilm.cast ? currentFilm.cast.split(',').map(c => c.trim()) : [];
       const newLikedElements = [...new Set([...likedElements, ...allElements])];
@@ -498,25 +481,7 @@ const Index = () => {
       setLikedElements(newLikedElements);
       setLikedCast(newLikedCast);
 
-      const cached = localStorage.getItem('user_data');
-      if (cached) {
-        try {
-          const data = JSON.parse(cached);
-          data.liked = data.liked || {};
-          const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
-          // Preserve all film metadata when updating liked entry
-          data.liked[currentFilm.tconst] = {
-            ...film,
-            ...currentFilm,
-            elements: newLikedElements,
-            likedCast: newLikedCast.join(', ')
-          };
-          updateUserDataCache();
-        } catch (e) {
-          console.error('Error updating cache:', e);
-        }
-      }
-
+      updateUserDataCache();
       await saveElements(newLikedElements, newLikedCast);
     } catch (error) {
       console.error('Error loving film:', error);
@@ -538,19 +503,10 @@ const Index = () => {
       setLikedElements([]);
       setLikedCast([]);
 
-      const cached = localStorage.getItem('user_data');
-      if (cached) {
-        try {
-          const data = JSON.parse(cached);
-          data.liked = data.liked || {};
-          delete data.liked[currentFilm.tconst];
-          const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
-          setMyLiked(newLiked);
-          updateUserDataCache();
-        } catch (e) {
-          console.error('Error updating cache:', e);
-        }
-      }
+      // Remove from liked list
+      const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
+      setMyLiked(newLiked);
+      updateUserDataCache();
 
       await saveElements([], []);
     } catch (error) {
@@ -569,13 +525,16 @@ const Index = () => {
         });
         const newWatchlist = watchList.filter(f => f.tconst !== currentFilm.tconst);
         setWatchList(newWatchlist);
-        const cached = localStorage.getItem('user_data');
-        if (cached) {
-          try {
-            updateUserDataCache();
-          } catch (e) {
-            console.error('Error updating cache:', e);
-          }
+        // Update cache with the new watchlist (not from state which hasn't updated yet)
+        try {
+          const userData = {
+            watchlist: newWatchlist,
+            liked: myLiked,
+            loved: myLoved,
+          };
+          localStorage.setItem('user_data', JSON.stringify(userData));
+        } catch (e) {
+          console.error('Error updating cache:', e);
         }
       } else {
         await axios.post(`/api/addWatchlist`, {
@@ -584,13 +543,16 @@ const Index = () => {
         });
         const newWatchlist = [...watchList, currentFilm];
         setWatchList(newWatchlist);
-        const cached = localStorage.getItem('user_data');
-        if (cached) {
-          try {
-            updateUserDataCache();
-          } catch (e) {
-            console.error('Error updating cache:', e);
-          }
+        // Update cache with the new watchlist (not from state which hasn't updated yet)
+        try {
+          const userData = {
+            watchlist: newWatchlist,
+            liked: myLiked,
+            loved: myLoved,
+          };
+          localStorage.setItem('user_data', JSON.stringify(userData));
+        } catch (e) {
+          console.error('Error updating cache:', e);
         }
       }
       setIsInWatchlist(!isInWatchlist);
@@ -610,37 +572,33 @@ const Index = () => {
         cast: cast,
       });
 
-      const cached = localStorage.getItem('user_data');
-      if (cached) {
-        try {
-          const data = JSON.parse(cached);
-          data.liked = data.liked || {};
-          const isFilmLiked = myLiked.some((f) => f.tconst === currentFilm.tconst);
+      // Update myLiked state with likedElements and likedCast (as arrays)
+      const safeMyLiked = myLiked;
+      const isFilmLiked = safeMyLiked.some((f) => f.tconst === currentFilm.tconst);
+      let updatedLiked = [...safeMyLiked];
 
-          if (elements.length > 0 || cast.length > 0) {
-            const film = myLiked.find(f => f.tconst === currentFilm.tconst) || currentFilm;
-            // Preserve all film metadata when updating liked entry
-            data.liked[currentFilm.tconst] = {
-              ...film,
-              ...currentFilm, // Ensure currentFilm metadata takes precedence
-              elements,
-              cast
-            };
-            if (!isFilmLiked) {
-              const newLiked = [...myLiked, film];
-              setMyLiked(newLiked);
-            }
-          } else if (isFilmLiked) {
-            delete data.liked[currentFilm.tconst];
-            const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
-            setMyLiked(newLiked);
-          }
+      if (elements.length > 0 || cast.length > 0) {
+        const existingFilm = safeMyLiked.find(f => f.tconst === currentFilm.tconst);
+        const filmToSave = {
+          ...(existingFilm || currentFilm),
+          ...currentFilm, // Ensure currentFilm metadata takes precedence
+          likedElements: elements,
+          likedCast: cast,
+        };
 
-          updateUserDataCache();
-        } catch (e) {
-          console.error('Error updating cache:', e);
+        if (isFilmLiked) {
+          const idx = updatedLiked.findIndex(f => f.tconst === currentFilm.tconst);
+          updatedLiked[idx] = filmToSave;
+        } else {
+          updatedLiked.push(filmToSave);
         }
+      } else {
+        // Remove from liked if no elements/cast
+        updatedLiked = updatedLiked.filter(f => f.tconst !== currentFilm.tconst);
       }
+
+      setMyLiked(updatedLiked);
+      updateUserDataCache();
     } catch (error) {
       console.error('Error saving elements:', error);
     }
