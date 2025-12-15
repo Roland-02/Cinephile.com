@@ -279,67 +279,57 @@ const Profile = () => {
             {/* Favorite Films */}
             <div className="main-title">Favourites</div>
             <div className="profile-poster-container" data-id={user_id}>
-              {lovedFilms.length > 0 ? (
-                lovedFilms.map((film, index) => (
-                  <figure
-                    key={film.tconst}
-                    className="poster-wrapper clickable"
-                    data-id={film.tconst}
-                    onClick={() => handleFilmClick(film, index, lovedFilms, true)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <figcaption className="caption">
-                      <p>
-                        Released: <strong>{film.startYear}</strong>
-                      </p>
-                      <p>
-                        Genre: <strong>{film.genres}</strong>
-                      </p>
-                      <p>{film.plot}</p>
-                    </figcaption>
-                    <img
-                      className="film-poster"
-                      src={film.poster ? baseImagePath + film.poster : '/images/MissingPoster.jpeg'}
-                      alt={film.primaryTitle}
-                    />
-                  </figure>
-                ))
-              ) : (
-                <img
-                  className="notFound"
-                  src="/images/NotFound_FlyingBirdWoman.png"
-                  alt="No films found"
-                />
-              )}
-            </div>
-
-            {/* Liked Films */}
-            <div className="profile-poster-container" data-id={user_id} style={{ marginTop: '20px' }}>
-              {likedFilms.length > 0 ? (
-                likedFilms.map((film, index) => (
-                  <figure
-                    key={film.tconst}
-                    className="poster-wrapper clickable"
-                    data-id={film.tconst}
-                    onClick={() => handleFilmClick(film, index, likedFilms, false)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <figcaption className="caption">
-                      <p>
-                        Released: <strong>{film.startYear}</strong>
-                      </p>
-                      <p>
-                        Genre: <strong>{film.genres}</strong>
-                      </p>
-                      <p>{film.plot}</p>
-                    </figcaption>
-                    <img
-                      className="film-poster"
-                      src={film.poster ? baseImagePath + film.poster : '/images/MissingPoster.jpeg'}
-                      alt={film.primaryTitle}
-                    />
-                  </figure>
-                ))
+              {lovedFilms.length > 0 || likedFilms.length > 0 ? (
+                <>
+                  {lovedFilms.map((film, index) => (
+                    <figure
+                      key={film.tconst}
+                      className="poster-wrapper clickable"
+                      data-id={film.tconst}
+                      onClick={() => handleFilmClick(film, index, lovedFilms, true)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <figcaption className="caption">
+                        <p>
+                          Released: <strong>{film.startYear}</strong>
+                        </p>
+                        <p>
+                          Genre: <strong>{film.genres}</strong>
+                        </p>
+                        <p>{film.plot}</p>
+                      </figcaption>
+                      <img
+                        className="film-poster"
+                        src={film.poster ? baseImagePath + film.poster : '/images/MissingPoster.jpeg'}
+                        alt={film.primaryTitle}
+                      />
+                    </figure>
+                  ))}
+                  {likedFilms.map((film, index) => (
+                    <figure
+                      key={film.tconst}
+                      className="poster-wrapper clickable"
+                      data-id={film.tconst}
+                      onClick={() => handleFilmClick(film, index, likedFilms, false)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <figcaption className="caption">
+                        <p>
+                          Released: <strong>{film.startYear}</strong>
+                        </p>
+                        <p>
+                          Genre: <strong>{film.genres}</strong>
+                        </p>
+                        <p>{film.plot}</p>
+                      </figcaption>
+                      <img
+                        className="film-poster"
+                        src={film.poster ? baseImagePath + film.poster : '/images/MissingPoster.jpeg'}
+                        alt={film.primaryTitle}
+                      />
+                    </figure>
+                  ))}
+                </>
               ) : (
                 <img
                   className="notFound"

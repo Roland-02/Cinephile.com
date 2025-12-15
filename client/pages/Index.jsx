@@ -44,17 +44,24 @@ const Index = () => {
     if (cached) {
       try {
         const data = JSON.parse(cached);
-        setWatchList(data.watchlist || []);
-        const likedDict = data.liked || {};
-        setMyLiked(Object.values(likedDict).map(item => {
-          if (item.film) {
-            return item.film;
-          } else {
+
+        // Normalise cached structures
+        const watchlist = Array.isArray(data.watchlist) ? data.watchlist : [];
+        const likedDict = data.liked && typeof data.liked === 'object' ? data.liked : {};
+        const loved = Array.isArray(data.loved) ? data.loved : [];
+
+        // Convert liked dictionary back into a flat film array.
+        const likedFilms = Object.values(likedDict)
+          .map((item) => {
+            if (item.film) return item.film;
             const { elements, cast, ...film } = item;
             return film;
-          }
-        }));
-        setMyLoved(data.loved || []);
+          })
+          .filter(Boolean);
+
+        setWatchList(watchlist);
+        setMyLiked(likedFilms);
+        setMyLoved(loved);
         return;
       } catch (e) {
         console.error('Error parsing cached user data:', e);
@@ -80,9 +87,9 @@ const Index = () => {
 
       // Ensure we store full film objects with metadata
       const userData = {
-        watchlist: Array.isArray(watchListRes.data) ? watchListRes.data : [],
+        watchlist: watchListRes.data,
         liked: likedDict,
-        loved: Array.isArray(lovedRes.data) ? lovedRes.data : (lovedRes.data?.films || []),
+        loved: lovedRes.data.films,
       };
 
       setWatchList(userData.watchlist);
@@ -95,8 +102,8 @@ const Index = () => {
     }
   };
 
-  const updateUserDataCache = (watchlist, liked, loved) => {
-    localStorage.setItem('user_data', JSON.stringify({ watchlist, liked, loved }));
+  const updateUserDataCache = () => {
+    localStorage.removeItem('user_data');
   };
 
   useEffect(() => {
@@ -516,7 +523,7 @@ const Index = () => {
               if (!myLiked.some(f => f.tconst === currentFilm.tconst)) {
                 setMyLiked([...myLiked, film]);
               }
-              updateUserDataCache(watchList, data.liked, newLoved);
+              updateUserDataCache();
             } catch (e) {
               console.error('Error updating cache:', e);
             }
@@ -565,7 +572,7 @@ const Index = () => {
             elements: newLikedElements, 
             cast: newLikedCast 
           };
-          updateUserDataCache(watchList, data.liked, newLoved);
+          updateUserDataCache();
         } catch (e) {
           console.error('Error updating cache:', e);
         }
@@ -600,7 +607,7 @@ const Index = () => {
           delete data.liked[currentFilm.tconst];
           const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
           setMyLiked(newLiked);
-          updateUserDataCache(watchList, data.liked, newLoved);
+          updateUserDataCache();
         } catch (e) {
           console.error('Error updating cache:', e);
         }
@@ -626,8 +633,7 @@ const Index = () => {
         const cached = localStorage.getItem('user_data');
         if (cached) {
           try {
-            const data = JSON.parse(cached);
-            updateUserDataCache(newWatchlist, data.liked || {}, myLoved);
+            updateUserDataCache();
           } catch (e) {
             console.error('Error updating cache:', e);
           }
@@ -642,8 +648,7 @@ const Index = () => {
         const cached = localStorage.getItem('user_data');
         if (cached) {
           try {
-            const data = JSON.parse(cached);
-            updateUserDataCache(newWatchlist, data.liked || {}, myLoved);
+            updateUserDataCache();
           } catch (e) {
             console.error('Error updating cache:', e);
           }
@@ -692,7 +697,7 @@ const Index = () => {
             setMyLiked(newLiked);
           }
 
-          updateUserDataCache(watchList, data.liked, myLoved);
+          updateUserDataCache();
         } catch (e) {
           console.error('Error updating cache:', e);
         }
