@@ -333,22 +333,75 @@ def dataset_length():
 
 @app.route('/api/getLikedFilms', methods=['GET'])
 def get_liked_films():
+    """
+    Return all films the user has any liked interaction with, together with
+    all liked elements and liked cast for each film.
+
+    Response shape:
+    [
+      {
+        "tconst": "tt1234567",
+        "likedElements": ["Title", "Plot", ...],
+        "likedCast": ["Actor A", "Actor B", ...]
+      },
+      ...
+    ]
+    """
     try:
         user_id = request.args.get('user_id')
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
-        
-        query = """
-            (SELECT tconst FROM liked_attributes WHERE user_id = %s)
-            UNION
-            (SELECT tconst FROM liked_cast WHERE user_id = %s)
-        """
-        cursor.execute(query, (user_id, user_id))
-        results = cursor.fetchall()
-        
+
+        # 1) Get all liked attribute rows for this user
+        cursor.execute("""
+            SELECT tconst, Title, Plot, Rating, Genre, Runtime, Year,
+                   Director, Camera, Writer, Producer, Editor, Composer
+            FROM liked_attributes
+            WHERE user_id = %s
+        """, (user_id,))
+        attr_results = cursor.fetchall()
+
+        liked_elements_by_tconst = {}
+        for row in attr_results:
+            tconst = row['tconst']
+            elements = []
+            # Skip the tconst key when checking flags
+            for key, value in row.items():
+                if key == 'tconst':
+                    continue
+                if value == 1:
+                    elements.append(key)
+            liked_elements_by_tconst[tconst] = elements
+
+        # 2) Get all liked cast rows for this user
+        cursor.execute("""
+            SELECT tconst, name
+            FROM liked_cast
+            WHERE user_id = %s
+        """, (user_id,))
+        cast_results = cursor.fetchall()
+
+        liked_cast_by_tconst = {}
+        for row in cast_results:
+            tconst = row['tconst']
+            name = row['name']
+            liked_cast_by_tconst.setdefault(tconst, []).append(name)
+
         cursor.close()
         conn.close()
-        return jsonify(results)
+
+        # 3) Merge tconsts from both sources
+        all_tconsts = set(liked_elements_by_tconst.keys()) | set(liked_cast_by_tconst.keys())
+
+        liked_films = []
+        for tconst in all_tconsts:
+            liked_films.append({
+                'tconst': tconst,
+                'likedElements': liked_elements_by_tconst.get(tconst, []),
+                'likedCast': liked_cast_by_tconst.get(tconst, []),
+            })
+
+        return jsonify(liked_films)
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -383,42 +436,6 @@ def get_watchlist():
         cursor.close()
         conn.close()
         return jsonify(results)
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/getLikedElements', methods=['GET'])
-def get_liked_elements():
-    try:
-        user_id = request.args.get('user_id')
-        film_id = request.args.get('film_id')
-        
-        conn = create_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        
-        # Get liked attributes
-        cursor.execute("""
-            SELECT Title, Plot, Rating, Genre, Runtime, Year, Director, Camera, Writer, Producer, Editor, Composer 
-            FROM liked_attributes 
-            WHERE user_id = %s AND tconst = %s
-        """, (user_id, film_id))
-        film_results = cursor.fetchall()
-        
-        elements = []
-        if film_results:
-            for result in film_results:
-                for key, value in result.items():
-                    if value == 1:
-                        elements.append(key)
-
-        cursor.execute("SELECT name FROM liked_cast WHERE user_id = %s AND tconst = %s", 
-                      (user_id, film_id))
-        cast_results = cursor.fetchall()
-        cast = [row['name'] for row in cast_results]
-        
-        cursor.close()
-        conn.close()
-        return jsonify({'likedElements': elements, 'likedCast': cast})
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
