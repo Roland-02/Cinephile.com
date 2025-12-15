@@ -491,6 +491,7 @@ def love_film():
         conn = create_db_connection()
         cursor = conn.cursor()
 
+        # Ensure mutual exclusivity: remove from liked tables first, then add to loved
         cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s",
                       (user_id, tconst))
         cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s",
@@ -572,6 +573,9 @@ def save_liked_elements():
         conn = create_db_connection()
         cursor = conn.cursor();
 
+        # Ensure mutual exclusivity: remove from loved_films if it exists there
+        cursor.execute("DELETE FROM loved_films WHERE user_id = %s AND tconst = %s",
+                      (user_id, tconst))
         cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s",
                       (user_id, tconst))
         cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s",

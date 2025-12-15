@@ -1,4 +1,3 @@
-// Search page - search films by title, actor, director, etc. with infinite scrolling
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -12,7 +11,7 @@ const Search = () => {
   const [searchQueries, setSearchQueries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [currentPages, setCurrentPages] = useState({}); // Track page for each query
+  const [currentPages, setCurrentPages] = useState({});
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,7 +42,6 @@ const Search = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Search for multiple queries and combine results with pagination
   const handleSearchForQueries = async (queries, append = false) => {
     if (!queries || queries.length === 0) return;
 
@@ -75,7 +73,7 @@ const Search = () => {
           const pageToLoad = append ? currentPage + 1 : 1;
 
           const response = await axios.get(`/api/search_general?query=${queryKey}&page=${pageToLoad}`);
-          const filmsData = response.data.films || [];
+          const filmsData = response.data || [];
 
           if (filmsData.length > 0) {
             let addedNewFilm = false;
@@ -94,7 +92,6 @@ const Search = () => {
         }
       }
 
-      // Check if we actually got new films
       const finalFilmsCount = allFilms.length;
       const actuallyAddedNewFilms = finalFilmsCount > initialFilmsCount;
 
@@ -104,7 +101,6 @@ const Search = () => {
           const newFilms = allFilms.filter(f => !existingIds.has(f.tconst));
           return [...prevFilms, ...newFilms];
         });
-        // Only set hasMore to true if we actually added new films
         setHasMore(actuallyAddedNewFilms && hasNewResults);
       } else {
         setFilms(allFilms);
@@ -122,7 +118,6 @@ const Search = () => {
     }
   };
 
-  // Add new search query and perform search
   const handleSearch = async (searchQuery) => {
     if (!searchQuery || searchQuery.trim() === '') return;
 
@@ -132,7 +127,7 @@ const Search = () => {
     
     try {
       const response = await axios.get(`/api/search_general?query=${searchQuery.trim()}&page=1`);
-      const filmsData = response.data.films || [];
+      const filmsData = response.data || [];
 
       setFilms(prevFilms => {
         const combined = [...prevFilms];

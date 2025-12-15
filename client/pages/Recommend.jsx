@@ -21,12 +21,10 @@ const Recommend = () => {
   const observerTarget = useRef(null);
   const currentPageRef = useRef(1);
 
-  // Keep ref in sync with state for pagination
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
 
-  // Load initial batch of recommended films
   const loadFilms = async () => {
     setLoading(true);
     
@@ -34,7 +32,7 @@ const Recommend = () => {
       const response = await axios.get(
         `/api/get_batch?user_id=${user_id}&category=${category}&page=1`
       );
-      const filmsData = response.data.films || [];
+      const filmsData = response.data || [];
       
       setFilms(filmsData);
       setCurrentPage(1);
@@ -48,7 +46,6 @@ const Recommend = () => {
     }
   };
 
-  // Update user profile vectors and reload recommendations
   const updateProfileAndLoad = async () => {
     setLoading(true);
     try {
@@ -70,11 +67,10 @@ const Recommend = () => {
       
       axios.get(`/api/get_batch?user_id=${user_id}&category=${category}&page=${nextPage}`)
         .then(response => {
-          const filmsData = response.data.films || [];
+          const filmsData = response.data || [];
           
           if (filmsData.length > 0) {
             setFilms(prevFilms => {
-              // Avoid duplicates
               const existingIds = new Set(prevFilms.map(f => f.tconst));
               const newFilms = filmsData.filter(f => !existingIds.has(f.tconst));
               return [...prevFilms, ...newFilms];
@@ -138,7 +134,6 @@ const Recommend = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Intersection Observer for infinite scrolling
   useEffect(() => {
     if (!hasMore || isLoadingMore || loading || films.length === 0) return;
 
