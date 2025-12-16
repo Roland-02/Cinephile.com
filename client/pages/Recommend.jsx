@@ -29,6 +29,25 @@ const Recommend = () => {
     setLoading(true);
     
     try {
+      const cacheKey = `recommendations_${user_id}`;
+      const cached = localStorage.getItem(cacheKey);
+      
+      if (cached) {
+        try {
+          const recommendationsCache = JSON.parse(cached);
+          if (recommendationsCache[category]) {
+            const filmsData = recommendationsCache[category];
+            setFilms(filmsData);
+            setCurrentPage(1);
+            setHasMore(filmsData.length >= 100);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing cached recommendations:', e);
+        }
+      }
+      
       const response = await axios.get(
         `/api/get_batch?user_id=${user_id}&category=${category}&page=1`
       );
@@ -37,6 +56,14 @@ const Recommend = () => {
       setFilms(filmsData);
       setCurrentPage(1);
       setHasMore(filmsData.length >= 100);
+      
+      try {
+        const recommendationsCache = cached ? JSON.parse(cached) : {};
+        recommendationsCache[category] = filmsData;
+        localStorage.setItem(cacheKey, JSON.stringify(recommendationsCache));
+      } catch (e) {
+        console.error('Error caching recommendations:', e);
+      }
     } catch (error) {
       console.error('Error loading recommended films:', error);
       setFilms([]);
@@ -50,6 +77,10 @@ const Recommend = () => {
     setLoading(true);
     try {
       await axios.post(`/api/update_profile_and_vectors?user_id=${user_id}`);
+      
+      const cacheKey = `recommendations_${user_id}`;
+      localStorage.removeItem(cacheKey);
+      
       setCurrentPage(1);
       setHasMore(true);
       await loadFilms();

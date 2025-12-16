@@ -505,6 +505,7 @@ const Index = () => {
           }
           setMyLiked(updatedLiked);
           updateUserDataCacheWithValues(null, updatedLiked, newLoved);
+          clearRecommendationsCache();
 
           await saveElements(newLikedElements, newLikedCast);
         } catch (error) {
@@ -519,6 +520,12 @@ const Index = () => {
     }, 0);
   };
 
+  const clearRecommendationsCache = () => {
+    if (!user_id) return;
+    const cacheKey = `recommendations_${user_id}`;
+    localStorage.removeItem(cacheKey);
+  };
+
   const handleLoveFilm = async () => {
     if (!user_id || !currentFilm) return;
 
@@ -529,12 +536,10 @@ const Index = () => {
       });
       setIsLoved(true);
       
-      // Remove from loved first to avoid duplicates, then add
       const filteredLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
       const newLoved = [...filteredLoved, currentFilm];
       setMyLoved(newLoved);
 
-      // Remove from liked list (film can only be in loved OR liked, never both)
       const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
       setMyLiked(newLiked);
 
@@ -545,13 +550,13 @@ const Index = () => {
       setLikedCast(allCast);
 
       updateUserDataCacheWithValues(null, newLiked, newLoved);
+      clearRecommendationsCache();
 
     } catch (error) {
       console.error('Error loving film:', error);
     }
   };
 
-  // Unlove film and remove all highlights
   const handleUnloveFilm = async () => {
     if (!user_id || !currentFilm) return;
 
@@ -566,10 +571,10 @@ const Index = () => {
       setLikedElements([]);
       setLikedCast([]);
 
-      // Remove from liked list
       const newLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
       setMyLiked(newLiked);
       updateUserDataCacheWithValues(null, newLiked, newLoved);
+      clearRecommendationsCache();
 
       await saveElements([], []);
     } catch (error) {
@@ -643,11 +648,11 @@ const Index = () => {
       }
 
       setMyLiked(updatedLiked);
-      // Update both lists to ensure mutual exclusivity
       if (currentLoved.length !== myLoved.length) {
         setMyLoved(currentLoved);
       }
       updateUserDataCacheWithValues(null, updatedLiked, currentLoved);
+      clearRecommendationsCache();
     } catch (error) {
       console.error('Error saving elements:', error);
     }
