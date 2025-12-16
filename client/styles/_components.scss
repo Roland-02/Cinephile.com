@@ -9,10 +9,15 @@
   min-height: 100vh;
   width: 100%;
   max-width: 100vw;
-  padding: 0 $spacing-md;
+  padding: 60px $spacing-md 0;
   overflow-x: hidden;
   background-color: $color-white;
   box-sizing: border-box;
+  
+  // Remove top padding on mobile
+  @include mobile {
+    padding-top: 0;
+  }
 }
 
 // Film poster
@@ -79,11 +84,26 @@
   }
 }
 
+// Filter button container - static on mobile, absolute on desktop
+.filter-button-container {
+  position: absolute;
+  top: $navbar-height + $spacing-sm;
+  left: $spacing-md;
+  z-index: $navbar-z-index - 1;
+  width: auto;
+  
+  // Hide filter button on mobile (moved to navbar)
+  @include mobile {
+    display: none;
+  }
+}
+
 // Filter button
 #filter-blank,
 #filter-filled {
   z-index: $filter-z-index + 1;
   position: relative;
+  cursor: pointer;
 }
 
 // Filter options
@@ -91,9 +111,17 @@
   z-index: $filter-z-index;
   background-color: $color-white;
   @include border-black;
-  position: relative;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: $spacing-xs;
   min-width: 200px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  
+  // Ensure absolute positioning on mobile to overlay content instead of pushing it down
+  @include mobile {
+    position: absolute !important;
+  }
   
   .form-label {
     font-weight: 500;

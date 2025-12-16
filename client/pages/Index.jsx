@@ -192,6 +192,65 @@ const Index = () => {
     loadFilms(initialCacheStart);
   }, [location.key]);
 
+  // Listen for mobile menu opening to close filter menu (mobile only)
+  useEffect(() => {
+    const handleCloseFilterMenu = () => {
+      // Only close filter on mobile views
+      if (window.innerWidth <= 991) {
+        setShowFilters(false);
+      }
+    };
+    
+    const handleToggleFilterMenu = (event) => {
+      if (window.innerWidth <= 991) {
+        setShowFilters(event.detail);
+      }
+    };
+    
+    window.addEventListener('closeFilterMenu', handleCloseFilterMenu);
+    window.addEventListener('toggleFilterMenu', handleToggleFilterMenu);
+    
+    return () => {
+      window.removeEventListener('closeFilterMenu', handleCloseFilterMenu);
+      window.removeEventListener('toggleFilterMenu', handleToggleFilterMenu);
+    };
+  }, []);
+
+  // Render filter form into mobile filter menu
+  useEffect(() => {
+    if (window.innerWidth <= 991 && showFilters) {
+      const mobileFilterContent = document.getElementById('mobile-filter-content');
+      const filterOptions = document.getElementById('filterOptions');
+      
+      if (mobileFilterContent && filterOptions) {
+        const formContent = filterOptions.querySelector('form');
+        if (formContent) {
+          mobileFilterContent.innerHTML = '';
+          const clonedForm = formContent.cloneNode(true);
+          mobileFilterContent.appendChild(clonedForm);
+          
+          // Re-attach event handlers using event delegation
+          clonedForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleFilterSubmit(e);
+          });
+          
+          // Update select values and attach change handlers
+          ['filterRating', 'filterGenre', 'filterRuntime', 'filterYear'].forEach(id => {
+            const select = clonedForm.querySelector(`#${id}`);
+            if (select) {
+              const key = id.replace('filter', '').toLowerCase();
+              select.value = filterValues[key];
+              select.addEventListener('change', (e) => {
+                setFilterValues({ ...filterValues, [key]: e.target.value });
+              });
+            }
+          });
+        }
+      }
+    }
+  }, [showFilters, filterValues]);
+
   // Check if current film is in cache, load new cache if needed
   useEffect(() => {
     const cacheEndIndex = cacheStartIndex + filmCache.length;
@@ -950,7 +1009,7 @@ const Index = () => {
     <div className="view-container">
       <div className="row">
         {/* Filters */}
-        <div className="container position-absolute m-2 d-flex" style={{ width: '15%' }}>
+        <div className="filter-button-container">
           <div>
             {!showFilters ? (
               <svg

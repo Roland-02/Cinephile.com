@@ -5,6 +5,7 @@ import { getSession, signOut } from '../utils/auth';
 const Navbar = ({ onLoginClick }) => {
   const [session, setSession] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -12,7 +13,32 @@ const Navbar = ({ onLoginClick }) => {
   }, []);
   
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    const newMenuState = !isMenuOpen;
+    setIsMenuOpen(newMenuState);
+    
+    // Close filter menu if mobile menu is opening (only on mobile views)
+    if (newMenuState && window.innerWidth <= 991) {
+      setIsFilterOpen(false);
+      window.dispatchEvent(new CustomEvent('closeFilterMenu'));
+    }
+  };
+  
+  const toggleFilter = () => {
+    const newFilterState = !isFilterOpen;
+    setIsFilterOpen(newFilterState);
+    
+    // Close mobile menu if filter menu is opening (only on mobile views)
+    if (newFilterState && window.innerWidth <= 991) {
+      setIsMenuOpen(false);
+    }
+    
+    // Dispatch event to Index component
+    window.dispatchEvent(new CustomEvent('toggleFilterMenu', { detail: newFilterState }));
+  };
+  
+  const closeFilter = () => {
+    setIsFilterOpen(false);
+    window.dispatchEvent(new CustomEvent('toggleFilterMenu', { detail: false }));
   };
   
   const closeMenu = () => {
@@ -126,6 +152,34 @@ const Navbar = ({ onLoginClick }) => {
             )}
           </div>
 
+          {/* Mobile filter button - on the left */}
+          {isAuthenticated && window.location.pathname === '/' && (
+            <button 
+              className="mobile-filter-btn"
+              onClick={toggleFilter}
+              aria-label="Toggle filter"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="32"
+                height="32"
+                fill="black"
+                viewBox="0 0 16 16"
+              >
+                {isFilterOpen ? (
+                  <>
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16M3.5 5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1 0-1M5 8.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m2 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                    <path d="M7 11.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5" />
+                  </>
+                )}
+              </svg>
+            </button>
+          )}
+
           {/* Mobile menu button - on the right */}
           {isAuthenticated && (
             <button 
@@ -164,6 +218,11 @@ const Navbar = ({ onLoginClick }) => {
           <div className={`mobile-menu ${isMenuOpen ? 'open' : ''}`}>
             <div className="mobile-menu-header">
               <h2>Menu</h2>
+              <button onClick={closeMenu} className="mobile-menu-close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" viewBox="0 0 16 16">
+                  <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
+                </svg>
+              </button>
             </div>
             <div className="mobile-menu-items">
               <Link
@@ -206,6 +265,32 @@ const Navbar = ({ onLoginClick }) => {
                   Sign Out
                 </button>
               </form>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Mobile filter slide-out menu */}
+      {isAuthenticated && window.location.pathname === '/' && (
+        <>
+          {/* Overlay */}
+          <div 
+            className={`mobile-filter-overlay ${isFilterOpen ? 'open' : ''}`}
+            onClick={closeFilter}
+          />
+          
+          {/* Slide-out filter menu from left */}
+          <div className={`mobile-filter-menu ${isFilterOpen ? 'open' : ''}`}>
+            <div className="mobile-filter-header">
+              <h2>Filters</h2>
+              <button onClick={closeFilter} className="mobile-filter-close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" viewBox="0 0 16 16">
+                  <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
+                </svg>
+              </button>
+            </div>
+            <div id="mobile-filter-content" className="mobile-filter-content">
+              {/* Filter form will be rendered here by Index component */}
             </div>
           </div>
         </>
