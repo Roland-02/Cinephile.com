@@ -38,20 +38,17 @@ const Profile = () => {
     
     // Try to load from cache first
     const cached = localStorage.getItem('user_data');
-    let filmsLoadedFromCache = false;
+    let loadedFromCache = false;
     
     if (cached) {
       try {
         const data = JSON.parse(cached);
         
-        // Load loved films from cache
-        if (data.loved && Array.isArray(data.loved)) {
+        if (data.loved && Array.isArray(data.loved) && 
+            data.liked && typeof data.liked === 'object' && 
+            data.stats) {
           setLovedFilms(data.loved);
-          filmsLoadedFromCache = true;
-        }
-        
-        // Load liked films from cache
-        if (data.liked && typeof data.liked === 'object') {
+          
           const likedDict = data.liked;
           const likedFilmsList = Object.values(likedDict).map(item => {
             if (item.film) {
@@ -62,56 +59,48 @@ const Profile = () => {
             }
           });
           setLikedFilms(likedFilmsList);
-          filmsLoadedFromCache = true;
+          setStats(data.stats);
+          loadedFromCache = true;
         }
       } catch (e) {
         console.error('Error parsing cached user data:', e);
       }
     }
     
+    if (loadedFromCache) {
+      setLoading(false);
+      return;
+    }
+    
     try {
-      // Always fetch stats from API (not cached)
-      // Only fetch films if cache was not available
-      const promises = [axios.get(`/api/get_profile_stats?user_id=${user_id}`)];
+      const [statsRes, lovedRes, likedRes] = await Promise.all([
+        axios.get(`/api/get_profile_stats?user_id=${user_id}`),
+        axios.get(`/api/get_loved_films?user_id=${user_id}`),
+        axios.get(`/api/get_liked_films?user_id=${user_id}`)
+      ]);
       
-      if (!filmsLoadedFromCache) {
-        promises.push(
-          axios.get(`/api/get_loved_films?user_id=${user_id}`),
-          axios.get(`/api/get_liked_films?user_id=${user_id}`)
-        );
-      }
-      
-      const results = await Promise.all(promises);
-      const statsRes = results[0];
       const profileStats = statsRes.data;
-      
-      setStats({
+      const stats = {
         cast: profileStats.cast,
         crew: profileStats.crew,
         genre: profileStats.genre,
-      });
+      };
+      setStats(stats);
       
-      // If we didn't load from cache, fetch and update films
-      if (!filmsLoadedFromCache) {
-        const lovedRes = results[1];
-        const likedRes = results[2];
-        
-        const loved = lovedRes.data;
-        const liked = likedRes.data;
-        
-        setLovedFilms(loved);
-        setLikedFilms(liked);
-        
-        // Update cache with full film data, preserving existing liked elements/cast
-        try {
-          const cached = localStorage.getItem('user_data');
-          const data = cached ? JSON.parse(cached) : {};
-          data.loved = loved;
-          data.liked = liked;
-          localStorage.setItem('user_data', JSON.stringify(data));
-        } catch (e) {
-          console.error('Error updating cache with full film data:', e);
-        }
+      const loved = lovedRes.data;
+      const liked = likedRes.data;
+      setLovedFilms(loved);
+      setLikedFilms(liked);
+      
+      try {
+        const cached = localStorage.getItem('user_data');
+        const data = cached ? JSON.parse(cached) : {};
+        data.stats = stats;
+        data.loved = loved;
+        data.liked = liked;
+        localStorage.setItem('user_data', JSON.stringify(data));
+      } catch (e) {
+        console.error('Error updating cache:', e);
       }
     } catch (error) {
       console.error('Error loading profile data:', error);

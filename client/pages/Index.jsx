@@ -474,9 +474,7 @@ const Index = () => {
       // If all attributes are liked and film is not loved -> move from liked to loved
       if (allAttributesLiked && !isLoved) {
         await handleLoveFilm();
-      } 
-      // If film is loved and any attribute is disliked -> move from loved to liked
-      else if (isLoved && !allAttributesLiked) {
+      } else if (isLoved && !allAttributesLiked) {
         try {
           await axios.post(`/api/unloveFilm`, {
             film_id: currentFilm.tconst,
@@ -547,8 +545,7 @@ const Index = () => {
       setLikedCast(allCast);
 
       updateUserDataCacheWithValues(null, newLiked, newLoved);
-      // Don't call saveElements here - loveFilm endpoint already removes from liked_attributes/liked_cast
-      // A loved film should only be in loved_films table, not in liked tables
+
     } catch (error) {
       console.error('Error loving film:', error);
     }
