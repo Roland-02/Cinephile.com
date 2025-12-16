@@ -1122,7 +1122,9 @@ def get_user_films():
 @recommend_bp.route('/get_profile_stats', methods=['GET'])
 def get_profile_stats():
     user_id = request.args.get("user_id")
-    user_profile_df = get_user_profile(user_id)[0]
+    user_profile_tuple = get_user_profile(user_id)
+    user_profile_df = user_profile_tuple[0]
+    loved_films_df = user_profile_tuple[1]
     
 
     if(user_profile_df.empty):
@@ -1132,11 +1134,23 @@ def get_profile_stats():
         grouped_likes = collate_liked_groups(user_profile_df)
         liked_cast = grouped_likes[1]
         liked_crew = grouped_likes[2]
-        liked_genre = grouped_likes[3]
 
         top_cast = most_common_names(liked_cast)
         top_crew = most_common_names(liked_crew)
-        top_genres = top_5_genres(liked_genre['genres'])
+        
+        # For genres, we want ALL genres from ALL films (loved and liked), not just liked genre attributes
+        # Get genres from loved films
+        loved_genres = loved_films_df['genres'].dropna() if not loved_films_df.empty else pd.Series(dtype=str)
+        
+        # Get genres from liked films (need to fetch from data since liked_attributes might have None for genres)
+        liked_att = get_liked_attributes(user_id)
+        liked_cast_df = get_liked_cast(user_id)
+        liked_tconsts = set(liked_att['tconst'].unique()) | set(liked_cast_df['tconst'].unique())
+        liked_films_genres = data[data['tconst'].isin(liked_tconsts)]['genres'].dropna() if len(liked_tconsts) > 0 else pd.Series(dtype=str)
+        
+        # Combine all genres
+        all_genres = pd.concat([loved_genres, liked_films_genres]).dropna()
+        top_genres = top_5_genres(all_genres)
 
         # Convert the result to a dictionary
         top_genres_dict = [{'Genres': genre, 'Count': count} for genre, count in top_genres]
