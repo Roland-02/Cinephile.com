@@ -31,15 +31,6 @@
   transition: opacity $transition-fast;
 }
 
-// Spinner animation
-@mixin spinner($size: 40px, $border-size: 4px) {
-  width: $size;
-  height: $size;
-  border: $border-size solid $color-grey-light;
-  border-top: $border-size solid $color-blue;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
 
 // Media queries
 @mixin mobile {

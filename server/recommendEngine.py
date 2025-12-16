@@ -29,6 +29,7 @@ warnings.filterwarnings("ignore")
 tfidf_vectorizer = TfidfVectorizer()
 recommend_bp = Blueprint('recommend', __name__)
 MAX_REQUESTS_PER_SECOND = 50
+MAX_INDEX_THREADS = 25
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 # Thread-local storage for database connections (thread-safe)
@@ -614,12 +615,19 @@ def recommend_content_films(user_id):
     genre_features = [col for col in liked_genre.columns if col != 'likeage']
     meta_features = [col for col in liked_meta.columns if col != 'likeage']
 
-    # Call the function with the selected columns
-    plot_matrix = create_similarity_vector(data[plot_features], liked_plot[plot_features])
-    crew_matrix = create_similarity_vector(data[crew_features], liked_crew[crew_features])
-    cast_matrix = create_similarity_vector(data[cast_features], liked_cast[cast_features])
-    genre_matrix = create_similarity_vector(data[genre_features], liked_genre[genre_features])
-    meta_matrix = create_euclidean_vector(data[meta_features], liked_meta[meta_features])
+    # Create similarity vectors in parallel using ThreadPoolExecutor
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_INDEX_THREADS) as executor:
+        plot_future = executor.submit(create_similarity_vector, data[plot_features], liked_plot[plot_features])
+        crew_future = executor.submit(create_similarity_vector, data[crew_features], liked_crew[crew_features])
+        cast_future = executor.submit(create_similarity_vector, data[cast_features], liked_cast[cast_features])
+        genre_future = executor.submit(create_similarity_vector, data[genre_features], liked_genre[genre_features])
+        meta_future = executor.submit(create_euclidean_vector, data[meta_features], liked_meta[meta_features])
+        
+        plot_matrix = plot_future.result()
+        crew_matrix = crew_future.result()
+        cast_matrix = cast_future.result()
+        genre_matrix = genre_future.result()
+        meta_matrix = meta_future.result()
 
     # Similarity vectors for each group
     similarity_vectors = {
@@ -925,12 +933,19 @@ def update_profile_and_vectors(user_id=None):
             genre_features = [col for col in liked_genre.columns if col != 'likeage']
             meta_features = [col for col in liked_meta.columns if col != 'likeage']
 
-            # Call the function with the selected columns
-            plot_matrix = create_similarity_vector(data[plot_features], liked_plot[plot_features])
-            crew_matrix = create_similarity_vector(data[crew_features], liked_crew[crew_features])
-            cast_matrix = create_similarity_vector(data[cast_features], liked_cast[cast_features])
-            genre_matrix = create_similarity_vector(data[genre_features], liked_genre[genre_features])
-            meta_matrix = create_euclidean_vector(data[meta_features], liked_meta[meta_features])
+            # Create similarity vectors in parallel using ThreadPoolExecutor
+            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_INDEX_THREADS) as executor:
+                plot_future = executor.submit(create_similarity_vector, data[plot_features], liked_plot[plot_features])
+                crew_future = executor.submit(create_similarity_vector, data[crew_features], liked_crew[crew_features])
+                cast_future = executor.submit(create_similarity_vector, data[cast_features], liked_cast[cast_features])
+                genre_future = executor.submit(create_similarity_vector, data[genre_features], liked_genre[genre_features])
+                meta_future = executor.submit(create_euclidean_vector, data[meta_features], liked_meta[meta_features])
+                
+                plot_matrix = plot_future.result()
+                crew_matrix = crew_future.result()
+                cast_matrix = cast_future.result()
+                genre_matrix = genre_future.result()
+                meta_matrix = meta_future.result()
 
             # Convert similarity vectors to JSON strings
             similarity_vectors_json = {

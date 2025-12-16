@@ -12,6 +12,7 @@ const Navbar = ({ onLoginClick }) => {
 
   const handleSignOut = async (e) => {
     e.preventDefault();
+    localStorage.clear();
     await signOut();
     setSession(null);
   };
