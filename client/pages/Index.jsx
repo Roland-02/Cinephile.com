@@ -44,15 +44,9 @@ const Index = () => {
     if (cached) {
       try {
         const data = JSON.parse(cached);
-
-        // Normalise cached structures
-        const watchlist = data.watchlist || [];
-        const liked = data.liked || [];
-        const loved = data.loved || [];
-
-        setWatchList(watchlist);
-        setMyLiked(liked);
-        setMyLoved(loved);
+        setWatchList(data.watchlist || []);
+        setMyLiked(data.liked || []);
+        setMyLoved(data.loved || []);
 
       } catch (e) {
         console.error('Error parsing cached user data:', e);
@@ -291,20 +285,30 @@ const Index = () => {
     if (filmCache.length === 0 || localIndex < 0 || localIndex >= filmCache.length) return;
 
     let film = filmCache[localIndex];
+    let likedEntry = null;
+    let lovedEntry = null;
     
-    // Merge with full film data from myLiked/myLoved/watchList to ensure complete metadata (especially cast)
     if (user_id) {
-      const likedEntry = myLiked.find((f) => f.tconst === film.tconst);
-      const lovedEntry = myLoved.find((f) => f.tconst === film.tconst);
+      likedEntry = myLiked.find((f) => f.tconst === film.tconst);
+      lovedEntry = myLoved.find((f) => f.tconst === film.tconst);
       const watchlistEntry = watchList.find((f) => f.tconst === film.tconst);
       
-      // Use the entry with the most complete data (prioritize liked/loved for metadata)
+      if (!likedEntry && !lovedEntry) {
+        try {
+          const cached = localStorage.getItem('user_data');
+          if (cached) {
+            const data = JSON.parse(cached);
+            lovedEntry = data?.loved.find((f) => f.tconst === film.tconst);
+            likedEntry = data?.liked.find((f) => f.tconst === film.tconst);
+          }
+        } catch (e) {
+          console.error('Error parsing cached user data:', e);
+        }
+      }
+      
       const fullFilmData = likedEntry || lovedEntry || watchlistEntry;
       if (fullFilmData) {
-        // Merge: start with fullFilmData (has complete metadata), then override with film (preserves cache data)
-        // This ensures missing properties like 'cast' are filled, but existing ones are preserved
         film = { ...fullFilmData, ...film };
-        // Explicitly preserve likedElements and likedCast from likedEntry if they exist
         if (likedEntry && likedEntry.likedElements) {
           film.likedElements = likedEntry.likedElements;
         }
