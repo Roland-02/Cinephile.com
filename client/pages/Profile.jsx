@@ -248,7 +248,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="container" style={{ paddingTop: '60px', paddingBottom: '40px' }}>
+    <div className="container">
       <div className="row" style={{ marginTop: '15px' }}>
         {/* Films Section */}
         <div className="col-lg-6 col-md-6 col-sm-12">

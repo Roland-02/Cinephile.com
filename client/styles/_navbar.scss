@@ -55,16 +55,28 @@
   max-width: calc(100% - 300px); // Reserve space for buttons
   padding: 0 $spacing-sm;
   z-index: 1;
+  width: 100%;
+  pointer-events: none;
   
   h1 {
     white-space: nowrap;
     font-size: clamp(20px, 3vw, 28px); // Keep title bigger
     margin: 0;
     letter-spacing: 2px;
+    pointer-events: auto;
   }
   
   &:hover {
     cursor: pointer;
+  }
+  
+  // Mobile - ensure proper centering with menu button
+  @include mobile {
+    width: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100% - 80px); // Account for mobile menu button
+    padding: 0;
   }
 }
 
@@ -244,16 +256,18 @@
     padding: 0 $spacing-xs;
     height: auto;
     min-height: $navbar-height;
+    position: relative;
   }
   
   .nav-center {
-    position: relative;
-    left: auto;
-    transform: none;
-    max-width: 100%;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100% - 100px);
     order: 2;
-    flex: 1 1 100%;
-    padding: $spacing-xs 0;
+    flex: 0 1 auto;
+    padding: 0;
+    width: auto;
     
     h1 {
       font-size: clamp(18px, 4vw, 24px);
@@ -283,47 +297,172 @@
   }
 }
 
+// Mobile menu button - hidden on desktop, positioned on right
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  padding: $spacing-xs;
+  cursor: pointer;
+  z-index: $navbar-z-index + 1;
+  
+  svg {
+    display: block;
+  }
+  
+  @include mobile {
+    display: block;
+    order: 3;
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+}
+
+// Desktop-only elements - hidden on mobile
+.desktop-only {
+  @include mobile {
+    display: none !important;
+  }
+}
+
+// Mobile slide-out menu
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: $navbar-z-index + 10;
+  opacity: 0;
+  transition: opacity $transition-fast;
+  pointer-events: none;
+  
+  @include mobile {
+    display: block;
+    
+    &.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+  }
+}
+
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 280px;
+  height: 100%;
+  background-color: $color-white;
+  border-right: $border-width $border-style $color-black;
+  z-index: 111;
+  transition: left $transition-fast;
+  overflow-y: auto;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+  
+  @include mobile {
+    display: block;
+    
+    &.open {
+      left: 0;
+    }
+  }
+  
+  @media (min-width: 992px) {
+    display: none;
+  }
+}
+
+.mobile-menu-header {
+  padding: $spacing-lg;
+  border-bottom: $border-width $border-style $color-black;
+  background-color: $color-white;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  
+  h2 {
+    margin: 0;
+    font-size: $font-size-xl;
+    letter-spacing: 1px;
+  }
+}
+
+
+.mobile-menu-item {
+  display: block;
+  padding: $spacing-md $spacing-lg;
+  text-decoration: none;
+  color: $color-black;
+  border-bottom: 1px solid $color-grey-light;
+  transition: all $transition-fast;
+  font-size: $font-size-lg;
+  font-weight: 500;
+  
+  &:hover {
+    background-color: $color-grey-light;
+    padding-left: $spacing-xl;
+  }
+  
+  &.active {
+    background-color: $color-orange-light;
+    font-weight: 600;
+    border-left: 4px solid $color-orange;
+  }
+}
+
+.mobile-menu-item-form {
+  margin: 0;
+  padding: 0;
+}
+
+.mobile-menu-item-button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: $font-size-lg;
+  font-weight: 400;
+  color: $color-black;
+  padding: $spacing-md $spacing-lg;
+  transition: all $transition-fast;
+  display: block;
+  text-decoration: none;
+  border-bottom: 1px solid $color-grey-light;
+  
+  &:hover {
+    background-color: $color-grey-light;
+    padding-left: $spacing-xl;
+  }
+}
+
 // Very small screens - stack vertically if needed
 @media (max-width: 576px) {
   .nav-bar {
-    flex-direction: column;
-    height: auto;
-    padding: $spacing-xs;
-  }
-  
-  .nav-left,
-  .nav-right {
-    width: 100%;
-    justify-content: center;
+    padding: 0 $spacing-xs;
+    position: relative;
   }
   
   .nav-center {
-    order: 1;
-    width: 100%;
-    margin: $spacing-xs 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: calc(100% - 70px);
+    text-align: center;
     
     h1 {
-      font-size: 20px;
+      font-size: clamp(16px, 5vw, 22px);
     }
   }
   
-  .nav-left {
-    order: 2;
-  }
-  
-  .nav-right {
-    order: 3;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  
-  .menu-btn {
-    margin: 2px;
-    padding: 4px 8px;
-    
-    p {
-      font-size: 11px;
-    }
+  .mobile-menu {
+    width: 250px;
+    left: -250px;
   }
 }
 

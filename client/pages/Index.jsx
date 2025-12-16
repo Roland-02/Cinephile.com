@@ -947,7 +947,7 @@ const Index = () => {
   };
 
   return (
-    <div className="view-container" style={{ paddingTop: '75px' }}>
+    <div className="view-container">
       <div className="row">
         {/* Filters */}
         <div className="container position-absolute m-2 d-flex" style={{ width: '15%' }}>
