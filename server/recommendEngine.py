@@ -17,7 +17,7 @@ import concurrent.futures
 from io import BytesIO
 from langdetect import detect
 from collections import Counter
-from multiprocessing import Manager
+from multiprocessing import Manager, process
 from sqlalchemy import create_engine
 import schedule
 from flask_caching import Cache
@@ -1162,7 +1162,7 @@ def get_profile_stats():
 def search_general():
     filters_str = request.args.get("query")
     page = int(request.args.get("page", 1))  # Default to page 1 if not provided
-    page_size = 100  # Default page size to 100 if not provided
+    page_size = int(os.getenv("PAGE_SIZE"))
 
     if filters_str:
         filters = filters_str.split(',')

@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { getSession } from '../utils/auth';
 
-const CACHE_SIZE = 250;
+const PAGE_SIZE = parseInt(import.meta.env.VITE_PAGE_SIZE);
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
 const Index = () => {
@@ -30,6 +30,7 @@ const Index = () => {
     year: 'Any'
   });
   const isLoadingRef = useRef(false);
+  const isLoadingUserDataRef = useRef(false);
 
   const session = getSession();
   const user_id = session?.id;
@@ -38,45 +39,51 @@ const Index = () => {
   // Load user's watchlist, liked, and loved films from cache or API
   const loadUserData = async () => {
     if (!user_id) return;
+    if (isLoadingUserDataRef.current) return;
 
-    const cached = localStorage.getItem('user_data');
+    isLoadingUserDataRef.current = true;
 
-    if (cached) {
-      try {
-        const data = JSON.parse(cached);
-        setWatchList(data.watchlist || []);
-        setMyLiked(data.liked || []);
-        setMyLoved(data.loved || []);
+    try {
+      const cached = localStorage.getItem('user_data');
 
-      } catch (e) {
-        console.error('Error parsing cached user data:', e);
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          setWatchList(data.watchlist || []);
+          setMyLiked(data.liked || []);
+          setMyLoved(data.loved || []);
+
+        } catch (e) {
+          console.error('Error parsing cached user data:', e);
+        }
       }
-    }
-    else {
-      try {
-        const [watchListRes, likedRes, lovedRes] = await Promise.all([
-          axios.get(`/api/getWatchlist?user_id=${user_id}`),
-          axios.get(`/api/getLikedFilms?user_id=${user_id}`),
-          axios.get(`/api/getLovedFilms?user_id=${user_id}`),
-        ]);
-        // Ensure we store full film objects with metadata
-        const userData = {
-          watchlist: watchListRes.data,
-          liked: likedRes.data,
-          loved: lovedRes.data,
-        };
+      else {
+        try {
+          const [watchListRes, likedRes, lovedRes] = await Promise.all([
+            axios.get(`/api/getWatchlist?user_id=${user_id}`),
+            axios.get(`/api/getLikedFilms?user_id=${user_id}`),
+            axios.get(`/api/getLovedFilms?user_id=${user_id}`),
+          ]);
+          // Ensure we store full film objects with metadata
+          const userData = {
+            watchlist: watchListRes.data,
+            liked: likedRes.data,
+            loved: lovedRes.data,
+          };
 
-        setWatchList(userData.watchlist);
-        setMyLiked(userData.liked);
-        setMyLoved(userData.loved);
+          setWatchList(userData.watchlist);
+          setMyLiked(userData.liked);
+          setMyLoved(userData.loved);
 
-        localStorage.setItem('user_data', JSON.stringify(userData));
+          localStorage.setItem('user_data', JSON.stringify(userData));
 
-      } catch (error) {
-        console.error('Error loading user data:', error);
+        } catch (error) {
+          console.error('Error loading user data:', error);
+        }
       }
+    } finally {
+      isLoadingUserDataRef.current = false;
     }
-
   };
 
   // Update cache with current state values
@@ -127,6 +134,8 @@ const Index = () => {
         setFilmIndex(0);
         setCacheStartIndex(0);
         localStorage.setItem('filmIndex', 0);
+        // Clear any cached index page films when shuffling
+        localStorage.removeItem('indexPageFilms');
         localStorage.removeItem('films-source');
         const defaultFilters = { rating: 'Any', genre: 'Any', runtime: 'Any', year: 'Any' };
         setFilterValues(defaultFilters);
@@ -151,13 +160,13 @@ const Index = () => {
       // For outside films, calculate cache start based on the actual film list size
       const films_JSON = JSON.parse(hasFilmsSource);
       const totalFilms = films_JSON.length;
-      initialCacheStart = totalFilms < CACHE_SIZE
+      initialCacheStart = totalFilms < PAGE_SIZE
         ? 0
-        : Math.floor(initialIndex / CACHE_SIZE) * CACHE_SIZE;
+        : Math.floor(initialIndex / PAGE_SIZE) * PAGE_SIZE;
       setFilmIndex(initialIndex);
       setCacheStartIndex(initialCacheStart);
     } else {
-      initialCacheStart = Math.floor(initialIndex / CACHE_SIZE) * CACHE_SIZE;
+      initialCacheStart = Math.floor(initialIndex / PAGE_SIZE) * PAGE_SIZE;
       setFilmIndex(initialIndex);
       setCacheStartIndex(initialCacheStart);
     }
@@ -198,9 +207,9 @@ const Index = () => {
 
       if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
         if (!loading) {
-          const newCacheStart = totalFilms < CACHE_SIZE
+          const newCacheStart = totalFilms < PAGE_SIZE
             ? 0
-            : Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
+            : Math.floor(filmIndex / PAGE_SIZE) * PAGE_SIZE;
           loadFilms(newCacheStart);
         }
       } else if (filmCache.length > 0 && !loading) {
@@ -209,7 +218,7 @@ const Index = () => {
     } else {
       if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
         if (!loading) {
-          const newCacheStart = Math.floor(filmIndex / CACHE_SIZE) * CACHE_SIZE;
+          const newCacheStart = Math.floor(filmIndex / PAGE_SIZE) * PAGE_SIZE;
           loadFilms(newCacheStart);
         }
       } else if (filmCache.length > 0 && !loading) {
@@ -226,8 +235,9 @@ const Index = () => {
       let allFilmsData = [];
 
       if (filtered) {
-        const startPage = Math.floor(startGlobalIndex / 100) + 1;
-        const endPage = Math.floor((startGlobalIndex + CACHE_SIZE - 1) / 100) + 1;
+        // Map global index to backend pages using PAGE_SIZE
+        const startPage = Math.floor(startGlobalIndex / PAGE_SIZE) + 1;
+        const endPage = Math.floor((startGlobalIndex + PAGE_SIZE - 1) / PAGE_SIZE) + 1;
         for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
           const response = await fetch(`/api/filteredPageFilms?page=${pageNum}`);
           if (response.ok) {
@@ -237,25 +247,56 @@ const Index = () => {
         }
       } else if (filmsSource) {
         const films_JSON = JSON.parse(filmsSource);
-        if (films_JSON.length < CACHE_SIZE) {
+        if (films_JSON.length < PAGE_SIZE) {
           allFilmsData = films_JSON.slice(0);
         } else {
-          const endIndex = Math.min(startGlobalIndex + CACHE_SIZE, films_JSON.length);
+          const endIndex = Math.min(startGlobalIndex + PAGE_SIZE, films_JSON.length);
           allFilmsData = films_JSON.slice(startGlobalIndex, endIndex);
         }
       } else {
-        const startPage = Math.floor(startGlobalIndex / 100) + 1;
-        const endPage = Math.floor((startGlobalIndex + CACHE_SIZE - 1) / 100) + 1;
+        // Map global index to backend pages using PAGE_SIZE
+        const startPage = Math.floor(startGlobalIndex / PAGE_SIZE) + 1;
+        const endPage = Math.floor((startGlobalIndex + PAGE_SIZE - 1) / PAGE_SIZE) + 1;
+        const cacheKey = 'indexPageFilms';
+        
+        // Load cache if it exists
+        let cachedPages = {};
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            cachedPages = JSON.parse(cached);
+          } catch (e) {
+            console.error('Error parsing cached index page films:', e);
+          }
+        }
+        
+        // Fetch any missing pages in the range
         for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
-          const response = await fetch(`/api/indexPageFilms?page=${pageNum}`);
-          if (response.ok) {
-            const pageData = await response.json();
-            allFilmsData = allFilmsData.concat(pageData);
+          if (!cachedPages[`page_${pageNum}`]) {
+            const response = await fetch(`/api/indexPageFilms?page=${pageNum}`);
+            if (response.ok) {
+              const pageData = await response.json();
+              cachedPages[`page_${pageNum}`] = pageData;
+              
+              // Update cache with new page
+              try {
+                localStorage.setItem(cacheKey, JSON.stringify(cachedPages));
+              } catch (e) {
+                console.error('Error caching index page films:', e);
+              }
+            }
+          }
+        }
+        
+        // Collect films from cache for the requested range
+        for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+          if (cachedPages[`page_${pageNum}`]) {
+            allFilmsData = allFilmsData.concat(cachedPages[`page_${pageNum}`]);
           }
         }
       }
 
-      return allFilmsData.slice(0, CACHE_SIZE);
+      return allFilmsData.slice(0, PAGE_SIZE);
     } catch (error) {
       console.error('Error fetching films:', error);
       return [];
@@ -1073,7 +1114,7 @@ const Index = () => {
                 className="carousel-control-next"
                 type="button"
                 onClick={handleNext}
-                disabled={filmCache.length === 0 || (filmIndex - cacheStartIndex >= filmCache.length - 1 && filmCache.length < CACHE_SIZE)}
+                disabled={filmCache.length === 0 || (filmIndex - cacheStartIndex >= filmCache.length - 1 && filmCache.length < PAGE_SIZE)}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
