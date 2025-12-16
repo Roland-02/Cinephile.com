@@ -190,7 +190,7 @@ const Recommend = () => {
   }, [hasMore, isLoadingMore, loading, loadMoreFilms, films.length]);
 
   return (
-    <div className="container" style={{ paddingTop: '60px' }}>
+    <div className="container page-container">
       <div className="row justify-content-center align-items-center">
         <div className="col-lg-6 col-md-6">
           <div id="showMe">

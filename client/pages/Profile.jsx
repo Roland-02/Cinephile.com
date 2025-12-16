@@ -241,14 +241,14 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="container" style={{ paddingTop: '60px' }}>
+      <div className="container page-container">
         <div className="loading-spinner" style={{ display: 'block' }}></div>
       </div>
     );
   }
 
   return (
-    <div className="container">
+    <div className="container page-container">
       <div className="row" style={{ marginTop: '15px' }}>
         {/* Films Section */}
         <div className="col-lg-6 col-md-6 col-sm-12">

@@ -95,14 +95,14 @@ const Watchlist = () => {
 
   if (loading) {
     return (
-      <div className="container" style={{ paddingTop: '60px' }}>
+      <div className="container page-container">
         <div className="loading-spinner" style={{ display: 'block' }}></div>
       </div>
     );
   }
 
   return (
-    <div className="container" style={{ paddingTop: '60px', paddingBottom: '90px' }}>
+    <div className="container page-container" style={{ paddingBottom: '90px' }}>
       <div className="row justify-content-center">
         <div className="col-12 col-md-8" style={{ width: '100%' }}>
           <div id="watchlist-films" className="poster-container" data-id={user_id}>

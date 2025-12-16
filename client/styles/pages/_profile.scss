@@ -36,6 +36,11 @@
   &:first-of-type {
     margin-top: 0;
   }
+  
+  // Center align on mobile
+  @include mobile {
+    text-align: center;
+  }
 }
 
 .clickable-film {
@@ -101,6 +106,18 @@ li {
   .poster-wrapper {
     figcaption.caption {
       display: none !important;
+    }
+  }
+}
+
+// Mobile responsive styles
+@include mobile {
+  // Add margin between favourites and analytics on mobile
+  .row {
+    .col-lg-6.col-md-6.col-sm-12 {
+      &:nth-child(2) {
+        margin-top: $spacing-md * 2;
+      }
     }
   }
 }

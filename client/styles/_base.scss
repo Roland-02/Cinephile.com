@@ -48,6 +48,26 @@ body {
   background-color: $color-white !important;
 }
 
+// Page container - for main page containers with top padding
+.page-container {
+  padding-top: 60px;
+  
+  // Remove top padding on mobile
+  @include mobile {
+    padding-top: 0;
+  }
+}
+
+// Search page gets extra padding
+.search-page-container {
+  padding-top: 80px;
+  
+  // Remove top padding on mobile
+  @include mobile {
+    padding-top: 0;
+  }
+}
+
 // Form elements
 input,
 textarea,
