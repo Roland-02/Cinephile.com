@@ -511,7 +511,7 @@ const Index = () => {
           updateUserDataCacheWithValues(null, updatedLiked, newLoved);
           clearRecommendationsCache();
 
-          await saveElements(newLikedElements, newLikedCast);
+          await saveElements(newLikedElements, newLikedCast, updatedLiked);
         } catch (error) {
           console.error('Error unloving film:', error);
         }
@@ -612,7 +612,7 @@ const Index = () => {
     }
   };
 
-  const saveElements = async (elements, cast) => {
+  const saveElements = async (elements, cast, currentLiked = null) => {
     if (!user_id || !currentFilm) return;
 
     try {
@@ -623,10 +623,13 @@ const Index = () => {
         cast: cast,
       });
 
+      // Use provided currentLiked or fall back to state (for backward compatibility)
+      const likedToUse = currentLiked ?? myLiked;
+
       // Update myLiked state - ensure film is NOT in myLoved (mutual exclusivity)
       const hasLikes = elements.length > 0 || cast.length > 0;
-      const filmIndex = myLiked.findIndex(f => f.tconst === currentFilm.tconst);
-      const existingFilm = filmIndex >= 0 ? myLiked[filmIndex] : null;
+      const filmIndex = likedToUse.findIndex(f => f.tconst === currentFilm.tconst);
+      const existingFilm = filmIndex >= 0 ? likedToUse[filmIndex] : null;
 
       // Ensure film is removed from loved (can only be in one list)
       const currentLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
@@ -641,14 +644,14 @@ const Index = () => {
         };
         
         if (filmIndex >= 0) {
-          updatedLiked = [...myLiked];
+          updatedLiked = [...likedToUse];
           updatedLiked[filmIndex] = filmToSave;
         } else {
-          updatedLiked = [...myLiked, filmToSave];
+          updatedLiked = [...likedToUse, filmToSave];
         }
       } else {
         // Remove from liked if no elements/cast
-        updatedLiked = myLiked.filter(f => f.tconst !== currentFilm.tconst);
+        updatedLiked = likedToUse.filter(f => f.tconst !== currentFilm.tconst);
       }
 
       setMyLiked(updatedLiked);
