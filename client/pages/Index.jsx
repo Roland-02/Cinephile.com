@@ -87,19 +87,6 @@ const Index = () => {
     }
   };
 
-  // Update cache with current state values
-  const updateUserDataCache = () => {
-    try {
-      localStorage.setItem('user_data', JSON.stringify({
-        watchlist: watchList,
-        liked: myLiked,
-        loved: myLoved,
-      }));
-    } catch (e) {
-      console.error('Error updating user_data cache:', e);
-    }
-  };
-
   // Update cache with explicit values (use when state hasn't updated yet)
   const updateUserDataCacheWithValues = (watchlist, liked, loved) => {
     try {
@@ -113,6 +100,29 @@ const Index = () => {
     }
   };
 
+  const shuffleAndReset = async () => {
+    try {
+      const currentUserId = getSession()?.id;
+      const url = currentUserId ? `/api/shuffleFilms?user_id=${currentUserId}` : `/api/shuffleFilms`;
+      await axios.post(url);
+    } catch (error) {
+      console.error('Error shuffling films:', error);
+    }
+    setFiltered(false);
+    setOutside(false);
+    setFilmIndex(0);
+    setCacheStartIndex(0);
+    localStorage.setItem('filmIndex', 0);
+    // Clear any cached index page films when shuffling
+    localStorage.removeItem('indexPageFilms');
+    localStorage.removeItem('films-source');
+    const defaultFilters = { rating: 'Any', genre: 'Any', runtime: 'Any', year: 'Any' };
+    setFilterValues(defaultFilters);
+    localStorage.setItem('activeFilters', JSON.stringify(defaultFilters));
+    loadedPagesRef.current.clear(); // Reset loaded pages tracking for shuffle
+    await loadFilms(0);
+  };
+
   useEffect(() => {
     const shouldShuffle = localStorage.getItem('shouldShuffle');
 
@@ -121,29 +131,6 @@ const Index = () => {
       setLoading(true);
       setCurrentFilm(null);
       setFilmCache([]);
-
-      const shuffleAndReset = async () => {
-        try {
-          const currentUserId = getSession()?.id;
-          const url = currentUserId ? `/api/shuffleFilms?user_id=${currentUserId}` : `/api/shuffleFilms`;
-          await axios.post(url);
-        } catch (error) {
-          console.error('Error shuffling films:', error);
-        }
-        setFiltered(false);
-        setOutside(false);
-        setFilmIndex(0);
-        setCacheStartIndex(0);
-        localStorage.setItem('filmIndex', 0);
-        // Clear any cached index page films when shuffling
-        localStorage.removeItem('indexPageFilms');
-        localStorage.removeItem('films-source');
-        const defaultFilters = { rating: 'Any', genre: 'Any', runtime: 'Any', year: 'Any' };
-        setFilterValues(defaultFilters);
-        localStorage.setItem('activeFilters', JSON.stringify(defaultFilters));
-        loadedPagesRef.current.clear(); // Reset loaded pages tracking for shuffle
-        await loadFilms(0);
-      };
       shuffleAndReset();
       return;
     }
@@ -176,10 +163,12 @@ const Index = () => {
     if (!localStorage.getItem('films-source')) {
       const savedFilters = localStorage.getItem('activeFilters');
       let hasActiveFilters = false;
-      
+      let parsedFilters = null;
+
       if (savedFilters) {
         try {
           const filters = JSON.parse(savedFilters);
+          parsedFilters = filters;
           setFilterValues(filters);
           hasActiveFilters = !(filters.rating === 'Any' && filters.genre === 'Any' &&
             filters.runtime === 'Any' && filters.year === 'Any');
@@ -189,6 +178,92 @@ const Index = () => {
         } catch (e) {
           console.error('Error parsing saved filters:', e);
         }
+      }
+
+      if (hasActiveFilters && parsedFilters) {
+        const initFiltered = async () => {
+          try {
+            setLoading(true);
+            setCurrentFilm(null);
+            setFilmCache([]);
+            loadedPagesRef.current.clear();
+            
+            await axios.post('/api/filter', parsedFilters);
+            
+            const targetPageNum = Math.floor(initialIndex / PAGE_SIZE) + 1;
+            let cachedPages = {};
+            let canUseCache = false;
+            
+            try {
+              const cached = localStorage.getItem('indexPageFilms');
+              if (cached) {
+                cachedPages = JSON.parse(cached);
+              }
+            } catch (e) {
+              cachedPages = {};
+            }
+            
+            if (cachedPages && cachedPages.__filters) {
+              try {
+                canUseCache = JSON.stringify(cachedPages.__filters) === JSON.stringify(parsedFilters);
+              } catch (e) {
+                canUseCache = false;
+              }
+            }
+            
+            if (canUseCache) {
+              const allPagesInCache = [];
+              let allPagesAvailable = true;
+              
+              for (let pageNum = 1; pageNum <= targetPageNum; pageNum++) {
+                const pageKey = `page_${pageNum}`;
+                if (cachedPages[pageKey] && cachedPages[pageKey].length > 0) {
+                  allPagesInCache.push(...cachedPages[pageKey]);
+                  loadedPagesRef.current.add(pageNum);
+                } else {
+                  allPagesAvailable = false;
+                  break;
+                }
+              }
+              
+              if (allPagesAvailable && allPagesInCache.length > 0) {
+                setFilmCache(allPagesInCache);
+                return;
+              }
+            }
+            
+            const allPages = [];
+            const newCachedPages = { __filters: parsedFilters };
+            
+            for (let pageNum = 1; pageNum <= targetPageNum; pageNum++) {
+              const res = await fetch(`/api/filteredPageFilms?page=${pageNum}`);
+              if (!res.ok) {
+                break;
+              }
+              const pageData = await res.json();
+              const pageKey = `page_${pageNum}`;
+              newCachedPages[pageKey] = pageData;
+              allPages.push(...pageData);
+              loadedPagesRef.current.add(pageNum);
+            }
+            
+            try {
+              localStorage.setItem('indexPageFilms', JSON.stringify(newCachedPages));
+            } catch (e) {
+              console.error('Error caching filtered films:', e);
+            }
+            
+            setFilmCache(allPages);
+          } catch (e) {
+            console.error('Error initializing filtered films:', e);
+          } finally {
+            setLoading(false);
+          }
+        };
+        
+        loadUserData();
+        initFiltered();
+        return;
       }
 
       // For normal films (not filtered), preload all pages up to the target page from cache
@@ -239,16 +314,16 @@ const Index = () => {
         setShowFilters(false);
       }
     };
-    
+
     const handleToggleFilterMenu = (event) => {
       if (window.innerWidth <= 991) {
         setShowFilters(event.detail);
       }
     };
-    
+
     window.addEventListener('closeFilterMenu', handleCloseFilterMenu);
     window.addEventListener('toggleFilterMenu', handleToggleFilterMenu);
-    
+
     return () => {
       window.removeEventListener('closeFilterMenu', handleCloseFilterMenu);
       window.removeEventListener('toggleFilterMenu', handleToggleFilterMenu);
@@ -260,7 +335,7 @@ const Index = () => {
     const wrapper = document.querySelector('.mobile-filter-contents');
     let indexContainer = document.getElementById('mobile-filter-content-index');
     const recommendContainer = document.getElementById('mobile-filter-content-recommend');
-    
+
     if (!indexContainer && wrapper) {
       indexContainer = document.createElement('div');
       indexContainer.id = 'mobile-filter-content-index';
@@ -268,7 +343,7 @@ const Index = () => {
       indexContainer.setAttribute('aria-hidden', 'false');
       wrapper.appendChild(indexContainer);
     }
-    
+
     if (window.innerWidth > 991 || !showFilters) {
       if (indexContainer) {
         indexContainer.innerHTML = '';
@@ -278,32 +353,32 @@ const Index = () => {
       }
       return;
     }
-    
+
     if (recommendContainer) {
       recommendContainer.remove();
     }
-    
+
     const filterOptions = document.getElementById('filterOptions');
     if (!indexContainer || !filterOptions) {
       return;
     }
-    
+
     const formContent = filterOptions.querySelector('form');
     if (!formContent) {
       indexContainer.innerHTML = '';
       return;
     }
-    
+
     indexContainer.innerHTML = '';
     const clonedForm = formContent.cloneNode(true);
     indexContainer.appendChild(clonedForm);
-    
+
     // Re-attach event handlers using event delegation
     clonedForm.addEventListener('submit', (e) => {
       e.preventDefault();
       handleFilterSubmit(e);
     });
-    
+
     // Attach reset button handler
     const resetButton = clonedForm.querySelector('button[type="button"]');
     if (resetButton) {
@@ -311,7 +386,7 @@ const Index = () => {
         handleFilterReset();
       });
     }
-    
+
     // Update select values and attach change handlers
     ['filterRating', 'filterGenre', 'filterRuntime', 'filterYear'].forEach(id => {
       const select = clonedForm.querySelector(`#${id}`);
@@ -354,17 +429,17 @@ const Index = () => {
         // Calculate current page (1-indexed)
         const currentPage = Math.floor(filmIndex / PAGE_SIZE) + 1;
         const nextPage = currentPage + 1;
-        
+
         // Preload trigger: when at last item of current page (e.g., index 9, 19, 29 for PAGE_SIZE 10)
         const isAtPageBoundary = filmIndex === (currentPage * PAGE_SIZE - 1);
-        
+
         if (isAtPageBoundary && !loadedPagesRef.current.has(nextPage)) {
           // Preload next page
           const nextPageStartIndex = (nextPage - 1) * PAGE_SIZE;
           loadFilms(nextPageStartIndex);
         }
       }
-      
+
       // Update film if we have data in cache
       if (filmCache.length > 0 && !loading && filmIndex < filmCache.length) {
         updateFilm();
@@ -384,27 +459,13 @@ const Index = () => {
       let allFilmsData = [];
 
       if (filtered) {
-        // Map global index to backend pages using PAGE_SIZE
-        for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
-          const response = await fetch(`/api/filteredPageFilms?page=${pageNum}`);
-          if (response.ok) {
-            const pageData = await response.json();
-            allFilmsData = allFilmsData.concat(pageData);
-          }
-        }
-      } else if (filmsSource) {
-        const films_JSON = JSON.parse(localStorage.getItem('films-source'));
-        allFilmsData = films_JSON.slice(startGlobalIndex, startGlobalIndex + PAGE_SIZE);
-      } else {
-        // Regular index films: cumulative cache with localStorage persistence
         const pageNum = startPage;
         
-        // Check if this page has already been appended to in-memory cache
+        // Avoid duplicate appends for filtered pages too
         if (loadedPagesRef.current.has(pageNum)) {
-          // Page already in memory, return empty to avoid duplicate append
           return [];
         }
-        
+
         // Load from localStorage cache or fetch from server
         let cachedPages = {};
         try {
@@ -413,7 +474,41 @@ const Index = () => {
         } catch (e) {
           cachedPages = {};
         }
-     
+
+        const pageKey = `page_${pageNum}`;
+        if (cachedPages[pageKey]) {
+          allFilmsData = cachedPages[pageKey];
+        } else {
+          const response = await fetch(`/api/filteredPageFilms?page=${pageNum}`);
+          if (response.ok) {
+            const pageData = await response.json();
+            cachedPages[pageKey] = pageData;
+            localStorage.setItem('indexPageFilms', JSON.stringify(cachedPages));
+            allFilmsData = pageData;
+          }
+        }
+      } else if (filmsSource) {
+        const films_JSON = JSON.parse(localStorage.getItem('films-source'));
+        allFilmsData = films_JSON.slice(startGlobalIndex, startGlobalIndex + PAGE_SIZE);
+      } else {
+        // Regular index films: cumulative cache with localStorage persistence
+        const pageNum = startPage;
+
+        // Check if this page has already been appended to in-memory cache
+        if (loadedPagesRef.current.has(pageNum)) {
+          // Page already in memory, return empty to avoid duplicate append
+          return [];
+        }
+
+        // Load from localStorage cache or fetch from server
+        let cachedPages = {};
+        try {
+          const cached = localStorage.getItem('indexPageFilms');
+          cachedPages = cached ? JSON.parse(cached) : {};
+        } catch (e) {
+          cachedPages = {};
+        }
+
         const pageKey = `page_${pageNum}`;
 
         if (cachedPages[pageKey]) {
@@ -448,12 +543,12 @@ const Index = () => {
       const filmsData = await getFilms(startIndex);
       if (filmsData && filmsData.length > 0) {
         const pageNum = Math.floor(startIndex / PAGE_SIZE) + 1;
-        
+
         // Only append if this page hasn't been loaded yet
         if (!loadedPagesRef.current.has(pageNum)) {
           setFilmCache((prev) => [...prev, ...filmsData]);
           loadedPagesRef.current.add(pageNum);
-          
+
           // For normal films, cacheStartIndex stays at 0 (cumulative cache)
           // Only update for external source films
           if (outside) {
@@ -476,12 +571,12 @@ const Index = () => {
     let film = filmCache[localIndex];
     let likedEntry = null;
     let lovedEntry = null;
-    
+
     if (user_id) {
       likedEntry = myLiked.find((f) => f.tconst === film.tconst);
       lovedEntry = myLoved.find((f) => f.tconst === film.tconst);
       const watchlistEntry = watchList.find((f) => f.tconst === film.tconst);
-      
+
       if (!likedEntry && !lovedEntry) {
         try {
           const cached = localStorage.getItem('user_data');
@@ -494,7 +589,7 @@ const Index = () => {
           console.error('Error parsing cached user data:', e);
         }
       }
-      
+
       const fullFilmData = likedEntry || lovedEntry || watchlistEntry;
       if (fullFilmData) {
         film = { ...fullFilmData, ...film };
@@ -506,7 +601,7 @@ const Index = () => {
         }
       }
     }
-    
+
     const imageUrl = film.poster ? baseImagePath + film.poster : "/images/MissingPoster.jpeg";
     const imagePreload = new Image();
 
@@ -526,7 +621,7 @@ const Index = () => {
       // Check both state and cache for loved/liked status (state might not be loaded yet)
       let isLovedFilm = myLoved.some((f) => f.tconst === film.tconst);
       let likedEntry = myLiked.find((f) => f.tconst === film.tconst);
-      
+
       // Fallback to cache if state isn't ready yet
       if (!likedEntry && !isLovedFilm) {
         try {
@@ -540,7 +635,7 @@ const Index = () => {
           // Ignore cache parse errors
         }
       }
-      
+
       setIsLoved(isLovedFilm);
 
       if (isLovedFilm) {
@@ -674,7 +769,7 @@ const Index = () => {
             user_id: user_id,
           });
           setIsLoved(false);
-          
+
           // Remove from loved (film can only be in one list)
           const newLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
           setMyLoved(newLoved);
@@ -686,7 +781,7 @@ const Index = () => {
             likedElements: newLikedElements,
             likedCast: newLikedCast,
           };
-          
+
           let updatedLiked;
           if (existingLikedIndex >= 0) {
             // Update existing entry
@@ -704,7 +799,7 @@ const Index = () => {
         } catch (error) {
           console.error('Error unloving film:', error);
         }
-      } 
+      }
       // Film remains in liked list (some but not all attributes liked)
       else {
         // Update liked entry with new liked elements/cast
@@ -728,7 +823,7 @@ const Index = () => {
         user_id: user_id,
       });
       setIsLoved(true);
-      
+
       const filteredLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
       const newLoved = [...filteredLoved, currentFilm];
       setMyLoved(newLoved);
@@ -781,7 +876,7 @@ const Index = () => {
     try {
       const isRemoving = isInWatchlist;
       const endpoint = isRemoving ? '/api/deleteWatchlist' : '/api/addWatchlist';
-      
+
       await axios.post(endpoint, {
         film_id: currentFilm.tconst,
         user_id: user_id,
@@ -793,7 +888,7 @@ const Index = () => {
 
       setWatchList(newWatchlist);
       setIsInWatchlist(!isRemoving);
-      
+
       // Update cache with new watchlist (state hasn't updated yet)
       updateUserDataCacheWithValues(newWatchlist, null, null);
     } catch (error) {
@@ -822,7 +917,7 @@ const Index = () => {
 
       // Ensure film is removed from loved (can only be in one list)
       const currentLoved = myLoved.filter(f => f.tconst !== currentFilm.tconst);
-      
+
       let updatedLiked;
       if (hasLikes) {
         const filmToSave = {
@@ -831,7 +926,7 @@ const Index = () => {
           likedElements: elements,
           likedCast: cast,
         };
-        
+
         if (filmIndex >= 0) {
           updatedLiked = [...likedToUse];
           updatedLiked[filmIndex] = filmToSave;
@@ -866,16 +961,27 @@ const Index = () => {
     localStorage.setItem('activeFilters', JSON.stringify(filter));
 
     try {
-      const response = await axios.post('/api/filter', null, {
-        params: { filter: JSON.stringify(filter) }
-      });
+      const response = await axios.post('/api/filter', filter);
       if (response.data !== undefined && response.data !== null) {
+        // Fetch first filtered page and cache it immediately
+        const firstPageRes = await fetch('/api/filteredPageFilms?page=1');
+        const firstPageData = firstPageRes.ok ? await firstPageRes.json() : [];
+
+        // Persist the first filtered page so the carousel shows results right away
+        let cachedPages = {};
+        try {
+          cachedPages = { page_1: firstPageData || [] };
+          localStorage.setItem('indexPageFilms', JSON.stringify(cachedPages));
+        } catch (e) {
+          console.error('Error caching filtered films:', e);
+        }
+
         setFiltered(true);
         setFilmIndex(0);
         setCacheStartIndex(0);
-        setFilmCache([]);
-        loadedPagesRef.current.clear(); // Reset loaded pages tracking
-        await loadFilms(0);
+        setFilmCache(firstPageData || []);
+        loadedPagesRef.current.clear();
+        loadedPagesRef.current.add(1);
       }
     } catch (error) {
       console.error('Error applying filters:', error);
@@ -911,14 +1017,23 @@ const Index = () => {
     localStorage.removeItem('indexPageFilms');
     localStorage.removeItem('films-source');
 
-        setFiltered(false);
-        setOutside(false);
-        setFilmIndex(0);
-        setCacheStartIndex(0);
-        setFilmCache([]);
-        loadedPagesRef.current.clear(); // Reset loaded pages tracking
+    setFiltered(false);
+    setOutside(false);
+    setFilmIndex(0);
+    setCacheStartIndex(0);
+    setFilmCache([]);
+    loadedPagesRef.current.clear();
+    setCurrentFilm(null);
     await loadFilms(0);
   };
+
+  // When we replace the cache (e.g. after applying filters), refresh the displayed film
+  useEffect(() => {
+    if (loading) return;
+    if (filmCache.length === 0) return;
+    updateFilm();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filmCache[0]?.tconst, filmCache.length]);
 
   if (loading || !currentFilm) {
     return (

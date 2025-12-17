@@ -190,12 +190,14 @@ def filter_films():
         if not films_loaded:
             load_films_from_db()
         
-        filter_data = request.args.get('filter')
-        if isinstance(filter_data, str):
-            try:
-                filter_data = json.loads(filter_data)
-            except:
-                filter_data = {}
+        filter_data = request.get_json(silent=True)
+        if not filter_data:
+            filter_data = request.args.get('filter')
+            if isinstance(filter_data, str):
+                try:
+                    filter_data = json.loads(filter_data)
+                except Exception:
+                    filter_data = {}
         
         filteredFilms_global = allFilms_global.copy()
         
@@ -227,16 +229,13 @@ def filter_films():
                     def is_valid_runtime(film):
                         film_runtime = film.get('runtimeMinutes')
                         try:
-                            runtime_int = int(film_runtime)
-
-                            # pass the integer to the lambda
+                            runtime_val = float(film_runtime)
                             if runtime in runtime_filters:
-                                return runtime_filters[runtime](runtime_int)
-                            return False
-
+                                return runtime_filters[runtime](runtime_val)
+                            return True
                         except Exception:
                             return False
-                        
+                    
                     filteredFilms_global = [f for f in filteredFilms_global if is_valid_runtime(f)]
                 
                 if filter_data.get('year') != 'Any':
