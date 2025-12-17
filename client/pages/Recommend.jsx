@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { getSession } from '../utils/auth';
+import NavbarFilter, { useFilter } from '../components/NavbarFilter';
 
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
@@ -21,10 +22,10 @@ const Recommend = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const session = getSession();
   const user_id = session?.id;
   const navigate = useNavigate();
+  const { isFilterOpen, closeFilter } = useFilter();
   const [searchParams] = useSearchParams();
   const refreshProfile = searchParams.get('refreshProfile') === 'true';
   const observerTarget = useRef(null);
@@ -168,62 +169,6 @@ const Recommend = () => {
     setCategory(value);
   }, []);
 
-  // Listen for filter menu toggle events from Navbar (mobile)
-  useEffect(() => {
-    const handleToggleFilterMenu = (event) => {
-      if (window.innerWidth <= 991) {
-        setShowFilters(event.detail);
-      }
-    };
-    
-    window.addEventListener('toggleFilterMenu', handleToggleFilterMenu);
-    
-    return () => {
-      window.removeEventListener('toggleFilterMenu', handleToggleFilterMenu);
-    };
-  }, []);
-
-  // Render filter options into the mobile filter menu as buttons (Recommend only)
-  useEffect(() => {
-    const wrapper = document.querySelector('.mobile-filter-contents');
-    let mobileFilterContent = document.getElementById('mobile-filter-content-recommend');
-    const indexFilterContent = document.getElementById('mobile-filter-content-index');
-    
-    if (!mobileFilterContent && wrapper) {
-      mobileFilterContent = document.createElement('div');
-      mobileFilterContent.id = 'mobile-filter-content-recommend';
-      mobileFilterContent.className = 'mobile-filter-content mobile-filter-content-recommend';
-      mobileFilterContent.setAttribute('aria-hidden', 'false');
-      wrapper.appendChild(mobileFilterContent);
-    }
-    
-    if (!mobileFilterContent) {
-      return;
-    }
-    
-    if (window.innerWidth > 991 || !showFilters) {
-      mobileFilterContent.innerHTML = '';
-      if (indexFilterContent) {
-        indexFilterContent.remove();
-      }
-      return;
-    }
-    
-    if (indexFilterContent) {
-      indexFilterContent.remove();
-    }
-    
-    mobileFilterContent.innerHTML = '';
-    
-    categoryOptions.forEach((option) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `mobile-filter-button ${category === option.value ? 'active' : ''}`;
-      button.textContent = option.label;
-      button.addEventListener('click', () => handleMobileCategoryClick(option.value));
-      mobileFilterContent.appendChild(button);
-    });
-  }, [showFilters, category, handleMobileCategoryClick]);
 
   const handleFilmClick = (film, filmIndex) => {
     localStorage.setItem('filmIndex', filmIndex);
@@ -340,6 +285,25 @@ const Recommend = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile filter menu */}
+      <NavbarFilter isOpen={isFilterOpen && window.innerWidth <= 991} onClose={closeFilter}>
+        <div className="mobile-filter-content mobile-filter-content-recommend" style={{ padding: '0' }}>
+          {categoryOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={`mobile-filter-button ${category === option.value ? 'active' : ''}`}
+              onClick={() => {
+                handleMobileCategoryClick(option.value);
+                closeFilter();
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </NavbarFilter>
     </div>
   );
 };

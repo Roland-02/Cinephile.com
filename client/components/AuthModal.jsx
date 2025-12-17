@@ -12,7 +12,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
   const [passwordError, setPasswordError] = useState(false);
   const [message, setMessage] = useState('');
   
-  // Sign up state
+  // Create account state
   const [confPassword, setConfPassword] = useState('');
   const [confPasswordError, setConfPasswordError] = useState(false);
 
@@ -182,7 +182,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
             )}
           </div>
 
-          {/* Confirm password input (only for sign up) */}
+          {/* Confirm password input (only for Create account) */}
           {isSignUp && (
             <div className="auth-form-group mb-4">
               <label className="auth-form-label" htmlFor="confPassword">
@@ -224,7 +224,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
           {/* Submit button */}
           <div className="d-flex justify-content-center mb-4">
             <button type="submit" className="btn btn-primary auth-submit-btn" style={{ width: '260px', fontSize: '18px', padding: '10px 20px' }}>
-              {isSignUp ? 'Sign up' : 'Sign in'}
+              {isSignUp ? 'Create account' : 'Sign in'}
             </button>
           </div>
 
@@ -239,7 +239,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
               className="btn btn-outline-primary auth-switch-btn"
               style={{ width: '260px', fontSize: '18px', padding: '10px 20px' }}
             >
-              {isSignUp ? 'Sign in' : 'Sign up'}
+              {isSignUp ? 'Sign in' : 'Create account'}
             </button>
           </div>
         </form>

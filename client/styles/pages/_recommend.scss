@@ -129,45 +129,43 @@ figcaption {
 }
 
 // Mobile filter buttons inside slide-out filter menu
-@include mobile {
-  #mobile-filter-content-recommend {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    padding: 0;
+.mobile-filter-content-recommend {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  
+  .mobile-filter-label {
+    margin: 0 0 $spacing-sm;
+    font-weight: 600;
+    font-size: $font-size-base;
+  }
+  
+  .mobile-filter-button {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: $font-size-lg;
+    font-weight: 500;
+    color: var(--text-color);
+    padding: $spacing-md $spacing-lg;
+    transition: all $transition-fast;
+    display: block;
+    text-decoration: none;
+    border-bottom: 1px solid var(--grey-light);
     
-    .mobile-filter-label {
-      margin: 0 0 $spacing-sm;
-      font-weight: 600;
-      font-size: $font-size-base;
+    &:hover {
+      background-color: var(--grey-light);
+      padding-left: $spacing-xl;
     }
     
-    .mobile-filter-button {
-      width: 100%;
-      text-align: left;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-family: inherit;
-      font-size: $font-size-lg;
-      font-weight: 500;
-      color: var(--text-color);
-      padding: $spacing-md $spacing-lg;
-      transition: all $transition-fast;
-      display: block;
-      text-decoration: none;
-      border-bottom: 1px solid var(--grey-light);
-      
-      &:hover {
-        background-color: var(--grey-light);
-        padding-left: $spacing-xl;
-      }
-      
-      &.active {
-        background-color: $color-orange-light;
-        font-weight: 600;
-        border-left: 4px solid $color-orange;
-      }
+    &.active {
+      background-color: $color-orange-light;
+      font-weight: 600;
+      border-left: 4px solid $color-orange;
     }
   }
 }

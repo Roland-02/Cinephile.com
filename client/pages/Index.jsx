@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { getSession } from '../utils/auth';
+import NavbarFilter, { useFilter } from '../components/NavbarFilter';
 
 const PAGE_SIZE = parseInt(import.meta.env.VITE_PAGE_SIZE);
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
@@ -37,6 +38,7 @@ const Index = () => {
   const session = getSession();
   const user_id = session?.id;
   const location = useLocation();
+  const { isFilterOpen, closeFilter } = useFilter();
 
   // Load user's watchlist, liked, and loved films from cache or API
   const loadUserData = async () => {
@@ -307,99 +309,6 @@ const Index = () => {
     loadFilms(initialCacheStart);
   }, [location.key]);
 
-  // Listen for mobile menu opening to close filter menu (mobile only)
-  useEffect(() => {
-    const handleCloseFilterMenu = () => {
-      // Only close filter on mobile views
-      if (window.innerWidth <= 991) {
-        setShowFilters(false);
-      }
-    };
-
-    const handleToggleFilterMenu = (event) => {
-      if (window.innerWidth <= 991) {
-        setShowFilters(event.detail);
-      }
-    };
-
-    window.addEventListener('closeFilterMenu', handleCloseFilterMenu);
-    window.addEventListener('toggleFilterMenu', handleToggleFilterMenu);
-
-    return () => {
-      window.removeEventListener('closeFilterMenu', handleCloseFilterMenu);
-      window.removeEventListener('toggleFilterMenu', handleToggleFilterMenu);
-    };
-  }, []);
-
-  // Render filter form into mobile filter menu (Index only)
-  useEffect(() => {
-    const wrapper = document.querySelector('.mobile-filter-contents');
-    let indexContainer = document.getElementById('mobile-filter-content-index');
-    const recommendContainer = document.getElementById('mobile-filter-content-recommend');
-
-    if (!indexContainer && wrapper) {
-      indexContainer = document.createElement('div');
-      indexContainer.id = 'mobile-filter-content-index';
-      indexContainer.className = 'mobile-filter-content mobile-filter-content-index';
-      indexContainer.setAttribute('aria-hidden', 'false');
-      wrapper.appendChild(indexContainer);
-    }
-
-    if (window.innerWidth > 991 || !showFilters) {
-      if (indexContainer) {
-        indexContainer.innerHTML = '';
-      }
-      if (recommendContainer) {
-        recommendContainer.remove();
-      }
-      return;
-    }
-
-    if (recommendContainer) {
-      recommendContainer.remove();
-    }
-
-    const filterOptions = document.getElementById('filterOptions');
-    if (!indexContainer || !filterOptions) {
-      return;
-    }
-
-    const formContent = filterOptions.querySelector('form');
-    if (!formContent) {
-      indexContainer.innerHTML = '';
-      return;
-    }
-
-    indexContainer.innerHTML = '';
-    const clonedForm = formContent.cloneNode(true);
-    indexContainer.appendChild(clonedForm);
-
-    // Re-attach event handlers using event delegation
-    clonedForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      handleFilterSubmit(e);
-    });
-
-    // Attach reset button handler
-    const resetButton = clonedForm.querySelector('button[type="button"]');
-    if (resetButton) {
-      resetButton.addEventListener('click', () => {
-        handleFilterReset();
-      });
-    }
-
-    // Update select values and attach change handlers
-    ['filterRating', 'filterGenre', 'filterRuntime', 'filterYear'].forEach(id => {
-      const select = clonedForm.querySelector(`#${id}`);
-      if (select) {
-        const key = id.replace('filter', '').toLowerCase();
-        select.value = filterValues[key];
-        select.addEventListener('change', (e) => {
-          setFilterValues({ ...filterValues, [key]: e.target.value });
-        });
-      }
-    });
-  }, [showFilters, filterValues]);
 
   // Close filter box when clicking outside
   useEffect(() => {
@@ -1007,6 +916,8 @@ const Index = () => {
 
     if (window.innerWidth > 991) {
       setShowFilters(false);
+    } else {
+      closeFilter();
     }
   };
 
@@ -1014,22 +925,6 @@ const Index = () => {
     const defaultFilters = { rating: 'Any', genre: 'Any', runtime: 'Any', year: 'Any' };
     setFilterValues(defaultFilters);
     localStorage.setItem('activeFilters', JSON.stringify(defaultFilters));
-
-    // Update mobile filter form selects to "Any"
-    if (window.innerWidth <= 991) {
-      const mobileFilterContent = document.getElementById('mobile-filter-content-index');
-      if (mobileFilterContent) {
-        const form = mobileFilterContent.querySelector('form');
-        if (form) {
-          ['filterRating', 'filterGenre', 'filterRuntime', 'filterYear'].forEach(id => {
-            const select = form.querySelector(`#${id}`);
-            if (select) {
-              select.value = 'Any';
-            }
-          });
-        }
-      }
-    }
 
     // Clear index page films cache when filters are reset
     localStorage.removeItem('indexPageFilms');
@@ -1043,6 +938,10 @@ const Index = () => {
     loadedPagesRef.current.clear();
     setCurrentFilm(null);
     await loadFilms(0);
+
+    if (window.innerWidth <= 991) {
+      closeFilter();
+    }
   };
 
   // When we replace the cache (e.g. after applying filters), refresh the displayed film
@@ -1530,6 +1429,96 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile filter menu */}
+      <NavbarFilter isOpen={isFilterOpen && window.innerWidth <= 991} onClose={closeFilter}>
+        <div className="mobile-filter-content mobile-filter-content-index" style={{ padding: '15px' }}>
+          <form onSubmit={handleFilterSubmit}>
+            {/* Rating */}
+            <div className="mb-2">
+              <label htmlFor="mobile-filterRating" className="form-label">
+                Rating
+              </label>
+              <select
+                id="mobile-filterRating"
+                className="form-select"
+                value={filterValues.rating}
+                onChange={(e) => setFilterValues({ ...filterValues, rating: e.target.value })}
+              >
+                <option value="Any">Any</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <option key={num} value={num}>
+                    {num}/10
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Genre */}
+            <div className="mb-2">
+              <label htmlFor="mobile-filterGenre" className="form-label">
+                Genre
+              </label>
+              <select
+                id="mobile-filterGenre"
+                className="form-select"
+                value={filterValues.genre}
+                onChange={(e) => setFilterValues({ ...filterValues, genre: e.target.value })}
+              >
+                <option value="Any">Any</option>
+                {['Drama', 'Action', 'Comedy', 'Sci-Fi', 'Fantasy', 'Romance', 'Family', 'Horror', 'Mystery', 'Documentary'].map((genre) => (
+                  <option key={genre} value={genre}>{genre}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Runtime */}
+            <div className="mb-2">
+              <label htmlFor="mobile-filterRuntime" className="form-label">
+                Runtime
+              </label>
+              <select
+                id="mobile-filterRuntime"
+                className="form-select"
+                value={filterValues.runtime}
+                onChange={(e) => setFilterValues({ ...filterValues, runtime: e.target.value })}
+              >
+                <option value="Any">Any</option>
+                {['≤ 1Hr', '≤ 1Hr 30m', '≤ 2Hrs', '≤ 2Hrs 30m', '≤ 3Hrs', 'really long...'].map((runtime) => (
+                  <option key={runtime} value={runtime}>{runtime}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Year */}
+            <div className="mb-2">
+              <label htmlFor="mobile-filterYear" className="form-label">
+                Year
+              </label>
+              <select
+                id="mobile-filterYear"
+                className="form-select"
+                value={filterValues.year}
+                onChange={(e) => setFilterValues({ ...filterValues, year: e.target.value })}
+              >
+                <option value="Any">Any</option>
+                {['2020s', '2010s', '2000s', '1990s', '1980s', '1970s', '1960s'].map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="d-flex gap-2 mt-3">
+              <button type="submit" className="btn btn-primary" style={{ flex: '2' }}>
+                apply
+              </button>
+              <button type="button" className="btn btn-secondary" style={{ flex: '1' }} onClick={handleFilterReset}>
+                reset
+              </button>
+            </div>
+          </form>
+        </div>
+      </NavbarFilter>
     </div>
   );
 };

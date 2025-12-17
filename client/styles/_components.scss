@@ -323,11 +323,13 @@
   .auth-submit-btn {
     &.btn-primary {
       color: var(--text-color);
-      background-color: var(--border-color);
+      background-color: var(--grey-light);
+      border-color: var(--border-color);
       
       &:hover {
         color: var(--text-color) !important;
-        background-color: $color-grey;
+        background-color: var(--grey-light);
+        opacity: 0.8;
       }
     }
   }
@@ -336,6 +338,7 @@
     &.btn-outline-primary {
       color: var(--text-color);
       border-color: var(--border-color);
+      background-color: transparent;
       
       &:hover {
         color: var(--text-color) !important;

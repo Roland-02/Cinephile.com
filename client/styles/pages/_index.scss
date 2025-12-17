@@ -230,10 +230,10 @@
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
   }
   
-  // Mobile responsive - smaller buttons
+  // Mobile responsive - bigger buttons for easier tapping
   @include mobile {
-    width: 36px !important;
-    height: 36px !important;
+    width: 56px !important;
+    height: 56px !important;
   }
 }
 
@@ -248,10 +248,10 @@
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
   }
   
-  // Mobile responsive - smaller buttons
+  // Mobile responsive - bigger buttons for easier tapping
   @include mobile {
-    width: 36px !important;
-    height: 36px !important;
+    width: 56px !important;
+    height: 56px !important;
   }
 }
 
@@ -259,9 +259,9 @@
 @include mobile {
   // Ensure proper spacing between columns
   
-  // Film info section - reduce padding
+  // Film info section - reduce padding, especially top padding to reduce space from carousel
   .col-lg-6.col-md-6.col-sm-12.py-4 {
-    padding-top: $spacing-sm !important;
+    padding-top: $spacing-xs !important;
     padding-bottom: $spacing-sm !important;
   }
   
