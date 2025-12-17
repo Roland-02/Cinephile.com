@@ -256,7 +256,10 @@
     padding: 0 $spacing-xs;
     height: auto;
     min-height: $navbar-height;
-    position: relative;
+    position: fixed;
+    top: 0;
+    width: 100%;
+
   }
   
   .nav-center {
@@ -476,10 +479,13 @@
 }
 
 // Very small screens - stack vertically if needed
-@media (max-width: 576px) {
+@media (max-width: 768px) {
   .nav-bar {
     padding: 0 $spacing-xs;
-    position: relative;
+    position: fixed;
+    top: 0;
+    width: 100%;
+
   }
   
   .nav-center {
@@ -592,7 +598,11 @@
   justify-content: center;
 }
 
-.mobile-filter-content {
+.mobile-filter-contents {
+  width: 100%;
+}
+
+#mobile-filter-content-index {
   padding: $spacing-md;
 }
 

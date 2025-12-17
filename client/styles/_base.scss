@@ -51,20 +51,12 @@ body {
 // Page container - for main page containers with top padding
 .page-container {
   padding-top: 60px;
-  
-  // Remove top padding only when screen is less than 766px
-  @media screen and (max-width: 765px) {
-    padding-top: 0;
-  }
 }
 
-// Search page gets extra padding
-.search-page-container {
-  padding-top: 80px;
-  
-  // Remove top padding only when screen is less than 766px
-  @media screen and (max-width: 765px) {
-    padding-top: 0;
+// Mobile: keep content clear of the fixed navbar
+@media screen and (max-width: 768px) {
+  .page-container {
+    padding-top: calc(#{$navbar-height}) !important;
   }
 }
 

@@ -227,7 +227,7 @@ const Search = () => {
   }, [hasMore, isLoadingMore, loading, searchQueries, loadMoreFilms]);
 
   return (
-    <div className="container page-container search-page-container">
+    <div className="container page-container">
       <div className="row justify-content-center">
         <div className="col-lg-8 col-md-10">
           <form id="searchForm" className="search-container" onSubmit={handleSubmit}>

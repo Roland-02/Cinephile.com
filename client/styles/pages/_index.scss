@@ -258,16 +258,6 @@
 // Mobile responsive - general layout improvements
 @include mobile {
   // Ensure proper spacing between columns
-  .carousel-container {
-    padding: $spacing-sm 0 !important;
-  }
-  
-  // Reduce top margin on smaller screens
-  @media (max-width: 576px) {
-    .carousel-container {
-      margin-top: $spacing-sm !important;
-    }
-  }
   
   // Film info section - reduce padding
   .col-lg-6.col-md-6.col-sm-12.py-4 {

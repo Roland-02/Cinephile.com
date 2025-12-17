@@ -289,8 +289,21 @@ const Navbar = ({ onLoginClick }) => {
                 </svg>
               </button>
             </div>
-            <div id="mobile-filter-content" className="mobile-filter-content">
-              {/* Filter form will be rendered here by Index/Recommend component */}
+            <div className="mobile-filter-contents">
+              <div
+                id="mobile-filter-content-index"
+                className="mobile-filter-content mobile-filter-content-index"
+                aria-hidden={window.location.pathname !== '/'}
+              >
+                {/* Index filters render here */}
+              </div>
+              <div
+                id="mobile-filter-content-recommend"
+                className="mobile-filter-content mobile-filter-content-recommend"
+                aria-hidden={window.location.pathname !== '/recommend'}
+              >
+                {/* Recommend filters render here */}
+              </div>
             </div>
           </div>
         </>

@@ -255,47 +255,74 @@ const Index = () => {
     };
   }, []);
 
-  // Render filter form into mobile filter menu
+  // Render filter form into mobile filter menu (Index only)
   useEffect(() => {
-    if (window.innerWidth <= 991 && showFilters) {
-      const mobileFilterContent = document.getElementById('mobile-filter-content');
-      const filterOptions = document.getElementById('filterOptions');
-      
-      if (mobileFilterContent && filterOptions) {
-        const formContent = filterOptions.querySelector('form');
-        if (formContent) {
-          mobileFilterContent.innerHTML = '';
-          const clonedForm = formContent.cloneNode(true);
-          mobileFilterContent.appendChild(clonedForm);
-          
-          // Re-attach event handlers using event delegation
-          clonedForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            handleFilterSubmit(e);
-          });
-          
-          // Attach reset button handler
-          const resetButton = clonedForm.querySelector('button[type="button"]');
-          if (resetButton) {
-            resetButton.addEventListener('click', () => {
-              handleFilterReset();
-            });
-          }
-          
-          // Update select values and attach change handlers
-          ['filterRating', 'filterGenre', 'filterRuntime', 'filterYear'].forEach(id => {
-            const select = clonedForm.querySelector(`#${id}`);
-            if (select) {
-              const key = id.replace('filter', '').toLowerCase();
-              select.value = filterValues[key];
-              select.addEventListener('change', (e) => {
-                setFilterValues({ ...filterValues, [key]: e.target.value });
-              });
-            }
-          });
-        }
-      }
+    const wrapper = document.querySelector('.mobile-filter-contents');
+    let indexContainer = document.getElementById('mobile-filter-content-index');
+    const recommendContainer = document.getElementById('mobile-filter-content-recommend');
+    
+    if (!indexContainer && wrapper) {
+      indexContainer = document.createElement('div');
+      indexContainer.id = 'mobile-filter-content-index';
+      indexContainer.className = 'mobile-filter-content mobile-filter-content-index';
+      indexContainer.setAttribute('aria-hidden', 'false');
+      wrapper.appendChild(indexContainer);
     }
+    
+    if (window.innerWidth > 991 || !showFilters) {
+      if (indexContainer) {
+        indexContainer.innerHTML = '';
+      }
+      if (recommendContainer) {
+        recommendContainer.remove();
+      }
+      return;
+    }
+    
+    if (recommendContainer) {
+      recommendContainer.remove();
+    }
+    
+    const filterOptions = document.getElementById('filterOptions');
+    if (!indexContainer || !filterOptions) {
+      return;
+    }
+    
+    const formContent = filterOptions.querySelector('form');
+    if (!formContent) {
+      indexContainer.innerHTML = '';
+      return;
+    }
+    
+    indexContainer.innerHTML = '';
+    const clonedForm = formContent.cloneNode(true);
+    indexContainer.appendChild(clonedForm);
+    
+    // Re-attach event handlers using event delegation
+    clonedForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleFilterSubmit(e);
+    });
+    
+    // Attach reset button handler
+    const resetButton = clonedForm.querySelector('button[type="button"]');
+    if (resetButton) {
+      resetButton.addEventListener('click', () => {
+        handleFilterReset();
+      });
+    }
+    
+    // Update select values and attach change handlers
+    ['filterRating', 'filterGenre', 'filterRuntime', 'filterYear'].forEach(id => {
+      const select = clonedForm.querySelector(`#${id}`);
+      if (select) {
+        const key = id.replace('filter', '').toLowerCase();
+        select.value = filterValues[key];
+        select.addEventListener('change', (e) => {
+          setFilterValues({ ...filterValues, [key]: e.target.value });
+        });
+      }
+    });
   }, [showFilters, filterValues]);
 
   // Check if current film is in cache, load new cache if needed
@@ -854,7 +881,9 @@ const Index = () => {
       console.error('Error applying filters:', error);
     }
 
-    setShowFilters(false);
+    if (window.innerWidth > 991) {
+      setShowFilters(false);
+    }
   };
 
   const handleFilterReset = async () => {
@@ -864,7 +893,7 @@ const Index = () => {
 
     // Update mobile filter form selects to "Any"
     if (window.innerWidth <= 991) {
-      const mobileFilterContent = document.getElementById('mobile-filter-content');
+      const mobileFilterContent = document.getElementById('mobile-filter-content-index');
       if (mobileFilterContent) {
         const form = mobileFilterContent.querySelector('form');
         if (form) {

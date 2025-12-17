@@ -130,15 +130,14 @@ figcaption {
 
 // Mobile filter buttons inside slide-out filter menu
 @include mobile {
-  #mobile-filter-content {
+  #mobile-filter-content-recommend {
     display: flex;
     flex-direction: column;
     gap: 0;
-    padding: $spacing-md 0;
-    padding-top: 0;
+    padding: 0;
     
     .mobile-filter-label {
-      margin: 0 $spacing-md $spacing-sm;
+      margin: 0 0 $spacing-sm;
       font-weight: 600;
       font-size: $font-size-base;
     }

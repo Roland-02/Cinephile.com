@@ -6,7 +6,7 @@ import { getSession } from '../utils/auth';
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
 const categoryOptions = [
-  { value: 'content', label: 'From your profile' },
+  { value: 'content', label: 'All combined' },
   { value: 'plot', label: 'Storylines' },
   { value: 'cast', label: 'Cast' },
   { value: 'crew', label: 'Crew' },
@@ -183,16 +183,34 @@ const Recommend = () => {
     };
   }, []);
 
-  // Render filter options into the mobile filter menu as buttons
+  // Render filter options into the mobile filter menu as buttons (Recommend only)
   useEffect(() => {
-    const mobileFilterContent = document.getElementById('mobile-filter-content');
+    const wrapper = document.querySelector('.mobile-filter-contents');
+    let mobileFilterContent = document.getElementById('mobile-filter-content-recommend');
+    const indexFilterContent = document.getElementById('mobile-filter-content-index');
+    
+    if (!mobileFilterContent && wrapper) {
+      mobileFilterContent = document.createElement('div');
+      mobileFilterContent.id = 'mobile-filter-content-recommend';
+      mobileFilterContent.className = 'mobile-filter-content mobile-filter-content-recommend';
+      mobileFilterContent.setAttribute('aria-hidden', 'false');
+      wrapper.appendChild(mobileFilterContent);
+    }
+    
     if (!mobileFilterContent) {
       return;
     }
     
     if (window.innerWidth > 991 || !showFilters) {
       mobileFilterContent.innerHTML = '';
+      if (indexFilterContent) {
+        indexFilterContent.remove();
+      }
       return;
+    }
+    
+    if (indexFilterContent) {
+      indexFilterContent.remove();
     }
     
     mobileFilterContent.innerHTML = '';
@@ -255,7 +273,7 @@ const Recommend = () => {
               value={category}
               onChange={handleCategoryChange}
             >
-              <option value="content">From your profile</option>
+              <option value="content">All combined</option>
               <optgroup label="from features you may like...">
                 <option value="plot">Storylines</option>
                 <option value="cast">Cast</option>

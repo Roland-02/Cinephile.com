@@ -110,6 +110,12 @@ li {
   }
 }
 
+@media screen and (max-width: 768px) {
+  .row .col-lg-6.col-md-6.col-sm-12:nth-child(2) {
+      margin-top: 50px;
+  }
+}
+
 // Mobile responsive styles - add margin between favourites and analytics
 @include mobile {
   .row {
