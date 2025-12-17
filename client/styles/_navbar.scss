@@ -487,9 +487,20 @@
   }
 }
 
+.mobile-menu-bottom-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+}
+
 .mobile-menu-item-form {
   margin: 0;
   padding: 0;
+  
+  .mobile-menu-item-button {
+    border-top: 2px solid var(--border-color) !important;
+    border-bottom: none !important;
+  }
 }
 
 .mobile-menu-item-button {
@@ -515,15 +526,17 @@
 }
 
 .mobile-theme-toggle {
-  margin-top: auto;
   border-top: 2px solid var(--border-color) !important;
   border-bottom: none !important;
   font-weight: 500;
+  font-size: $font-size-sm;
+  padding: $spacing-sm $spacing-lg !important;
+  margin-top: 0 !important;
   
   span {
     display: flex;
     align-items: center;
-    gap: $spacing-sm;
+    gap: 6px;
   }
   
   svg {
