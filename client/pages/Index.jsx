@@ -235,6 +235,14 @@ const Index = () => {
             handleFilterSubmit(e);
           });
           
+          // Attach reset button handler
+          const resetButton = clonedForm.querySelector('button[type="button"]');
+          if (resetButton) {
+            resetButton.addEventListener('click', () => {
+              handleFilterReset();
+            });
+          }
+          
           // Update select values and attach change handlers
           ['filterRating', 'filterGenre', 'filterRuntime', 'filterYear'].forEach(id => {
             const select = clonedForm.querySelector(`#${id}`);
@@ -291,12 +299,13 @@ const Index = () => {
   const getFilms = async (startGlobalIndex) => {
     try {
       const filmsSource = localStorage.getItem('films-source');
+      const startPage = Math.floor(startGlobalIndex / PAGE_SIZE) + 1;
+      const endPage = Math.floor(startGlobalIndex / PAGE_SIZE) + 2;
+
       let allFilmsData = [];
 
       if (filtered) {
         // Map global index to backend pages using PAGE_SIZE
-        const startPage = Math.floor(startGlobalIndex / PAGE_SIZE) + 1;
-        const endPage = Math.floor((startGlobalIndex + PAGE_SIZE - 1) / PAGE_SIZE) + 1;
         for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
           const response = await fetch(`/api/filteredPageFilms?page=${pageNum}`);
           if (response.ok) {
@@ -305,57 +314,21 @@ const Index = () => {
           }
         }
       } else if (filmsSource) {
-        const films_JSON = JSON.parse(filmsSource);
-        if (films_JSON.length < PAGE_SIZE) {
-          allFilmsData = films_JSON.slice(0);
-        } else {
-          const endIndex = Math.min(startGlobalIndex + PAGE_SIZE, films_JSON.length);
-          allFilmsData = films_JSON.slice(startGlobalIndex, endIndex);
-        }
+        const films_JSON = JSON.parse(localStorage.getItem('films-source'));
+        allFilmsData = films_JSON.slice(startGlobalIndex, startGlobalIndex + PAGE_SIZE);
       } else {
-        // Map global index to backend pages using PAGE_SIZE
-        const startPage = Math.floor(startGlobalIndex / PAGE_SIZE) + 1;
-        const endPage = Math.floor((startGlobalIndex + PAGE_SIZE - 1) / PAGE_SIZE) + 1;
-        const cacheKey = 'indexPageFilms';
-        
-        // Load cache if it exists
-        let cachedPages = {};
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          try {
-            cachedPages = JSON.parse(cached);
-          } catch (e) {
-            console.error('Error parsing cached index page films:', e);
-          }
-        }
-        
-        // Fetch any missing pages in the range
+        // Load all pages needed for 250 films
         for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
-          if (!cachedPages[`page_${pageNum}`]) {
-            const response = await fetch(`/api/indexPageFilms?page=${pageNum}`);
-            if (response.ok) {
-              const pageData = await response.json();
-              cachedPages[`page_${pageNum}`] = pageData;
-              
-              // Update cache with new page
-              try {
-                localStorage.setItem(cacheKey, JSON.stringify(cachedPages));
-              } catch (e) {
-                console.error('Error caching index page films:', e);
-              }
-            }
-          }
-        }
-        
-        // Collect films from cache for the requested range
-        for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
-          if (cachedPages[`page_${pageNum}`]) {
-            allFilmsData = allFilmsData.concat(cachedPages[`page_${pageNum}`]);
+          const response = await fetch(`/api/indexPageFilms?page=${pageNum}`);
+          if (response.ok) {
+            const pageData = await response.json();
+            allFilmsData = allFilmsData.concat(pageData);
           }
         }
       }
 
       return allFilmsData.slice(0, PAGE_SIZE);
+
     } catch (error) {
       console.error('Error fetching films:', error);
       return [];
@@ -794,6 +767,39 @@ const Index = () => {
     setShowFilters(false);
   };
 
+  const handleFilterReset = async () => {
+    const defaultFilters = { rating: 'Any', genre: 'Any', runtime: 'Any', year: 'Any' };
+    setFilterValues(defaultFilters);
+    localStorage.setItem('activeFilters', JSON.stringify(defaultFilters));
+
+    // Update mobile filter form selects to "Any"
+    if (window.innerWidth <= 991) {
+      const mobileFilterContent = document.getElementById('mobile-filter-content');
+      if (mobileFilterContent) {
+        const form = mobileFilterContent.querySelector('form');
+        if (form) {
+          ['filterRating', 'filterGenre', 'filterRuntime', 'filterYear'].forEach(id => {
+            const select = form.querySelector(`#${id}`);
+            if (select) {
+              select.value = 'Any';
+            }
+          });
+        }
+      }
+    }
+
+    // Clear index page films cache when filters are reset
+    localStorage.removeItem('indexPageFilms');
+    localStorage.removeItem('films-source');
+
+    setFiltered(false);
+    setOutside(false);
+    setFilmIndex(0);
+    setCacheStartIndex(0);
+    setFilmCache([]);
+    await loadFilms(0);
+  };
+
   if (loading || !currentFilm) {
     return (
       <div className="view-container" style={{ paddingTop: '75px' }}>
@@ -1123,9 +1129,14 @@ const Index = () => {
                     </select>
                   </div>
 
-                  <button type="submit" className="btn btn-primary mt-3">
-                    apply
-                  </button>
+                  <div className="d-flex gap-2 mt-3">
+                    <button type="submit" className="btn btn-primary" style={{ flex: '2' }}>
+                      apply
+                    </button>
+                    <button type="button" className="btn btn-secondary" style={{ flex: '1' }} onClick={handleFilterReset}>
+                      reset
+                    </button>
+                  </div>
                 </form>
               </div>
             )}
