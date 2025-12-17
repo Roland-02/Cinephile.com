@@ -86,14 +86,14 @@ figcaption {
   position: absolute;
   inset: 0;
   display: none;
-  color: $color-black;
+  color: var(--text-color);
   font-size: $font-size-xs;
   text-align: left;
   padding: $spacing-sm;
   overflow-y: auto;
   overflow-x: hidden;
   opacity: 0.8;
-  // background-color: rgba($color-white, 0.95);
+  background-color: var(--bg-color);
   box-sizing: border-box;
   
   p {
@@ -151,15 +151,15 @@ figcaption {
       font-family: inherit;
       font-size: $font-size-lg;
       font-weight: 500;
-      color: $color-black;
+      color: var(--text-color);
       padding: $spacing-md $spacing-lg;
       transition: all $transition-fast;
       display: block;
       text-decoration: none;
-      border-bottom: 1px solid $color-grey-light;
+      border-bottom: 1px solid var(--grey-light);
       
       &:hover {
-        background-color: $color-grey-light;
+        background-color: var(--grey-light);
         padding-left: $spacing-xl;
       }
       

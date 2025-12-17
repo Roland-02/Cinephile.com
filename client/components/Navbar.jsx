@@ -1,54 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getSession, signOut } from '../utils/auth';
+import { useTheme } from '../App';
 
 const Navbar = ({ onLoginClick }) => {
   const [session, setSession] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     setSession(getSession());
   }, []);
-  
+
   const toggleMenu = () => {
     const newMenuState = !isMenuOpen;
     setIsMenuOpen(newMenuState);
-    
+
     // Close filter menu if mobile menu is opening (only on mobile views)
     if (newMenuState && window.innerWidth <= 991) {
       setIsFilterOpen(false);
       window.dispatchEvent(new CustomEvent('closeFilterMenu'));
     }
   };
-  
+
   const toggleFilter = () => {
     const newFilterState = !isFilterOpen;
     setIsFilterOpen(newFilterState);
-    
+
     // Close mobile menu if filter menu is opening (only on mobile views)
     if (newFilterState && window.innerWidth <= 991) {
       setIsMenuOpen(false);
     }
-    
+
     // Dispatch event to Index component
     window.dispatchEvent(new CustomEvent('toggleFilterMenu', { detail: newFilterState }));
   };
-  
+
   const closeFilter = () => {
     setIsFilterOpen(false);
     window.dispatchEvent(new CustomEvent('toggleFilterMenu', { detail: false }));
   };
-  
+
   const closeMenu = () => {
     setIsMenuOpen(false);
   };
-  
+
   const handleMenuLinkClick = () => {
     closeMenu();
   };
-  
+
   const handleHomeClick = () => {
     localStorage.setItem('shouldShuffle', 'true');
     closeMenu();
@@ -81,29 +83,47 @@ const Navbar = ({ onLoginClick }) => {
   return (
     <>
       <div className="nav-container">
-        <div className="nav-bar py-1 bg-white border-bottom">
+        <div className="nav-bar py-1 border-bottom">
           {/* Left elements - hidden on mobile when authenticated */}
           <div className="nav-left">
             {isAuthenticated ? (
-              <form onSubmit={handleSignOut} className="d-inline-block desktop-only">
-                <button type="submit" className="nav-link d-inline-block" style={{ border: 'none', padding: '5px', background: 'none' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="black" className="bi bi-box-arrow-left" viewBox="0 0 16 16">
-                    <path fillRule="evenodd" d="M6 12.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0-.5.5v2a.5.5 0 0 1-1 0v-2A1.5 1.5 0 0 1 6.5 2h8A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 5 12.5v-2a.5.5 0 0 1 1 0z" />
-                    <path fillRule="evenodd" d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708z" />
-                  </svg>
+              <>
+                <form onSubmit={handleSignOut} className="d-inline-block desktop-only">
+                  <button type="submit" className="nav-link d-inline-block" style={{ border: 'none', padding: '5px', background: 'none' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" className="bi bi-box-arrow-left" viewBox="0 0 16 16">
+                      <path fillRule="evenodd" d="M6 12.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0-.5.5v2a.5.5 0 0 1-1 0v-2A1.5 1.5 0 0 1 6.5 2h8A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 5 12.5v-2a.5.5 0 0 1 1 0z" />
+                      <path fillRule="evenodd" d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708z" />
+                    </svg>
+                  </button>
+                </form>
+                <button
+                  onClick={toggleTheme}
+                  className="nav-link theme-toggle-btn desktop-only"
+                  style={{ border: 'none', padding: '5px', background: 'none', cursor: 'pointer', marginLeft: '15px' }}
+                  aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+                >
+                  {theme === 'light' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-moon-fill" viewBox="0 0 16 16">
+                      <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+                      <path d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708" />
+                    </svg>
+                  )}
                 </button>
-              </form>
+              </>
             ) : (
-              <button 
+              <button
                 onClick={handleLoginIconClick}
-                className="nav-link d-inline-block" 
+                className="nav-link d-inline-block"
                 style={{ border: 'none', padding: '5px', background: 'none', cursor: 'pointer' }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="50"
                   height="50"
-                  fill="black"
+                  fill="currentColor"
                   className="bi bi-box-arrow-in-right"
                   viewBox="0 0 16 16"
                   style={{ cursor: 'pointer' }}
@@ -154,7 +174,7 @@ const Navbar = ({ onLoginClick }) => {
 
           {/* Mobile filter button - on the left */}
           {isAuthenticated && (window.location.pathname === '/' || window.location.pathname === '/recommend') && (
-            <button 
+            <button
               className="mobile-filter-btn"
               onClick={toggleFilter}
               aria-label="Toggle filter"
@@ -163,7 +183,7 @@ const Navbar = ({ onLoginClick }) => {
                 xmlns="http://www.w3.org/2000/svg"
                 width="32"
                 height="32"
-                fill="black"
+                fill="currentColor"
                 viewBox="0 0 16 16"
               >
                 {isFilterOpen ? (
@@ -182,7 +202,7 @@ const Navbar = ({ onLoginClick }) => {
 
           {/* Mobile menu button - on the right */}
           {isAuthenticated && (
-            <button 
+            <button
               className="mobile-menu-btn"
               onClick={toggleMenu}
               aria-label="Toggle menu"
@@ -191,7 +211,7 @@ const Navbar = ({ onLoginClick }) => {
                 xmlns="http://www.w3.org/2000/svg"
                 width="32"
                 height="32"
-                fill="black"
+                fill="currentColor"
                 viewBox="0 0 16 16"
               >
                 {isMenuOpen ? (
@@ -209,17 +229,17 @@ const Navbar = ({ onLoginClick }) => {
       {isAuthenticated && (
         <>
           {/* Overlay */}
-          <div 
+          <div
             className={`mobile-menu-overlay ${isMenuOpen ? 'open' : ''}`}
             onClick={closeMenu}
           />
-          
+
           {/* Slide-out menu */}
           <div className={`mobile-menu ${isMenuOpen ? 'open' : ''}`}>
             <div className="mobile-menu-header">
               <h2>Menu</h2>
               <button onClick={closeMenu} className="mobile-menu-close">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" viewBox="0 0 16 16">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                   <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
                 </svg>
               </button>
@@ -265,6 +285,27 @@ const Navbar = ({ onLoginClick }) => {
                   Sign Out
                 </button>
               </form>
+              <button
+                onClick={() => {
+                  toggleTheme();
+                  closeMenu();
+                }}
+                className="mobile-menu-item mobile-menu-item-button mobile-theme-toggle"
+                aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {theme === 'light' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-moon-fill" viewBox="0 0 16 16">
+                      <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+                    <path d="M12 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+                  </svg>
+                  )}
+                  {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                </span>
+              </button>
             </div>
           </div>
         </>
@@ -274,17 +315,17 @@ const Navbar = ({ onLoginClick }) => {
       {isAuthenticated && (window.location.pathname === '/' || window.location.pathname === '/recommend') && (
         <>
           {/* Overlay */}
-          <div 
+          <div
             className={`mobile-filter-overlay ${isFilterOpen ? 'open' : ''}`}
             onClick={closeFilter}
           />
-          
+
           {/* Slide-out filter menu from left */}
           <div className={`mobile-filter-menu ${isFilterOpen ? 'open' : ''}`}>
             <div className="mobile-filter-header">
               <h2>Filters</h2>
               <button onClick={closeFilter} className="mobile-filter-close">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="black" viewBox="0 0 16 16">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                   <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
                 </svg>
               </button>

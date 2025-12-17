@@ -12,7 +12,7 @@
   align-items: center;
   
   &:hover {
-    background-color: $color-grey-light;
+    background-color: var(--grey-light);
     transform: translateY(-2px);
   }
   
@@ -101,7 +101,7 @@
   }
   
   &:hover {
-    background-color: $color-grey-light;
+    background-color: var(--grey-light);
     transform: translateY(-2px);
   }
   
@@ -136,7 +136,7 @@
   }
   
   &:hover {
-    background-color: $color-grey-light;
+    background-color: var(--grey-light);
     transform: translateY(-2px);
   }
   
@@ -223,7 +223,7 @@
 #heart-blank {
   transition: all 0.3s ease;
   cursor: pointer;
-  fill: #000;
+  fill: var(--text-color);
   
   &:hover {
     transform: scale(1.2);
@@ -241,7 +241,7 @@
 #watchlist-blank {
   transition: all 0.3s ease;
   cursor: pointer;
-  fill: #000;
+  fill: var(--text-color);
   
   &:hover {
     transform: scale(1.2);

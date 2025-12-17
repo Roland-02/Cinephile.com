@@ -32,6 +32,7 @@ const Index = () => {
   const isLoadingRef = useRef(false);
   const isLoadingUserDataRef = useRef(false);
   const loadedPagesRef = useRef(new Set()); // Track which pages have been appended to in-memory cache
+  const filterContainerRef = useRef(null);
 
   const session = getSession();
   const user_id = session?.id;
@@ -399,6 +400,23 @@ const Index = () => {
       }
     });
   }, [showFilters, filterValues]);
+
+  // Close filter box when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilters && filterContainerRef.current && !filterContainerRef.current.contains(event.target)) {
+        setShowFilters(false);
+      }
+    };
+
+    if (showFilters) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilters]);
 
   // Check if current film is in cache, load new cache if needed
   useEffect(() => {
@@ -1249,7 +1267,7 @@ const Index = () => {
     <div className="view-container">
       <div className="row">
         {/* Filters */}
-        <div className="filter-button-container">
+        <div className="filter-button-container" ref={filterContainerRef}>
           <div>
             {!showFilters ? (
               <svg
@@ -1262,6 +1280,7 @@ const Index = () => {
                 viewBox="0 0 16 16"
                 onClick={() => setShowFilters(true)}
                 style={{ cursor: 'pointer' }}
+                fill="currentColor"
               >
                 <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
                 <path d="M7 11.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5" />
@@ -1277,6 +1296,7 @@ const Index = () => {
                 viewBox="0 0 16 16"
                 onClick={() => setShowFilters(false)}
                 style={{ cursor: 'pointer' }}
+                fill="currentColor"
               >
                 <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16M3.5 5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1 0-1M5 8.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m2 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5" />
               </svg>
@@ -1286,7 +1306,7 @@ const Index = () => {
               <div
                 id="filterOptions"
                 className="container border border-2 m-2 p-3"
-                style={{ backgroundColor: 'white', position: 'relative', zIndex: 10000 }}
+                style={{ position: 'relative', zIndex: 10000 }}
               >
                 <form onSubmit={handleFilterSubmit}>
                   {/* Rating */}
@@ -1392,7 +1412,6 @@ const Index = () => {
 
               {/* Previous button */}
               <button
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0)' }}
                 id="prev-btn"
                 className="carousel-control-prev"
                 type="button"
@@ -1403,7 +1422,7 @@ const Index = () => {
                   xmlns="http://www.w3.org/2000/svg"
                   width="64"
                   height="64"
-                  fill="grey"
+                  fill="currentColor"
                   className="bi bi-caret-left-fill"
                   viewBox="0 0 16 16"
                 >
@@ -1413,7 +1432,6 @@ const Index = () => {
 
               {/* Next button */}
               <button
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0)' }}
                 id="next-btn"
                 className="carousel-control-next"
                 type="button"
@@ -1424,7 +1442,7 @@ const Index = () => {
                   xmlns="http://www.w3.org/2000/svg"
                   width="64"
                   height="64"
-                  fill="grey"
+                  fill="currentColor"
                   className="bi bi-caret-right-fill"
                   viewBox="0 0 16 16"
                 >

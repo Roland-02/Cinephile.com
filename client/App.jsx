@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
@@ -8,8 +8,31 @@ import Search from './pages/Search';
 import Watchlist from './pages/Watchlist';
 import Recommend from './pages/Recommend';
 
+const ThemeContext = createContext();
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within ThemeProvider');
+  }
+  return context;
+};
+
 function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme || 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
 
   const handleOpenAuth = () => {
     setAuthModalOpen(true);
@@ -25,27 +48,29 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="App">
-        <Navbar onLoginClick={handleOpenAuth} />
-        <AuthModal 
-          isOpen={authModalOpen} 
-          onClose={handleCloseAuth}
-          onSuccess={handleAuthSuccess}
-        />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/index" element={<Index />} />
-          <Route path="/discover" element={<Index />} />
-          <Route path="/home" element={<Index />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/watchlist" element={<Watchlist />} />
-          <Route path="/recommend" element={<Recommend />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </Router>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      <Router>
+        <div className="App">
+          <Navbar onLoginClick={handleOpenAuth} />
+          <AuthModal 
+            isOpen={authModalOpen} 
+            onClose={handleCloseAuth}
+            onSuccess={handleAuthSuccess}
+          />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/index" element={<Index />} />
+            <Route path="/discover" element={<Index />} />
+            <Route path="/home" element={<Index />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/watchlist" element={<Watchlist />} />
+            <Route path="/recommend" element={<Recommend />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </Router>
+    </ThemeContext.Provider>
   );
 }
 

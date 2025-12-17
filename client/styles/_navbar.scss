@@ -14,11 +14,12 @@
   height: $navbar-height;
   z-index: $navbar-z-index;
   @include flex-between;
-  background-color: $color-white;
-  border-bottom: $border-width $border-style $color-black;
+  background-color: var(--bg-color);
+  border-bottom: $border-width $border-style var(--border-color);
   box-sizing: border-box;
   padding: 0 $spacing-xl;
   min-width: 0; // Allow flex items to shrink
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .nav-left,
@@ -64,6 +65,8 @@
     margin: 0;
     letter-spacing: 2px;
     pointer-events: auto;
+    color: var(--text-color);
+    transition: color 0.3s ease;
   }
   
   &:hover {
@@ -87,7 +90,9 @@
   margin: $spacing-xs 4px;
   padding: $spacing-xs $spacing-sm;
   @include border-black;
-  background-color: $color-white;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border-color: var(--border-color);
   cursor: pointer;
   border-radius: $border-radius;
   transition: all $transition-fast;
@@ -100,7 +105,7 @@
   
   &:hover {
     cursor: pointer;
-    background-color: $color-grey-light;
+    background-color: var(--grey-light);
     transform: translateY(-1px);
   }
   
@@ -110,14 +115,14 @@
   
   // Remove Bootstrap's border class effect to prevent double borders
   &.border {
-    border: $border-width $border-style $color-black !important;
+    border: $border-width $border-style var(--border-color) !important;
   }
   
   p {
     font-size: clamp(11px, 1.2vw, $font-size-base);
     margin: 0;
     font-weight: 500;
-    color: $color-black;
+    color: var(--text-color);
   }
   
   // Active state
@@ -145,15 +150,25 @@
     padding: $spacing-xs;
     display: inline-block;
     transition: transform $transition-fast;
+    color: var(--text-color);
     
     svg {
-      transition: transform $transition-fast;
+      transition: transform $transition-fast, fill 0.3s ease;
       transform-origin: center;
       display: block;
+      fill: currentColor;
     }
     
     &:hover svg {
       transform: scale(1.1);
+    }
+  }
+  
+  .theme-toggle-btn {
+    color: var(--text-color);
+    
+    svg {
+      fill: currentColor;
     }
   }
   
@@ -308,9 +323,11 @@
   padding: $spacing-xs;
   cursor: pointer;
   z-index: $navbar-z-index + 1;
+  color: var(--text-color);
   
   svg {
     display: block;
+    fill: currentColor;
   }
   
   @include mobile {
@@ -329,9 +346,11 @@
   padding: $spacing-xs;
   cursor: pointer;
   z-index: $navbar-z-index + 1;
+  color: var(--text-color);
   
   svg {
     display: block;
+    fill: currentColor;
   }
   
   @include mobile {
@@ -379,15 +398,18 @@
   right: -280px;
   width: 280px;
   height: 100%;
-  background-color: $color-white;
-  border-left: $border-width $border-style $color-black;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border-left: $border-width $border-style var(--border-color);
   z-index: 111;
-  transition: right $transition-fast;
+  transition: right $transition-fast, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   overflow-y: auto;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
   
   @include mobile {
-    display: block;
+    display: flex;
     
     &.open {
       right: 0;
@@ -401,8 +423,9 @@
 
 .mobile-menu-header {
   padding: $spacing-lg;
-  border-bottom: $border-width $border-style $color-black;
-  background-color: $color-white;
+  border-bottom: $border-width $border-style var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-color);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -410,11 +433,13 @@
   justify-content: space-between;
   align-items: center;
   flex-direction: row-reverse;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   
   h2 {
     margin: 0;
     font-size: $font-size-xl;
     letter-spacing: 1px;
+    color: var(--text-color);
   }
 }
 
@@ -426,21 +451,32 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-color);
+  
+  svg {
+    fill: currentColor;
+  }
 }
 
+.mobile-menu-items {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+}
 
 .mobile-menu-item {
   display: block;
   padding: $spacing-md $spacing-lg;
   text-decoration: none;
-  color: $color-black;
-  border-bottom: 1px solid $color-grey-light;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--grey-light);
   transition: all $transition-fast;
   font-size: $font-size-lg;
   font-weight: 500;
   
   &:hover {
-    background-color: $color-grey-light;
+    background-color: var(--grey-light);
     padding-left: $spacing-xl;
   }
   
@@ -465,16 +501,33 @@
   font-family: inherit;
   font-size: $font-size-lg;
   font-weight: 400;
-  color: $color-black;
+  color: var(--text-color);
   padding: $spacing-md $spacing-lg;
   transition: all $transition-fast;
   display: block;
   text-decoration: none;
-  border-bottom: 1px solid $color-grey-light;
+  border-bottom: 1px solid var(--grey-light);
   
   &:hover {
-    background-color: $color-grey-light;
+    background-color: var(--grey-light);
     padding-left: $spacing-xl;
+  }
+}
+
+.mobile-theme-toggle {
+  margin-top: auto;
+  border-top: 2px solid var(--border-color) !important;
+  border-bottom: none !important;
+  font-weight: 500;
+  
+  span {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+  
+  svg {
+    flex-shrink: 0;
   }
 }
 
@@ -550,10 +603,11 @@
   left: -280px;
   width: 280px;
   height: 100%;
-  background-color: $color-white;
-  border-right: $border-width $border-style $color-black;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border-right: $border-width $border-style var(--border-color);
   z-index: 111;
-  transition: left $transition-fast;
+  transition: left $transition-fast, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   overflow-y: auto;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
   
@@ -572,19 +626,22 @@
 
 .mobile-filter-header {
   padding: $spacing-lg;
-  border-bottom: $border-width $border-style $color-black;
-  background-color: $color-white;
+  border-bottom: $border-width $border-style var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-color);
   position: sticky;
   top: 0;
   z-index: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   
   h2 {
     margin: 0;
     font-size: $font-size-xl;
     letter-spacing: 1px;
+    color: var(--text-color);
   }
 }
 
@@ -596,6 +653,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-color);
+  
+  svg {
+    fill: currentColor;
+  }
 }
 
 .mobile-filter-contents {

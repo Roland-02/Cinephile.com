@@ -17,9 +17,16 @@
     .search-input {
       flex: 1;
       padding: $spacing-sm $spacing-md;
-      border: $border-width $border-style $color-black;
+      border: $border-width $border-style var(--border-color);
       border-radius: $border-radius;
       font-size: $font-size-base;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      
+      &::placeholder {
+        color: var(--text-color);
+        opacity: 0.7;
+      }
       
       // Remove browser default clear button
       &::-webkit-search-cancel-button {
@@ -62,9 +69,10 @@
     display: inline-flex;
     align-items: center;
     padding: $spacing-xs $spacing-md;
-    border: $border-width $border-style $color-black;
+    border: $border-width $border-style var(--border-color);
     border-radius: $border-radius;
-    background-color: $color-white;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     font-size: $font-size-base;
     
     .search-query-close {
@@ -148,14 +156,14 @@ figcaption {
   position: absolute;
   inset: 0;
   display: none;
-  color: $color-black;
+  color: var(--text-color);
   font-size: $font-size-xs;
   text-align: left;
   padding: $spacing-sm;
   overflow-y: auto;
   overflow-x: hidden;
   opacity: 0.8;
-  // background-color: rgba($color-white, 0.95);
+  background-color: var(--bg-color);
   box-sizing: border-box;
   
   p {

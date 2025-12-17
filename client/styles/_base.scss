@@ -1,51 +1,61 @@
 @use 'variables' as *;
 @use 'mixins' as *;
 
+// CSS Custom Properties for theming
+:root {
+  --bg-color: #{$color-white};
+  --text-color: #{$color-black};
+  --border-color: #{$color-black};
+  --grey-light: #{$color-grey-light};
+}
+
+[data-theme="dark"] {
+  --bg-color: #{$color-dark-bg};
+  --text-color: #{$color-dark-text};
+  --border-color: #{$color-dark-border};
+  --grey-light: #2a2a2a;
+}
+
 // Reset and base styles
 * {
   box-sizing: border-box;
-  border-color: $color-black !important;
+  border-color: var(--border-color) !important;
 }
 
 html,
 body {
-  background-color: $color-white !important;
-  color: $color-black !important;
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
   margin: 0;
   padding: 0;
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {
-  background-color: $color-white;
+  background-color: var(--bg-color);
   min-height: 100vh;
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
+  transition: background-color 0.3s ease;
 }
 
 .App {
-  background-color: $color-white;
+  background-color: var(--bg-color);
   min-height: 100vh;
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
-}
-
-// Override dark mode
-.bg-dark,
-.dark,
-[data-theme="dark"] {
-  background-color: $color-white !important;
-  color: $color-black !important;
+  transition: background-color 0.3s ease;
 }
 
 // Global container styles
 .container,
 .container-fluid {
-  background-color: $color-white !important;
+  background-color: var(--bg-color) !important;
 }
 
 // Page container - for main page containers with top padding
@@ -65,8 +75,15 @@ input,
 textarea,
 select {
   @include border-black;
-  background-color: $color-white !important;
-  color: $color-black !important;
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  
+  &::placeholder {
+    color: var(--text-color);
+    opacity: 0.7;
+  }
 }
 
 // Buttons - remove double borders
@@ -89,8 +106,11 @@ button,
 .card,
 .panel,
 .modal-content {
-  background-color: $color-white !important;
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
   @include border-black;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 

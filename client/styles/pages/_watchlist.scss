@@ -67,13 +67,14 @@ figcaption {
   position: absolute;
   inset: 0;
   display: none;
-  color: $color-black;
+  color: var(--text-color);
   font-size: $font-size-xs;
   text-align: left;
   padding: $spacing-sm;
   overflow-y: auto;
   overflow-x: hidden;
-  background-color: rgba($color-white, 0.95);
+  background-color: var(--bg-color);
+  opacity: 0.95;
   box-sizing: border-box;
   
   p {
