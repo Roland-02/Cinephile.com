@@ -17,6 +17,8 @@
 
 .films-container {
   margin: $spacing-xs;
+  margin-top: $spacing-xl;
+  padding-top: $spacing-lg;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -124,5 +126,50 @@ figcaption {
   font-size: $font-size-lg;
   @include flex-center;
   flex-direction: column;
+}
+
+// Mobile filter buttons inside slide-out filter menu
+@include mobile {
+  #mobile-filter-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: $spacing-md 0;
+    padding-top: 0;
+    
+    .mobile-filter-label {
+      margin: 0 $spacing-md $spacing-sm;
+      font-weight: 600;
+      font-size: $font-size-base;
+    }
+    
+    .mobile-filter-button {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: $font-size-lg;
+      font-weight: 500;
+      color: $color-black;
+      padding: $spacing-md $spacing-lg;
+      transition: all $transition-fast;
+      display: block;
+      text-decoration: none;
+      border-bottom: 1px solid $color-grey-light;
+      
+      &:hover {
+        background-color: $color-grey-light;
+        padding-left: $spacing-xl;
+      }
+      
+      &.active {
+        background-color: $color-orange-light;
+        font-weight: 600;
+        border-left: 4px solid $color-orange;
+      }
+    }
+  }
 }
 

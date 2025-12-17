@@ -5,6 +5,14 @@ import { getSession } from '../utils/auth';
 
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
+const categoryOptions = [
+  { value: 'content', label: 'From your profile' },
+  { value: 'plot', label: 'Storylines' },
+  { value: 'cast', label: 'Cast' },
+  { value: 'crew', label: 'Crew' },
+  { value: 'genre', label: 'Genres' },
+];
+
 const Recommend = () => {
   const [films, setFilms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,6 +21,7 @@ const Recommend = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const session = getSession();
   const user_id = session?.id;
   const navigate = useNavigate();
@@ -151,9 +160,52 @@ const Recommend = () => {
     }
   }, [category]);
 
-  const handleCategoryChange = (e) => {
+  const handleCategoryChange = useCallback((e) => {
     setCategory(e.target.value);
-  };
+  }, []);
+
+  const handleMobileCategoryClick = useCallback((value) => {
+    setCategory(value);
+  }, []);
+
+  // Listen for filter menu toggle events from Navbar (mobile)
+  useEffect(() => {
+    const handleToggleFilterMenu = (event) => {
+      if (window.innerWidth <= 991) {
+        setShowFilters(event.detail);
+      }
+    };
+    
+    window.addEventListener('toggleFilterMenu', handleToggleFilterMenu);
+    
+    return () => {
+      window.removeEventListener('toggleFilterMenu', handleToggleFilterMenu);
+    };
+  }, []);
+
+  // Render filter options into the mobile filter menu as buttons
+  useEffect(() => {
+    const mobileFilterContent = document.getElementById('mobile-filter-content');
+    if (!mobileFilterContent) {
+      return;
+    }
+    
+    if (window.innerWidth > 991 || !showFilters) {
+      mobileFilterContent.innerHTML = '';
+      return;
+    }
+    
+    mobileFilterContent.innerHTML = '';
+    
+    categoryOptions.forEach((option) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `mobile-filter-button ${category === option.value ? 'active' : ''}`;
+      button.textContent = option.label;
+      button.addEventListener('click', () => handleMobileCategoryClick(option.value));
+      mobileFilterContent.appendChild(button);
+    });
+  }, [showFilters, category, handleMobileCategoryClick]);
 
   const handleFilmClick = (film, filmIndex) => {
     localStorage.setItem('filmIndex', filmIndex);
@@ -192,7 +244,7 @@ const Recommend = () => {
   return (
     <div className="container page-container">
       <div className="row justify-content-center align-items-center">
-        <div className="col-lg-6 col-md-6">
+        <div className="col-lg-6 col-md-6 desktop-only">
           <div id="showMe">
             <label htmlFor="showMeOptions" className="h3 form-label m-2">
               filter:{' '}

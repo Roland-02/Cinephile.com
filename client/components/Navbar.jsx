@@ -153,7 +153,7 @@ const Navbar = ({ onLoginClick }) => {
           </div>
 
           {/* Mobile filter button - on the left */}
-          {isAuthenticated && window.location.pathname === '/' && (
+          {isAuthenticated && (window.location.pathname === '/' || window.location.pathname === '/recommend') && (
             <button 
               className="mobile-filter-btn"
               onClick={toggleFilter}
@@ -271,7 +271,7 @@ const Navbar = ({ onLoginClick }) => {
       )}
 
       {/* Mobile filter slide-out menu */}
-      {isAuthenticated && window.location.pathname === '/' && (
+      {isAuthenticated && (window.location.pathname === '/' || window.location.pathname === '/recommend') && (
         <>
           {/* Overlay */}
           <div 
@@ -290,7 +290,7 @@ const Navbar = ({ onLoginClick }) => {
               </button>
             </div>
             <div id="mobile-filter-content" className="mobile-filter-content">
-              {/* Filter form will be rendered here by Index component */}
+              {/* Filter form will be rendered here by Index/Recommend component */}
             </div>
           </div>
         </>
