@@ -14,8 +14,8 @@
   background-color: $color-white;
   box-sizing: border-box;
   
-  // Remove top padding on mobile
-  @include mobile {
+  // Remove top padding only when screen is less than 766px
+  @media screen and (max-width: 765px) {
     padding-top: 0;
   }
 }
