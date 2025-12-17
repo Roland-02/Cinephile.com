@@ -31,6 +31,7 @@ const Index = () => {
   });
   const isLoadingRef = useRef(false);
   const isLoadingUserDataRef = useRef(false);
+  const loadedPagesRef = useRef(new Set()); // Track which pages have been appended to in-memory cache
 
   const session = getSession();
   const user_id = session?.id;
@@ -140,6 +141,7 @@ const Index = () => {
         const defaultFilters = { rating: 'Any', genre: 'Any', runtime: 'Any', year: 'Any' };
         setFilterValues(defaultFilters);
         localStorage.setItem('activeFilters', JSON.stringify(defaultFilters));
+        loadedPagesRef.current.clear(); // Reset loaded pages tracking for shuffle
         await loadFilms(0);
       };
       shuffleAndReset();
@@ -173,17 +175,54 @@ const Index = () => {
 
     if (!localStorage.getItem('films-source')) {
       const savedFilters = localStorage.getItem('activeFilters');
+      let hasActiveFilters = false;
+      
       if (savedFilters) {
         try {
           const filters = JSON.parse(savedFilters);
           setFilterValues(filters);
-          const hasActiveFilters = !(filters.rating === 'Any' && filters.genre === 'Any' &&
+          hasActiveFilters = !(filters.rating === 'Any' && filters.genre === 'Any' &&
             filters.runtime === 'Any' && filters.year === 'Any');
           if (hasActiveFilters) {
             setFiltered(true);
           }
         } catch (e) {
           console.error('Error parsing saved filters:', e);
+        }
+      }
+
+      // For normal films (not filtered), preload all pages up to the target page from cache
+      if (!hasActiveFilters) {
+        try {
+          const cached = localStorage.getItem('indexPageFilms');
+          if (cached) {
+            const cachedPages = JSON.parse(cached);
+            const targetPageNum = Math.floor(initialIndex / PAGE_SIZE) + 1;
+            const allPagesInCache = [];
+            let allPagesAvailable = true;
+
+            // Check if all pages from 1 to targetPageNum are in cache
+            for (let pageNum = 1; pageNum <= targetPageNum; pageNum++) {
+              const pageKey = `page_${pageNum}`;
+              if (cachedPages[pageKey] && cachedPages[pageKey].length > 0) {
+                allPagesInCache.push(...cachedPages[pageKey]);
+                loadedPagesRef.current.add(pageNum);
+              } else {
+                allPagesAvailable = false;
+                break;
+              }
+            }
+
+            // If all required pages are in cache, load them immediately
+            if (allPagesAvailable && allPagesInCache.length > 0) {
+              setFilmCache(allPagesInCache);
+              setLoading(false); // We have data, no need to show loading
+              loadUserData();
+              return; // Skip the async loadFilms call
+            }
+          }
+        } catch (e) {
+          // If cache parsing fails, continue with normal loading
         }
       }
     }
@@ -283,12 +322,24 @@ const Index = () => {
         updateFilm();
       }
     } else {
-      if (filmIndex < cacheStartIndex || filmIndex >= cacheEndIndex) {
-        if (!loading) {
-          const newCacheStart = Math.floor(filmIndex / PAGE_SIZE) * PAGE_SIZE;
-          loadFilms(newCacheStart);
+      // Normal film batching: cumulative cache with preloading
+      if (!loading && !isLoadingRef.current) {
+        // Calculate current page (1-indexed)
+        const currentPage = Math.floor(filmIndex / PAGE_SIZE) + 1;
+        const nextPage = currentPage + 1;
+        
+        // Preload trigger: when at last item of current page (e.g., index 9, 19, 29 for PAGE_SIZE 10)
+        const isAtPageBoundary = filmIndex === (currentPage * PAGE_SIZE - 1);
+        
+        if (isAtPageBoundary && !loadedPagesRef.current.has(nextPage)) {
+          // Preload next page
+          const nextPageStartIndex = (nextPage - 1) * PAGE_SIZE;
+          loadFilms(nextPageStartIndex);
         }
-      } else if (filmCache.length > 0 && !loading) {
+      }
+      
+      // Update film if we have data in cache
+      if (filmCache.length > 0 && !loading && filmIndex < filmCache.length) {
         updateFilm();
       }
     }
@@ -299,8 +350,9 @@ const Index = () => {
   const getFilms = async (startGlobalIndex) => {
     try {
       const filmsSource = localStorage.getItem('films-source');
+      // Calculate page number: filmIndex 0 → page 1, filmIndex 10 → page 2, filmIndex 20 → page 3, etc.
       const startPage = Math.floor(startGlobalIndex / PAGE_SIZE) + 1;
-      const endPage = Math.floor(startGlobalIndex / PAGE_SIZE) + 2;
+      const endPage = Math.floor(filmIndex / PAGE_SIZE) + 1;
 
       let allFilmsData = [];
 
@@ -317,17 +369,42 @@ const Index = () => {
         const films_JSON = JSON.parse(localStorage.getItem('films-source'));
         allFilmsData = films_JSON.slice(startGlobalIndex, startGlobalIndex + PAGE_SIZE);
       } else {
-        // Load all pages needed for 250 films
-        for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+        // Regular index films: cumulative cache with localStorage persistence
+        const pageNum = startPage;
+        
+        // Check if this page has already been appended to in-memory cache
+        if (loadedPagesRef.current.has(pageNum)) {
+          // Page already in memory, return empty to avoid duplicate append
+          return [];
+        }
+        
+        // Load from localStorage cache or fetch from server
+        let cachedPages = {};
+        try {
+          const cached = localStorage.getItem('indexPageFilms');
+          cachedPages = cached ? JSON.parse(cached) : {};
+        } catch (e) {
+          cachedPages = {};
+        }
+     
+        const pageKey = `page_${pageNum}`;
+
+        if (cachedPages[pageKey]) {
+          // Page exists in localStorage, use it
+          allFilmsData = cachedPages[pageKey];
+        } else {
+          // Page not in localStorage, fetch from server
           const response = await fetch(`/api/indexPageFilms?page=${pageNum}`);
           if (response.ok) {
             const pageData = await response.json();
-            allFilmsData = allFilmsData.concat(pageData);
+            cachedPages[pageKey] = pageData;
+            localStorage.setItem('indexPageFilms', JSON.stringify(cachedPages));
+            allFilmsData = pageData;
           }
         }
       }
 
-      return allFilmsData.slice(0, PAGE_SIZE);
+      return allFilmsData;
 
     } catch (error) {
       console.error('Error fetching films:', error);
@@ -343,8 +420,19 @@ const Index = () => {
     try {
       const filmsData = await getFilms(startIndex);
       if (filmsData && filmsData.length > 0) {
-        setFilmCache(filmsData);
-        setCacheStartIndex(startIndex);
+        const pageNum = Math.floor(startIndex / PAGE_SIZE) + 1;
+        
+        // Only append if this page hasn't been loaded yet
+        if (!loadedPagesRef.current.has(pageNum)) {
+          setFilmCache((prev) => [...prev, ...filmsData]);
+          loadedPagesRef.current.add(pageNum);
+          
+          // For normal films, cacheStartIndex stays at 0 (cumulative cache)
+          // Only update for external source films
+          if (outside) {
+            setCacheStartIndex(startIndex);
+          }
+        }
       }
     } finally {
       setLoading(false);
@@ -354,7 +442,8 @@ const Index = () => {
 
   // Update displayed film info and user interaction state
   const updateFilm = async () => {
-    const localIndex = filmIndex - cacheStartIndex;
+    // For normal films, use direct index (cumulative cache). For external source, use offset.
+    const localIndex = outside ? filmIndex - cacheStartIndex : filmIndex;
     if (filmCache.length === 0 || localIndex < 0 || localIndex >= filmCache.length) return;
 
     let film = filmCache[localIndex];
@@ -758,6 +847,7 @@ const Index = () => {
         setFilmIndex(0);
         setCacheStartIndex(0);
         setFilmCache([]);
+        loadedPagesRef.current.clear(); // Reset loaded pages tracking
         await loadFilms(0);
       }
     } catch (error) {
@@ -792,11 +882,12 @@ const Index = () => {
     localStorage.removeItem('indexPageFilms');
     localStorage.removeItem('films-source');
 
-    setFiltered(false);
-    setOutside(false);
-    setFilmIndex(0);
-    setCacheStartIndex(0);
-    setFilmCache([]);
+        setFiltered(false);
+        setOutside(false);
+        setFilmIndex(0);
+        setCacheStartIndex(0);
+        setFilmCache([]);
+        loadedPagesRef.current.clear(); // Reset loaded pages tracking
     await loadFilms(0);
   };
 
