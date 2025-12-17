@@ -163,6 +163,16 @@
       transform: scale(1.1);
     }
   }
+
+  .about-btn {
+    &:active svg {
+      transform: scale(0.98);
+    }
+
+    &.active {
+      color: $color-orange;
+    }
+  }
   
   .theme-toggle-btn {
     color: var(--text-color);
@@ -493,6 +503,7 @@
   flex-direction: column;
 }
 
+
 .mobile-menu-item-form {
   margin: 0;
   padding: 0;
@@ -537,10 +548,15 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    transition: transform $transition-fast;
   }
   
   svg {
     flex-shrink: 0;
+  }
+  
+  &:hover span {
+    transform: translateX(calc(#{$spacing-xl} - #{$spacing-lg}));
   }
 }
 

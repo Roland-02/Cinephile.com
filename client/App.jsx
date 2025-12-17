@@ -7,6 +7,7 @@ import Profile from './pages/Profile';
 import Search from './pages/Search';
 import Watchlist from './pages/Watchlist';
 import Recommend from './pages/Recommend';
+import About from './pages/About';
 import { FilterProvider } from './components/NavbarFilter';
 
 const ThemeContext = createContext();
@@ -68,6 +69,8 @@ function App() {
               <Route path="/search" element={<Search />} />
               <Route path="/watchlist" element={<Watchlist />} />
               <Route path="/recommend" element={<Recommend />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/info" element={<Navigate to="/about" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
