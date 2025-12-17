@@ -3,6 +3,10 @@
 
 // Index page specific styles
 
+.film-details-container {
+  padding-right: clamp($spacing-lg, 4vw, 80px);
+}
+
 // Cast names styling
 .actor {
   padding: $spacing-xs $spacing-sm;
@@ -318,8 +322,7 @@
   // Button row - keep buttons side by side on mobile
   .row.d-flex.py-2 {
     .col-lg-6.col-md-6.col-sm-6 {
-      padding-left: $spacing-xs !important;
-      padding-right: $spacing-xs !important;
+      padding: $spacing-sm !important;
       margin: 0 !important;
       flex: 0 0 50% !important;
       max-width: 50% !important;

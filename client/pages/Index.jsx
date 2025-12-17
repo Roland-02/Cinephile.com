@@ -1299,62 +1299,70 @@ const Index = () => {
         {/* Film poster carousel */}
         <div className="col-lg-6 col-md-6 col-sm-12 py-5 carousel-container">
           <div className="carousel slide" id="film-carousel" data-bs-ride="carousel">
-            <div className="d-flex align-items-center justify-content-center">
-              <div className="carousel-inner">
-                <div id="film-poster" className="carousel-item active">
-                  <img
-                    src={currentFilm.poster ? baseImagePath + currentFilm.poster : "/images/MissingPoster.jpeg"}
-                    alt={currentFilm.primaryTitle || "Film Poster"}
-                  />
+            <div className="film-carousel-frame">
+              <div className="film-carousel-nav-zone film-carousel-nav-zone--prev">
+                {/* Previous button */}
+                <button
+                  id="prev-btn"
+                  className="film-carousel-nav-btn"
+                  type="button"
+                  onClick={handlePrev}
+                  disabled={filmIndex === 0}
+                  aria-label="Previous film"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="64"
+                    height="64"
+                    fill="currentColor"
+                    className="bi bi-caret-left-fill"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="film-carousel-poster">
+                <div className="carousel-inner">
+                  <div id="film-poster" className="carousel-item active">
+                    <img
+                      src={currentFilm.poster ? baseImagePath + currentFilm.poster : "/images/MissingPoster.jpeg"}
+                      alt={currentFilm.primaryTitle || "Film Poster"}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Previous button */}
-              <button
-                id="prev-btn"
-                className="carousel-control-prev"
-                type="button"
-                onClick={handlePrev}
-                disabled={filmIndex === 0}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="64"
-                  height="64"
-                  fill="currentColor"
-                  className="bi bi-caret-left-fill"
-                  viewBox="0 0 16 16"
+              <div className="film-carousel-nav-zone film-carousel-nav-zone--next">
+                {/* Next button */}
+                <button
+                  id="next-btn"
+                  className="film-carousel-nav-btn"
+                  type="button"
+                  onClick={handleNext}
+                  disabled={filmCache.length === 0 || (filmIndex - cacheStartIndex >= filmCache.length - 1 && filmCache.length < PAGE_SIZE)}
+                  aria-label="Next film"
                 >
-                  <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
-                </svg>
-              </button>
-
-              {/* Next button */}
-              <button
-                id="next-btn"
-                className="carousel-control-next"
-                type="button"
-                onClick={handleNext}
-                disabled={filmCache.length === 0 || (filmIndex - cacheStartIndex >= filmCache.length - 1 && filmCache.length < PAGE_SIZE)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="64"
-                  height="64"
-                  fill="currentColor"
-                  className="bi bi-caret-right-fill"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
-                </svg>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="64"
+                    height="64"
+                    fill="currentColor"
+                    className="bi bi-caret-right-fill"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Film info */}
         <div className="col-lg-6 col-md-6 col-sm-12 py-4">
-          <div className="container">
+          <div className="container film-details-container">
             {renderFilmInfo()}
 
             {/* Watchlist and like buttons */}
