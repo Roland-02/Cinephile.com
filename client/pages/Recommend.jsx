@@ -48,7 +48,7 @@ const Recommend = () => {
             const filmsData = recommendationsCache[category];
             setFilms(filmsData);
             setCurrentPage(1);
-            setHasMore(filmsData.length >= 100);
+            setHasMore(filmsData.length > 0);
             setLoading(false);
             return;
           }
@@ -64,7 +64,7 @@ const Recommend = () => {
       
       setFilms(filmsData);
       setCurrentPage(1);
-      setHasMore(filmsData.length >= 100);
+      setHasMore(filmsData.length > 0);
       
       try {
         const recommendationsCache = cached ? JSON.parse(cached) : {};
@@ -116,7 +116,7 @@ const Recommend = () => {
               return [...prevFilms, ...newFilms];
             });
             setCurrentPage(nextPage);
-            setHasMore(filmsData.length >= 100);
+            setHasMore(filmsData.length > 0);
           } else {
             setHasMore(false);
           }

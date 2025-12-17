@@ -1043,7 +1043,6 @@ const Index = () => {
     );
   }
 
-
   // Render film details with likeable attributes
   const renderFilmInfo = () => {
     if (!currentFilm) return null;
