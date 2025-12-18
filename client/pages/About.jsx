@@ -17,7 +17,7 @@ const About = () => {
           <div className="about-section mb-4">
             <h4 className="mb-2">Why I built this</h4>
             <p className="mb-2">
-              I built <strong>Cinephile.com</strong> because I <strong>love films</strong>, and I wanted to build something
+              I built <strong>Cinephile.com</strong> because <strong> I love films</strong>, and I wanted to build something
               that helps people discover them in a more <strong>meaningful way</strong>.
             </p>
             <p className="mb-0">
@@ -108,7 +108,6 @@ const About = () => {
               </div>
             </div>
           </div>
-
 
           <div className="about-section about-section--cta text-center">
             <h4 className="mb-2">GitHub Repository</h4>
