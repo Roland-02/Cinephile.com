@@ -4,6 +4,7 @@ import axios from 'axios';
 import { getSession } from '../utils/auth';
 
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
+const PAGE_SIZE = parseInt(import.meta.env.VITE_PAGE_SIZE);
 
 const Search = () => {
   const [films, setFilms] = useState([]);
@@ -11,7 +12,7 @@ const Search = () => {
   const [searchQueries, setSearchQueries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [currentPages, setCurrentPages] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,6 +20,63 @@ const Search = () => {
   const user_id = session?.id;
   const navigate = useNavigate();
   const observerTarget = useRef(null);
+  const currentPageRef = useRef(1);
+  const isFetchingMoreRef = useRef(false);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  const buildQueryParam = (queries) => {
+    const cleaned = (queries || [])
+      .map((q) => (q ? q.trim() : ''))
+      .filter((q) => q.length > 0);
+    return cleaned.join(',');
+  };
+
+  const fetchSearchPage = async (queries, pageToLoad, append) => {
+    const combined = buildQueryParam(queries);
+    if (!combined) return;
+
+    if (!append) {
+      isFetchingMoreRef.current = false;
+      setLoading(true);
+      setHasMore(true);
+      setFilms([]);
+      setCurrentPage(1);
+    } else {
+      if (isFetchingMoreRef.current) {
+        return;
+      }
+      isFetchingMoreRef.current = true;
+      setIsLoadingMore(true);
+    }
+
+    try {
+      const encoded = encodeURIComponent(combined);
+      const response = await axios.get(`/api/search_general?query=${encoded}&page=${pageToLoad}`);
+      const filmsData = response.data || [];
+
+      if (append) {
+        setFilms((prevFilms) => {
+          const existingIds = new Set(prevFilms.map((f) => f.tconst));
+          const newFilms = filmsData.filter((f) => !existingIds.has(f.tconst));
+          return [...prevFilms, ...newFilms];
+        });
+      } else {
+        setFilms(filmsData);
+      }
+
+      setCurrentPage(pageToLoad);
+      setHasMore(filmsData.length === PAGE_SIZE);
+    } catch {
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+      setIsLoadingMore(false);
+      isFetchingMoreRef.current = false;
+    }
+  };
 
   useEffect(() => {
     const queryParam = searchParams.get('query');
@@ -26,11 +84,10 @@ const Search = () => {
       const queries = queryParam.split(',').filter(q => q.trim() !== '');
       if (queries.length > 0) {
         setSearchQueries(queries);
-        if (films.length === 0) {
-          handleSearchForQueries(queries);
-        }
+        fetchSearchPage(queries, 1, false);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -42,118 +99,10 @@ const Search = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSearchForQueries = async (queries, append = false) => {
-    if (!queries || queries.length === 0) return;
-
-    if (!append) {
-      setLoading(true);
-      setCurrentPages({});
-      setHasMore(true);
-    } else {
-      setIsLoadingMore(true);
-    }
-
-    try {
-      let allFilms = [];
-      if (append) {
-        setFilms(prevFilms => {
-          allFilms = [...prevFilms];
-          return prevFilms;
-        });
-      }
-
-      const newPages = { ...currentPages };
-      let hasNewResults = false;
-      const initialFilmsCount = allFilms.length;
-
-      for (const searchQuery of queries) {
-        if (searchQuery.trim() !== '') {
-          const queryKey = searchQuery.trim();
-          const currentPage = newPages[queryKey] || 0;
-          const pageToLoad = append ? currentPage + 1 : 1;
-
-          const response = await axios.get(`/api/search_general?query=${queryKey}&page=${pageToLoad}`);
-          const filmsData = response.data || [];
-
-          if (filmsData.length > 0) {
-            let addedNewFilm = false;
-            filmsData.forEach(film => {
-              if (!allFilms.find(f => f.tconst === film.tconst)) {
-                allFilms.push(film);
-                addedNewFilm = true;
-              }
-            });
-
-            if (addedNewFilm || !append) {
-              newPages[queryKey] = pageToLoad;
-              hasNewResults = true;
-            }
-          }
-        }
-      }
-
-      const finalFilmsCount = allFilms.length;
-      const actuallyAddedNewFilms = finalFilmsCount > initialFilmsCount;
-
-      if (append) {
-        setFilms(prevFilms => {
-          const existingIds = new Set(prevFilms.map(f => f.tconst));
-          const newFilms = allFilms.filter(f => !existingIds.has(f.tconst));
-          return [...prevFilms, ...newFilms];
-        });
-        setHasMore(actuallyAddedNewFilms && hasNewResults);
-      } else {
-        setFilms(allFilms);
-        setHasMore(hasNewResults);
-      }
-
-      setCurrentPages(newPages);
-
-    } catch {
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-      setIsLoadingMore(false);
-    }
-  };
-
-  const handleSearch = async (searchQuery) => {
-    if (!searchQuery || searchQuery.trim() === '') return;
-
-    setLoading(true);
-    setCurrentPages({});
-    setHasMore(true);
-    
-    try {
-      const response = await axios.get(`/api/search_general?query=${searchQuery.trim()}&page=1`);
-      const filmsData = response.data || [];
-
-      setFilms(prevFilms => {
-        const combined = [...prevFilms];
-        filmsData.forEach(film => {
-          if (!combined.find(f => f.tconst === film.tconst)) {
-            combined.push(film);
-          }
-        });
-        return combined;
-      });
-
-      if (filmsData.length > 0) {
-        setCurrentPages({ [searchQuery.trim()]: 1 });
-        setHasMore(true);
-      } else {
-        setHasMore(false);
-      }
-    } catch {
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const loadMoreFilms = useCallback(() => {
     if (!isLoadingMore && hasMore && !loading && searchQueries.length > 0) {
-      handleSearchForQueries(searchQueries, true);
+      const nextPage = currentPageRef.current + 1;
+      fetchSearchPage(searchQueries, nextPage, true);
     }
   }, [searchQueries, hasMore, isLoadingMore, loading]);
 
@@ -166,7 +115,7 @@ const Search = () => {
       const newQueries = [...searchQueries, trimmedQuery];
       setSearchQueries(newQueries);
       setSearchParams({ query: newQueries.join(',') });
-      handleSearch(trimmedQuery);
+      fetchSearchPage(newQueries, 1, false);
     }
 
     setQuery('');
@@ -175,18 +124,15 @@ const Search = () => {
   const handleRemoveQuery = (queryToRemove) => {
     const newQueries = searchQueries.filter(q => q !== queryToRemove);
     setSearchQueries(newQueries);
-    const newPages = { ...currentPages };
-    delete newPages[queryToRemove];
-    setCurrentPages(newPages);
 
     if (newQueries.length > 0) {
       setSearchParams({ query: newQueries.join(',') });
-      handleSearchForQueries(newQueries);
+      fetchSearchPage(newQueries, 1, false);
     } else {
       setSearchParams({});
       setFilms([]);
-      setCurrentPages({});
       setHasMore(true);
+      setCurrentPage(1);
     }
   };
 
@@ -273,7 +219,8 @@ const Search = () => {
                     padding: '0',
                     marginLeft: '8px',
                     display: 'inline-flex',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    color: 'var(--text-color)'
                   }}
                 >
                   <svg

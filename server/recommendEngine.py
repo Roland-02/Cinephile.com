@@ -1180,16 +1180,22 @@ def search_general():
     page_size = int(os.getenv("PAGE_SIZE"))
 
     if filters_str:
-        filters = filters_str.split(',')
-        keywords_lower = set(keyword.lower() for keyword in filters)
+        if page < 1:
+            page = 1
+
+        filters = [f.strip() for f in filters_str.split(',') if f and f.strip()]
+        keywords_lower = [keyword.lower() for keyword in filters]
+
         filtered_films = data.copy()
         for keyword in keywords_lower:
-            filtered_films = filtered_films[filtered_films['soup'].str.lower().str.contains(keyword)]
+            soup_lower = filtered_films['soup'].str.lower()
+            filtered_films = filtered_films[soup_lower.str.contains(keyword, regex=False, na=False)]
 
-        end_index = (page) * page_size
+        start_index = (page - 1) * page_size
+        end_index = page * page_size
 
         # Extract the subset of films based on pagination
-        paginated_films = filtered_films.iloc[:end_index]
+        paginated_films = filtered_films.iloc[start_index:end_index]
 
         # Remove the 'soup' column
         paginated_films = paginated_films.drop(columns=['soup'])

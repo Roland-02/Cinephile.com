@@ -5,6 +5,7 @@ import { getSession } from '../utils/auth';
 import NavbarFilter, { useFilter } from '../components/NavbarFilter';
 
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
+const PAGE_SIZE = parseInt(import.meta.env.VITE_PAGE_SIZE);
 
 const categoryOptions = [
   { value: 'content', label: 'All combined' },
@@ -30,6 +31,7 @@ const Recommend = () => {
   const refreshProfile = searchParams.get('refreshProfile') === 'true';
   const observerTarget = useRef(null);
   const currentPageRef = useRef(1);
+  const isLoadingMoreRef = useRef(false);
 
   useEffect(() => {
     currentPageRef.current = currentPage;
@@ -49,7 +51,7 @@ const Recommend = () => {
             const filmsData = recommendationsCache[category];
             setFilms(filmsData);
             setCurrentPage(1);
-            setHasMore(filmsData.length > 0);
+            setHasMore(filmsData.length === PAGE_SIZE);
             setLoading(false);
             return;
           }
@@ -64,7 +66,7 @@ const Recommend = () => {
       
       setFilms(filmsData);
       setCurrentPage(1);
-      setHasMore(filmsData.length > 0);
+      setHasMore(filmsData.length === PAGE_SIZE);
       
       try {
         const recommendationsCache = cached ? JSON.parse(cached) : {};
@@ -98,7 +100,10 @@ const Recommend = () => {
   };
 
   const loadMoreFilms = useCallback(() => {
-    if (!isLoadingMore && hasMore && !loading) {
+    if (isLoadingMoreRef.current) return;
+    if (!hasMore || loading) return;
+
+    isLoadingMoreRef.current = true;
       const nextPage = currentPageRef.current + 1;
       setIsLoadingMore(true);
       
@@ -113,18 +118,19 @@ const Recommend = () => {
               return [...prevFilms, ...newFilms];
             });
             setCurrentPage(nextPage);
-            setHasMore(filmsData.length > 0);
+            setHasMore(filmsData.length === PAGE_SIZE);
           } else {
             setHasMore(false);
           }
           
           setIsLoadingMore(false);
+          isLoadingMoreRef.current = false;
         })
         .catch(() => {
           setHasMore(false);
           setIsLoadingMore(false);
+          isLoadingMoreRef.current = false;
         });
-    }
   }, [hasMore, isLoadingMore, loading, user_id, category]);
 
   useEffect(() => {
