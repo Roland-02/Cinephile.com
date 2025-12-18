@@ -1,0 +1,223 @@
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.about-page {
+  color: var(--text-color);
+}
+
+.about-page strong {
+  font-weight: 750;
+}
+
+.about-page .cinephile-definition {
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: $spacing-md $spacing-lg;
+  border-left: 4px solid $color-orange;
+  border-radius: $border-radius;
+  background-color: var(--grey-light);
+}
+
+.about-page .about-section {
+  position: relative;
+  background-color: rgba(245, 245, 245, 0.546);
+  border: none;
+  border-radius: 8px;
+  padding: $spacing-lg;
+  padding-top: $spacing-md;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .about-page .about-section {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.about-page .about-section > h4:first-child,
+.about-page .about-section > h5:first-child {
+  margin-top: 0;
+}
+
+.about-page .about-section {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.about-page .about-section--cta {
+  padding: $spacing-xl;
+}
+
+.about-page .about-section--cta .btn {
+  margin-top: $spacing-xs;
+}
+
+.about-page .cinephile-definition p {
+  margin: 0;
+  font-size: clamp(18px, 2.2vw, 26px);
+  font-weight: 650;
+  font-style: italic;
+  line-height: 1.5;
+  max-width: none;
+}
+
+.about-page .cinephile-definition-source {
+  margin-top: $spacing-xs;
+  font-size: $font-size-sm;
+  opacity: 0.8;
+}
+
+.about-page h4 {
+  font-size: clamp(20px, 2vw, 28px);
+  font-weight: 650;
+  margin-top: $spacing-lg;
+  margin-bottom: $spacing-md;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  text-decoration-color: rgba($color-orange, 0.65);
+}
+
+.about-page h5 {
+  font-size: clamp(16px, 1.5vw, 20px);
+  font-weight: 650;
+  margin-top: $spacing-md;
+  margin-bottom: $spacing-md;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+  text-decoration-color: rgba($color-orange, 0.45);
+}
+
+.about-page p {
+  font-size: $font-size-md;
+  line-height: 1.65;
+  max-width: 75ch;
+}
+
+.about-page .about-section p,
+.about-page .about-section ul,
+.about-page .about-section ol {
+  max-width: none;
+}
+
+.about-page .about-section p:last-child,
+.about-page .about-section ul:last-child,
+.about-page .about-section ol:last-child {
+  margin-bottom: 0;
+}
+
+.about-page ul,
+.about-page ol {
+  padding-left: 1.2rem;
+  margin-bottom: $spacing-md;
+  max-width: 80ch;
+}
+
+.about-page li {
+  line-height: 1.65;
+  margin-bottom: 6px;
+}
+
+.about-page .about-tech-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+}
+
+.about-page .about-tech-card {
+  background-color: rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  padding: $spacing-md;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .about-page .about-tech-card {
+  background-color: rgba(0, 0, 0, 0.16);
+  box-shadow: none;
+}
+
+.about-page .about-tech-title {
+  font-size: $font-size-lg;
+  font-weight: 800;
+  margin-bottom: $spacing-sm;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+  text-decoration-color: rgba($color-orange, 0.45);
+}
+
+.about-page .about-tech-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.about-page .about-tech-list li:last-child {
+  margin-bottom: 0;
+}
+
+.about-page a.btn {
+  text-decoration: none;
+}
+
+.about-page .about-github-btn {
+  border: none !important;
+  background-color: rgba($color-orange, 0.9) !important;
+  color: $color-black !important;
+  font-weight: 700;
+  padding: 10px 18px !important;
+  border-radius: 8px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+  transition: transform $transition-fast, box-shadow $transition-fast, opacity $transition-fast;
+}
+
+.about-page .about-github-btn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.16);
+}
+
+.about-page .about-github-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+.about-page .about-github-btn:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 4px rgba($color-orange, 0.25), 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] .about-page .about-github-btn {
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.35);
+}
+
+@include mobile {
+  .about-page {
+    padding-left: $spacing-md !important;
+    padding-right: $spacing-md !important;
+  }
+
+  .about-page .cinephile-definition {
+    padding: $spacing-sm $spacing-md;
+    border-radius: $border-radius;
+    margin-top: 15px;
+  }
+
+  .about-page .about-section {
+    padding: $spacing-md;
+    padding-top: $spacing-sm;
+    border-radius: 7px;
+  }
+
+  .about-page .about-section--cta {
+    padding: $spacing-lg;
+  }
+
+  .about-page .about-tech-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page p,
+  .about-page li {
+    font-size: $font-size-base;
+    line-height: 1.75;
+  }
+}
+
