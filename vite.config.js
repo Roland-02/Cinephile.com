@@ -29,6 +29,7 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.VITE_PAGE_SIZE': JSON.stringify(process.env.PAGE_SIZE),
+    'import.meta.env.VITE_API_TOKEN': JSON.stringify(process.env.API_TOKEN),
   },
 });
 

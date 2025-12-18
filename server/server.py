@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import hmac
 import bcrypt
 import mysql.connector
 from flask import Flask, jsonify, request, make_response, send_from_directory
@@ -12,6 +13,38 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+API_TOKEN = os.getenv("API_TOKEN")
+if not API_TOKEN:
+    raise RuntimeError("Missing API_TOKEN environment variable.")
+
+def _extract_api_token_from_headers():
+    token = request.headers.get("X-API-KEY")
+    if token:
+        return str(token).strip()
+
+    auth_header = request.headers.get("Authorization", "")
+    if isinstance(auth_header, str) and auth_header.startswith("Bearer "):
+        token = auth_header[len("Bearer "):].strip()
+        if token:
+            return token
+
+    return None
+
+@app.before_request
+def enforce_api_token():
+    if request.method == "OPTIONS":
+        return None
+
+    if not request.path.startswith("/api/"):
+        return None
+
+    token = _extract_api_token_from_headers()
+    if not token:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    if not hmac.compare_digest(token, API_TOKEN):
+        return jsonify({"message": "Unauthorized"}), 401
 
 init_recommend_cache(app)
 from recommendEngine import cache
