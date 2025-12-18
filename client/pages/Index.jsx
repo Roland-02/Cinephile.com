@@ -57,8 +57,7 @@ const Index = () => {
           setMyLiked(data.liked || []);
           setMyLoved(data.loved || []);
 
-        } catch (e) {
-          console.error('Error parsing cached user data:', e);
+        } catch {
         }
       }
       else {
@@ -81,8 +80,7 @@ const Index = () => {
 
           localStorage.setItem('user_data', JSON.stringify(userData));
 
-        } catch (error) {
-          console.error('Error loading user data:', error);
+        } catch {
         }
       }
     } finally {
@@ -98,8 +96,7 @@ const Index = () => {
         liked: liked ?? myLiked,
         loved: loved ?? myLoved,
       }));
-    } catch (e) {
-      console.error('Error updating user_data cache:', e);
+    } catch {
     }
   };
 
@@ -108,8 +105,7 @@ const Index = () => {
       const currentUserId = getSession()?.id;
       const url = currentUserId ? `/api/shuffleFilms?user_id=${currentUserId}` : `/api/shuffleFilms`;
       await axios.post(url);
-    } catch (error) {
-      console.error('Error shuffling films:', error);
+    } catch {
     }
     setFiltered(false);
     setOutside(false);
@@ -178,8 +174,7 @@ const Index = () => {
           if (hasActiveFilters) {
             setFiltered(true);
           }
-        } catch (e) {
-          console.error('Error parsing saved filters:', e);
+        } catch {
         }
       }
 
@@ -252,13 +247,11 @@ const Index = () => {
             
             try {
               localStorage.setItem('indexPageFilms', JSON.stringify(newCachedPages));
-            } catch (e) {
-              console.error('Error caching filtered films:', e);
+            } catch {
             }
             
             setFilmCache(allPages);
-          } catch (e) {
-            console.error('Error initializing filtered films:', e);
+          } catch {
           } finally {
             setLoading(false);
           }
@@ -455,8 +448,7 @@ const Index = () => {
 
       return allFilmsData;
 
-    } catch (error) {
-      console.error('Error fetching films:', error);
+    } catch {
       return [];
     }
   };
@@ -512,8 +504,7 @@ const Index = () => {
             lovedEntry = data?.loved.find((f) => f.tconst === film.tconst);
             likedEntry = data?.liked.find((f) => f.tconst === film.tconst);
           }
-        } catch (e) {
-          console.error('Error parsing cached user data:', e);
+        } catch {
         }
       }
 
@@ -723,8 +714,7 @@ const Index = () => {
           clearRecommendationsCache();
 
           await saveElements(newLikedElements, newLikedCast, updatedLiked);
-        } catch (error) {
-          console.error('Error unloving film:', error);
+        } catch {
         }
       }
       // Film remains in liked list (some but not all attributes liked)
@@ -767,8 +757,7 @@ const Index = () => {
       updateUserDataCacheWithValues(null, newLiked, newLoved);
       clearRecommendationsCache();
 
-    } catch (error) {
-      console.error('Error loving film:', error);
+    } catch {
     }
   };
 
@@ -792,8 +781,7 @@ const Index = () => {
       clearRecommendationsCache();
 
       await saveElements([], []);
-    } catch (error) {
-      console.error('Error unloving film:', error);
+    } catch {
     }
   };
 
@@ -818,8 +806,7 @@ const Index = () => {
 
       // Update cache with new watchlist (state hasn't updated yet)
       updateUserDataCacheWithValues(newWatchlist, null, null);
-    } catch (error) {
-      console.error('Error toggling watchlist:', error);
+    } catch {
     }
   };
 
@@ -871,8 +858,7 @@ const Index = () => {
       }
       updateUserDataCacheWithValues(null, updatedLiked, currentLoved);
       clearRecommendationsCache();
-    } catch (error) {
-      console.error('Error saving elements:', error);
+    } catch {
     }
   };
 
@@ -899,8 +885,7 @@ const Index = () => {
         try {
           cachedPages = { page_1: firstPageData || [] };
           localStorage.setItem('indexPageFilms', JSON.stringify(cachedPages));
-        } catch (e) {
-          console.error('Error caching filtered films:', e);
+        } catch {
         }
 
         setFiltered(true);
@@ -910,8 +895,7 @@ const Index = () => {
         loadedPagesRef.current.clear();
         loadedPagesRef.current.add(1);
       }
-    } catch (error) {
-      console.error('Error applying filters:', error);
+    } catch {
     }
 
     if (window.innerWidth > 991) {

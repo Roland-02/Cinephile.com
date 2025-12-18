@@ -25,8 +25,7 @@ export const signOut = async () => {
       credentials: 'include',
     });
     window.location.href = '/';
-  } catch (error) {
-    console.error('Error signing out:', error);
+  } catch {
   }
 };
 

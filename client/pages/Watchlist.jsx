@@ -43,8 +43,7 @@ const Watchlist = () => {
           setLoading(false);
           return; // Exit early if cache loaded successfully
         }
-      } catch (e) {
-        console.error('Error parsing cached user data:', e);
+      } catch {
       }
     }
     
@@ -60,11 +59,9 @@ const Watchlist = () => {
         const data = cached ? JSON.parse(cached) : {};
         data.watchlist = watchlist;
         localStorage.setItem('user_data', JSON.stringify(data));
-      } catch (e) {
-        console.error('Error updating cache with watchlist data:', e);
+      } catch {
       }
-    } catch (error) {
-      console.error('Error loading watchlist:', error);
+    } catch {
     } finally {
       setLoading(false);
     }

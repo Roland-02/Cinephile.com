@@ -62,8 +62,7 @@ const Profile = () => {
           setStats(data.stats);
           loadedFromCache = true;
         }
-      } catch (e) {
-        console.error('Error parsing cached user data:', e);
+      } catch {
       }
     }
     
@@ -99,11 +98,9 @@ const Profile = () => {
         data.loved = loved;
         data.liked = liked;
         localStorage.setItem('user_data', JSON.stringify(data));
-      } catch (e) {
-        console.error('Error updating cache:', e);
+      } catch {
       }
-    } catch (error) {
-      console.error('Error loading profile data:', error);
+    } catch {
     } finally {
       setLoading(false);
     }

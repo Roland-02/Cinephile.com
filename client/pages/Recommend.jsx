@@ -53,8 +53,7 @@ const Recommend = () => {
             setLoading(false);
             return;
           }
-        } catch (e) {
-          console.error('Error parsing cached recommendations:', e);
+        } catch {
         }
       }
       
@@ -71,11 +70,9 @@ const Recommend = () => {
         const recommendationsCache = cached ? JSON.parse(cached) : {};
         recommendationsCache[category] = filmsData;
         localStorage.setItem(cacheKey, JSON.stringify(recommendationsCache));
-      } catch (e) {
-        console.error('Error caching recommendations:', e);
+      } catch {
       }
-    } catch (error) {
-      console.error('Error loading recommended films:', error);
+    } catch {
       setFilms([]);
       setHasMore(false);
     } finally {
@@ -94,8 +91,7 @@ const Recommend = () => {
       setCurrentPage(1);
       setHasMore(true);
       await loadFilms();
-    } catch (error) {
-      console.error('Error updating profile:', error);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -124,8 +120,7 @@ const Recommend = () => {
           
           setIsLoadingMore(false);
         })
-        .catch(error => {
-          console.error('Error loading more films:', error);
+        .catch(() => {
           setHasMore(false);
           setIsLoadingMore(false);
         });

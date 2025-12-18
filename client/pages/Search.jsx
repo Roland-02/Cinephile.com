@@ -109,8 +109,7 @@ const Search = () => {
 
       setCurrentPages(newPages);
 
-    } catch (error) {
-      console.error('Error searching films:', error);
+    } catch {
       setHasMore(false);
     } finally {
       setLoading(false);
@@ -145,8 +144,7 @@ const Search = () => {
       } else {
         setHasMore(false);
       }
-    } catch (error) {
-      console.error('Error searching films:', error);
+    } catch {
       setHasMore(false);
     } finally {
       setLoading(false);
