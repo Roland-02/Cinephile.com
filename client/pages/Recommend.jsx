@@ -172,8 +172,17 @@ const Recommend = () => {
 
 
   const handleFilmClick = (film, filmIndex) => {
+    const meta = {
+      source: 'recommend',
+      user_id: user_id,
+      category: category,
+      page: currentPage,
+      hasMore: hasMore,
+    };
+
     localStorage.setItem('filmIndex', filmIndex);
     localStorage.setItem('films-source', JSON.stringify(films));
+    localStorage.setItem('films-source-meta', JSON.stringify(meta));
     navigate('/index');
   };
 

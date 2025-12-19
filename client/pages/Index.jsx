@@ -6,6 +6,7 @@ import NavbarFilter, { useFilter } from '../components/NavbarFilter';
 
 const PAGE_SIZE = parseInt(import.meta.env.VITE_PAGE_SIZE);
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
+const OUTSIDE_META_KEY = 'films-source-meta';
 
 const Index = () => {
   const [filmCache, setFilmCache] = useState([]);
@@ -34,6 +35,7 @@ const Index = () => {
   const isLoadingUserDataRef = useRef(false);
   const loadedPagesRef = useRef(new Set()); // Track which pages have been appended to in-memory cache
   const filterContainerRef = useRef(null);
+  const isOutsideLoadingMoreRef = useRef(false);
 
   const session = getSession();
   const user_id = session?.id;
@@ -463,21 +465,110 @@ const Index = () => {
       if (filmsData && filmsData.length > 0) {
         const pageNum = Math.floor(startIndex / PAGE_SIZE) + 1;
 
-        // Only append if this page hasn't been loaded yet
-        if (!loadedPagesRef.current.has(pageNum)) {
-          setFilmCache((prev) => [...prev, ...filmsData]);
+        if (outside) {
+          loadedPagesRef.current.clear();
           loadedPagesRef.current.add(pageNum);
-
-          // For normal films, cacheStartIndex stays at 0 (cumulative cache)
-          // Only update for external source films
-          if (outside) {
-            setCacheStartIndex(startIndex);
+          setCacheStartIndex(startIndex);
+          setFilmCache(filmsData);
+        } else {
+          // Only append if this page hasn't been loaded yet
+          if (!loadedPagesRef.current.has(pageNum)) {
+            setFilmCache((prev) => [...prev, ...filmsData]);
+            loadedPagesRef.current.add(pageNum);
           }
         }
       }
     } finally {
       setLoading(false);
       isLoadingRef.current = false;
+    }
+  };
+
+  const getOutsideMeta = () => {
+    try {
+      const raw = localStorage.getItem(OUTSIDE_META_KEY);
+      if (!raw) return null;
+      const meta = JSON.parse(raw);
+      if (!meta || typeof meta !== 'object') return null;
+      return meta;
+    } catch {
+      return null;
+    }
+  };
+
+  const setOutsideMeta = (meta) => {
+    try {
+      localStorage.setItem(OUTSIDE_META_KEY, JSON.stringify(meta));
+    } catch {
+    }
+  };
+
+  const fetchMoreOutsideFilms = async () => {
+    if (isOutsideLoadingMoreRef.current) return false;
+    const meta = getOutsideMeta();
+    if (!meta) return false;
+    if (meta.hasMore === false) return false;
+
+    isOutsideLoadingMoreRef.current = true;
+
+    try {
+      const nextPage = (meta.page || 1) + 1;
+      let filmsData = [];
+
+      if (meta.source === 'search') {
+        const queryStr = meta.query;
+        if (!queryStr) {
+          setOutsideMeta({ ...meta, hasMore: false });
+          return false;
+        }
+        const encoded = encodeURIComponent(queryStr);
+        const response = await axios.get(`/api/search_general?query=${encoded}&page=${nextPage}`);
+        filmsData = response.data || [];
+      } else if (meta.source === 'recommend') {
+        const uid = meta.user_id || getSession()?.id;
+        const category = meta.category || 'content';
+        if (!uid) {
+          setOutsideMeta({ ...meta, hasMore: false });
+          return false;
+        }
+        const response = await axios.get(`/api/get_batch?user_id=${uid}&category=${category}&page=${nextPage}`);
+        filmsData = response.data || [];
+      } else {
+        return false;
+      }
+
+      if (!Array.isArray(filmsData) || filmsData.length === 0) {
+        setOutsideMeta({ ...meta, hasMore: false });
+        return false;
+      }
+
+      let existing = [];
+      try {
+        existing = JSON.parse(localStorage.getItem('films-source') || '[]');
+      } catch {
+        existing = [];
+      }
+
+      const existingIds = new Set(existing.map((f) => f && f.tconst).filter(Boolean));
+      const deduped = filmsData.filter((f) => f && f.tconst && !existingIds.has(f.tconst));
+      const updated = [...existing, ...deduped];
+
+      try {
+        localStorage.setItem('films-source', JSON.stringify(updated));
+      } catch {
+      }
+
+      setOutsideMeta({
+        ...meta,
+        page: nextPage,
+        hasMore: filmsData.length === PAGE_SIZE
+      });
+
+      return deduped.length > 0;
+    } catch {
+      return false;
+    } finally {
+      isOutsideLoadingMoreRef.current = false;
     }
   };
 
@@ -596,18 +687,42 @@ const Index = () => {
     if (isClickLocked) return;
     setIsClickLocked(true);
 
-    setFilmIndex(prev => {
+    try {
       if (outside) {
-        const films_JSON = JSON.parse(localStorage.getItem('films-source') || '[]');
-        const totalFilms = films_JSON.length;
-        if (prev + 1 >= totalFilms) {
-          return 0;
+        let films_JSON = [];
+        try {
+          films_JSON = JSON.parse(localStorage.getItem('films-source') || '[]');
+        } catch {
+          films_JSON = [];
         }
-      }
-      return prev + 1;
-    });
+        const totalFilms = films_JSON.length;
 
-    setIsClickLocked(false);
+        if (filmIndex + 1 >= totalFilms) {
+          await fetchMoreOutsideFilms();
+
+          try {
+            films_JSON = JSON.parse(localStorage.getItem('films-source') || '[]');
+          } catch {
+            films_JSON = [];
+          }
+
+          if (filmIndex + 1 < films_JSON.length) {
+            setFilmIndex(filmIndex + 1);
+          } else {
+            setFilmIndex(0);
+          }
+
+          return;
+        }
+
+        setFilmIndex(filmIndex + 1);
+        return;
+      }
+
+      setFilmIndex((prev) => prev + 1);
+    } finally {
+      setIsClickLocked(false);
+    }
   };
 
   const handlePrev = async () => {
