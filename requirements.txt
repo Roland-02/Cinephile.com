@@ -1,0 +1,14 @@
+Flask
+flask-cors
+python-dotenv
+mysql-connector-python
+bcrypt
+numpy
+pandas
+scikit-learn
+requests
+langdetect
+SQLAlchemy
+schedule
+Flask-Caching
+
