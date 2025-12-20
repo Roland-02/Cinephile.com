@@ -698,20 +698,7 @@ const Index = () => {
         const totalFilms = films_JSON.length;
 
         if (filmIndex + 1 >= totalFilms) {
-          await fetchMoreOutsideFilms();
-
-          try {
-            films_JSON = JSON.parse(localStorage.getItem('films-source') || '[]');
-          } catch {
-            films_JSON = [];
-          }
-
-          if (filmIndex + 1 < films_JSON.length) {
-            setFilmIndex(filmIndex + 1);
-          } else {
-            setFilmIndex(0);
-          }
-
+          setFilmIndex(0);
           return;
         }
 
