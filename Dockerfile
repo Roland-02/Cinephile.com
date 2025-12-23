@@ -8,11 +8,9 @@ COPY vite.config.js index.html ./
 COPY client ./client
 COPY public ./public
 
+ARG API_TOKEN
 ARG VITE_API_TOKEN
-ENV VITE_API_TOKEN=$VITE_API_TOKEN
-
-RUN npm run build
-
+RUN VITE_API_TOKEN="${VITE_API_TOKEN:-$API_TOKEN}" npm run build
 
 FROM python:3.11-slim AS runtime
 WORKDIR /app

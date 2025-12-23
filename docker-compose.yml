@@ -3,11 +3,11 @@ services:
     image: mysql:8.0
     command: --default-authentication-plugin=mysql_native_password
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
-      MYSQL_DATABASE: ${DB_DATABASE:-cinephile}
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-}
+      MYSQL_DATABASE: ${DB_DATABASE:-}
     volumes:
       - mysql_data:/var/lib/mysql
 
@@ -15,19 +15,20 @@ services:
     build:
       context: .
       args:
-        VITE_API_TOKEN: ${VITE_API_TOKEN}
-    depends_on:
-      - db
+        API_TOKEN: ${API_TOKEN:-}
+        VITE_API_TOKEN: ${VITE_API_TOKEN:-}
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       PORT: 8080
-      API_TOKEN: ${API_TOKEN}
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USER: ${DB_USER:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-password}
-      DB_DATABASE: ${DB_DATABASE:-cinephile}
-      PAGE_SIZE: ${PAGE_SIZE:-10}
+      API_TOKEN: ${API_TOKEN:-}
+      DB_HOST: ${DB_HOST:-}
+      DB_PORT: ${DB_PORT:-}
+      DB_USER: ${DB_USER:-}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+      DB_DATABASE: ${DB_DATABASE:-}
+      PAGE_SIZE: ${PAGE_SIZE:-}
       TMDB_API_KEY: ${TMDB_API_KEY:-}
     ports:
       - "8080:8080"
