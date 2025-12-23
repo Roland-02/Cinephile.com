@@ -188,3 +188,19 @@ figcaption {
   margin: $spacing-xl auto;
   display: block;
 }
+
+@include mobile {
+  .poster-wrapper:hover .caption {
+    display: none !important;
+  }
+
+  figure:hover figcaption {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .poster-container .poster-wrapper {
+    width: calc((100% - #{$spacing-sm}) / 2);
+  }
+}

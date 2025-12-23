@@ -98,3 +98,9 @@ figcaption {
   width: 70%;
 }
 
+@media (max-width: 480px) {
+  .poster-container .poster-wrapper {
+    width: calc((100% - #{$spacing-sm}) / 2);
+  }
+}
+
