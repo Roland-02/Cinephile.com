@@ -17,7 +17,8 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        // Local dev proxy; production uses VITE_API_BASE_URL in the client.
+        target: process.env.VITE_API_BASE_URL,
         changeOrigin: true,
       },
     },
@@ -30,6 +31,7 @@ export default defineConfig({
   define: {
     'import.meta.env.VITE_PAGE_SIZE': JSON.stringify(process.env.PAGE_SIZE),
     'import.meta.env.VITE_API_TOKEN': JSON.stringify(process.env.API_TOKEN),
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL),
   },
 });
 

@@ -5,6 +5,7 @@ import warnings
 import threading
 import numpy as np
 import pandas as pd
+from urllib.parse import quote_plus
 import mysql.connector
 from dotenv import load_dotenv
 from sklearn.cluster import KMeans
@@ -132,7 +133,10 @@ def save_mySQL(data):
     mycursor.execute(delete_query)
     mydb.commit()
 
-    engine = create_engine("mysql+mysqlconnector://root:Leicester69lol@localhost/cinephile")
+    engine = create_engine(
+        f"mysql+mysqlconnector://{os.environ['DB_USER']}:{quote_plus(os.environ['DB_PASSWORD'])}"
+        f"@{os.environ['DB_HOST']}:{int(os.environ['DB_PORT'])}/{os.environ['DB_DATABASE']}"
+    )
 
     data.to_sql('films', con=engine, if_exists='replace', index=True)
 

@@ -12,7 +12,20 @@ from recommendEngine import recommend_bp, init_recommend_cache, start_recommenda
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+# CORS is restricted to API routes and Vercel origins only.
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": [
+                "https://cinephile-com.vercel.app",
+            ]
+        }
+    },
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization", "X-API-KEY"],
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+)
 
 API_TOKEN = os.getenv("API_TOKEN")
 if not API_TOKEN:
@@ -751,10 +764,10 @@ def serve_react_app(path):
         """, 404
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "5000"))
+    port = int(os.getenv("PORT"))
     print(f"Starting unified Flask server on port {port}...")
-    print(f"API available at: http://127.0.0.1:{port}/api/")
-    print(f"React app available at: http://127.0.0.1:{port}/")
+    # print(f"API available at: http://127.0.0.1:{port}/api/")
+    # print(f"React app available at: http://127.0.0.1:{port}/")
     print(f"Recommendation engine routes integrated on same port")
     
     app.run(host="0.0.0.0", port=port, debug=False)
