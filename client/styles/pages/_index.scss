@@ -263,6 +263,11 @@
 @include mobile {
   // Ensure proper spacing between columns
   
+  // Carousel section - reduce bottom padding on mobile
+  .col-lg-6.col-md-6.col-sm-12.py-5.carousel-container {
+    padding-bottom: $spacing-sm !important;
+  }
+  
   // Film info section - reduce padding, especially top padding to reduce space from carousel
   .col-lg-6.col-md-6.col-sm-12.py-4 {
     padding-top: $spacing-xs !important;
