@@ -3,31 +3,28 @@ import json
 import random
 import hmac
 import bcrypt
+import secrets
 import mysql.connector
-from flask import Flask, jsonify, request, make_response, send_from_directory
+import requests as http_requests
+from flask import Flask, jsonify, request, make_response, send_from_directory, redirect
 from flask_cors import CORS
 from dotenv import load_dotenv
-from recommendEngine import recommend_bp, init_recommend_cache, start_recommendation_scheduler
+from recommendEngine import recommend_bp, init_recommend_cache, start_recommendation_scheduler, update_profile_and_vectors, get_user_films
 
 load_dotenv()
 
 app = Flask(__name__)
-# CORS is restricted to API routes and Vercel origins only.
-CORS(
-    app,
-    resources={
-        r"/api/*": {
-            "origins": [
-                "https://cinephile-com.vercel.app",
-            ]
-        }
-    },
-    supports_credentials=True,
-    allow_headers=["Content-Type", "Authorization", "X-API-KEY"],
-    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-)
+CORS(app, supports_credentials=True)
 
 API_TOKEN = os.getenv("API_TOKEN")
+
+# OAuth Configuration
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+FACEBOOK_APP_ID = os.getenv("FACEBOOK_APP_ID")
+FACEBOOK_APP_SECRET = os.getenv("FACEBOOK_APP_SECRET")
+OAUTH_REDIRECT_BASE = os.getenv("BASE_URL")
+
 if not API_TOKEN:
     raise RuntimeError("Missing API_TOKEN environment variable.")
 
@@ -126,7 +123,7 @@ def login():
             user_id = result['user_id']
             
             try:
-                request.post(f'/api/update_profile_and_vectors?user_id={user_id}', timeout=10)
+                update_profile_and_vectors(user_id=user_id)
             except Exception as e:
                 print(f"Warning: Could not update profile: {e}")
 
@@ -172,7 +169,7 @@ def create_account():
         user_id = cursor.lastrowid
 
         try:
-            request.post(f'/api/update_profile_and_vectors?user_id={user_id}', timeout=10)
+            update_profile_and_vectors(user_id=user_id)
         except Exception as e:
             print(f"Warning: Could not update profile: {e}")
 
@@ -201,6 +198,169 @@ def get_session():
     email = request.cookies.get('sessionEmail')
     user_id = request.cookies.get('sessionID')
     return jsonify({'session': {'email': email, 'id': user_id}})
+
+# OAuth Routes
+def get_or_create_oauth_user(email, provider):
+    """Get existing user or create new one for OAuth login."""
+    conn = create_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute("SELECT * FROM login WHERE email = %s", (email,))
+    result = cursor.fetchone()
+    
+    if result:
+        user_id = result['user_id']
+    else:
+        random_password = secrets.token_urlsafe(32)
+        hash_password = bcrypt.hashpw(random_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        cursor.execute("INSERT INTO login (user_id, email, password) VALUES (0, %s, %s)", (email, hash_password))
+        user_id = cursor.lastrowid
+        conn.commit()
+        try:
+            update_profile_and_vectors(user_id=user_id)
+        except Exception as e:
+            print(f"Warning: Could not update profile: {e}")
+    
+    cursor.close()
+    conn.close()
+    return user_id, email
+
+@app.route('/auth/google')
+def google_auth():
+    """Redirect to Google OAuth."""
+    redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/google/callback"
+    scope = "openid email profile"
+    state = secrets.token_urlsafe(16)
+    
+    auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth?"
+        f"client_id={GOOGLE_CLIENT_ID}&"
+        f"redirect_uri={redirect_uri}&"
+        f"response_type=code&"
+        f"scope={scope}&"
+        f"state={state}&"
+        f"access_type=offline"
+    )
+    return redirect(auth_url)
+
+@app.route('/auth/google/callback')
+def google_callback():
+    """Handle Google OAuth callback."""
+    code = request.args.get('code')
+    error = request.args.get('error')
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    
+    if error:
+        return redirect(f"{frontend_url}?auth_error={error}")
+    
+    if not code:
+        return redirect(f"{frontend_url}?auth_error=no_code")
+    
+    try:
+        redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/google/callback"
+        token_response = http_requests.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "code": code,
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code"
+            }
+        )
+        token_data = token_response.json()
+        
+        if "error" in token_data:
+            return redirect(f"{frontend_url}?auth_error={token_data['error']}")
+        
+        access_token = token_data["access_token"]
+        user_response = http_requests.get(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        user_data = user_response.json()
+        email = user_data.get("email")
+        
+        if not email:
+            return redirect(f"{frontend_url}?auth_error=no_email")
+        
+        user_id, email = get_or_create_oauth_user(email, "google")
+        
+        response = make_response(redirect(f"{frontend_url}?auth_success=true"))
+        response.set_cookie('sessionEmail', email, max_age=86400)
+        response.set_cookie('sessionID', str(user_id), max_age=86400)
+        return response
+        
+    except Exception as e:
+        print(f"Google OAuth error: {e}")
+        return redirect(f"{frontend_url}?auth_error=server_error")
+
+@app.route('/auth/facebook')
+def facebook_auth():
+    """Redirect to Facebook OAuth."""
+    redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/facebook/callback"
+    scope = "email,public_profile"
+    state = secrets.token_urlsafe(16)
+    
+    auth_url = (
+        f"https://www.facebook.com/v18.0/dialog/oauth?"
+        f"client_id={FACEBOOK_APP_ID}&"
+        f"redirect_uri={redirect_uri}&"
+        f"scope={scope}&"
+        f"state={state}"
+    )
+    return redirect(auth_url)
+
+@app.route('/auth/facebook/callback')
+def facebook_callback():
+    """Handle Facebook OAuth callback."""
+    code = request.args.get('code')
+    error = request.args.get('error')
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    
+    if error:
+        return redirect(f"{frontend_url}?auth_error={error}")
+    
+    if not code:
+        return redirect(f"{frontend_url}?auth_error=no_code")
+    
+    try:
+        redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/facebook/callback"
+        token_response = http_requests.get(
+            "https://graph.facebook.com/v18.0/oauth/access_token",
+            params={
+                "code": code,
+                "client_id": FACEBOOK_APP_ID,
+                "client_secret": FACEBOOK_APP_SECRET,
+                "redirect_uri": redirect_uri
+            }
+        )
+        token_data = token_response.json()
+        
+        if "error" in token_data:
+            return redirect(f"{frontend_url}?auth_error={token_data['error']['message']}")
+        
+        access_token = token_data["access_token"]
+        user_response = http_requests.get(
+            "https://graph.facebook.com/me",
+            params={"fields": "id,name,email", "access_token": access_token}
+        )
+        user_data = user_response.json()
+        email = user_data.get("email")
+        
+        if not email:
+            return redirect(f"{frontend_url}?auth_error=no_email_permission")
+        
+        user_id, email = get_or_create_oauth_user(email, "facebook")
+        
+        response = make_response(redirect(f"{frontend_url}?auth_success=true"))
+        response.set_cookie('sessionEmail', email, max_age=86400)
+        response.set_cookie('sessionID', str(user_id), max_age=86400)
+        return response
+        
+    except Exception as e:
+        print(f"Facebook OAuth error: {e}")
+        return redirect(f"{frontend_url}?auth_error=server_error")
 
 @app.route('/api/indexPageFilms', methods=['GET'])
 def get_index_page_films():
@@ -311,8 +471,9 @@ def shuffle_films():
         exclude_tconsts = []
         if user_id:
             try:
-                exclude_res = request.get(f'/api/get_user_films?user_id={user_id}', timeout=5)
-                exclude_tconsts = exclude_res.json().get('tconsts', [])
+                exclude_res = get_user_films()
+                exclude_json = exclude_res.get_json() or {}
+                exclude_tconsts = exclude_json.get('tconsts', [])
             except:
                 pass
 
@@ -766,8 +927,6 @@ def serve_react_app(path):
 if __name__ == "__main__":
     port = int(os.getenv("PORT"))
     print(f"Starting unified Flask server on port {port}...")
-    # print(f"API available at: http://127.0.0.1:{port}/api/")
-    # print(f"React app available at: http://127.0.0.1:{port}/")
     print(f"Recommendation engine routes integrated on same port")
     
     app.run(host="0.0.0.0", port=port, debug=False)

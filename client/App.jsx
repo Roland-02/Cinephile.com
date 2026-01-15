@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
 import Index from './pages/Index';
@@ -20,11 +20,59 @@ export const useTheme = () => {
   return context;
 };
 
-function App() {
+function AppContent() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const authSuccess = searchParams.get('auth_success');
+    const authError = searchParams.get('auth_error');
+    
+    if (authSuccess === 'true') {
+      navigate('/', { replace: true });
+      window.location.reload();
+    }
+    
+    if (authError) {
+      console.error('OAuth error:', authError);
+      navigate('/', { replace: true });
+    }
+  }, [searchParams, navigate]);
+
+  const handleAuthSuccess = () => {
+    setAuthModalOpen(false);
+    window.location.reload();
+  };
+
+  return (
+    <div className="App">
+      <Navbar onLoginClick={() => setAuthModalOpen(true)} />
+      <AuthModal 
+        isOpen={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/index" element={<Index />} />
+        <Route path="/discover" element={<Index />} />
+        <Route path="/home" element={<Index />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/watchlist" element={<Watchlist />} />
+        <Route path="/recommend" element={<Recommend />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/info" element={<Navigate to="/about" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
+  );
+}
+
+function App() {
   const [theme, setTheme] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme || 'light';
+    return localStorage.getItem('theme') || 'light';
   });
 
   useEffect(() => {
@@ -33,47 +81,14 @@ function App() {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
-  };
-
-  const handleOpenAuth = () => {
-    setAuthModalOpen(true);
-  };
-
-  const handleCloseAuth = () => {
-    setAuthModalOpen(false);
-  };
-
-  const handleAuthSuccess = () => {
-    setAuthModalOpen(false);
-    window.location.reload();
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <FilterProvider>
         <Router>
-          <div className="App">
-            <Navbar onLoginClick={handleOpenAuth} />
-            <AuthModal 
-              isOpen={authModalOpen} 
-              onClose={handleCloseAuth}
-              onSuccess={handleAuthSuccess}
-            />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/index" element={<Index />} />
-              <Route path="/discover" element={<Index />} />
-              <Route path="/home" element={<Index />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/watchlist" element={<Watchlist />} />
-              <Route path="/recommend" element={<Recommend />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/info" element={<Navigate to="/about" replace />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
+          <AppContent />
         </Router>
       </FilterProvider>
     </ThemeContext.Provider>
@@ -81,4 +96,3 @@ function App() {
 }
 
 export default App;
-
