@@ -10,8 +10,8 @@ const API_TOKEN = import.meta.env.VITE_API_TOKEN;
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL);
 
 axios.defaults.headers.common['X-API-KEY'] = API_TOKEN;
-
 axios.defaults.baseURL = API_BASE_URL;
+axios.defaults.withCredentials = true;
 
 
 const originalFetch = window.fetch.bind(window);

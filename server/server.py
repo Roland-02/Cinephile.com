@@ -14,7 +14,9 @@ from recommendEngine import recommend_bp, init_recommend_cache, start_recommenda
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+CORS(app, origins=[FRONTEND_URL], supports_credentials=True)
 
 API_TOKEN = os.getenv("API_TOKEN")
 
@@ -131,8 +133,8 @@ def login():
             conn.close()
 
             response = make_response(jsonify({'success': True, 'message': 'Login successful'}))
-            response.set_cookie('sessionEmail', email, max_age=86400)
-            response.set_cookie('sessionID', str(user_id), max_age=86400)
+            response.set_cookie('sessionEmail', email, max_age=86400, samesite='None', secure=True)
+            response.set_cookie('sessionID', str(user_id), max_age=86400, samesite='None', secure=True)
             return response
         else:
             cursor.close()
@@ -178,8 +180,8 @@ def create_account():
         conn.close()
 
         response = make_response(jsonify({'success': True, 'message': 'Account created successfully'}))
-        response.set_cookie('sessionEmail', email, max_age=86400)
-        response.set_cookie('sessionID', str(user_id), max_age=86400)
+        response.set_cookie('sessionEmail', email, max_age=86400, samesite='None', secure=True)
+        response.set_cookie('sessionID', str(user_id), max_age=86400, samesite='None', secure=True)
         return response
         
     except Exception as e:
@@ -189,8 +191,8 @@ def create_account():
 @app.route('/api/signout', methods=['POST'])
 def signout():
     response = make_response(jsonify({'success': True}))
-    response.set_cookie('sessionEmail', '', expires=0)
-    response.set_cookie('sessionID', '', expires=0)
+    response.set_cookie('sessionEmail', '', expires=0, samesite='None', secure=True)
+    response.set_cookie('sessionID', '', expires=0, samesite='None', secure=True)
     return response
 
 @app.route('/api/session', methods=['GET'])
@@ -248,7 +250,7 @@ def google_callback():
     """Handle Google OAuth callback."""
     code = request.args.get('code')
     error = request.args.get('error')
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    frontend_url = FRONTEND_URL
     
     if error:
         return redirect(f"{frontend_url}?auth_error={error}")
@@ -287,10 +289,10 @@ def google_callback():
         user_id, email = get_or_create_oauth_user(email, "google")
         
         response = make_response(redirect(f"{frontend_url}?auth_success=true"))
-        response.set_cookie('sessionEmail', email, max_age=86400)
-        response.set_cookie('sessionID', str(user_id), max_age=86400)
+        response.set_cookie('sessionEmail', email, max_age=86400, samesite='None', secure=True)
+        response.set_cookie('sessionID', str(user_id), max_age=86400, samesite='None', secure=True)
         return response
-        
+
     except Exception as e:
         print(f"Google OAuth error: {e}")
         return redirect(f"{frontend_url}?auth_error=server_error")
@@ -316,7 +318,7 @@ def facebook_callback():
     """Handle Facebook OAuth callback."""
     code = request.args.get('code')
     error = request.args.get('error')
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    frontend_url = FRONTEND_URL
     
     if error:
         return redirect(f"{frontend_url}?auth_error={error}")
@@ -354,10 +356,10 @@ def facebook_callback():
         user_id, email = get_or_create_oauth_user(email, "facebook")
         
         response = make_response(redirect(f"{frontend_url}?auth_success=true"))
-        response.set_cookie('sessionEmail', email, max_age=86400)
-        response.set_cookie('sessionID', str(user_id), max_age=86400)
+        response.set_cookie('sessionEmail', email, max_age=86400, samesite='None', secure=True)
+        response.set_cookie('sessionID', str(user_id), max_age=86400, samesite='None', secure=True)
         return response
-        
+
     except Exception as e:
         print(f"Facebook OAuth error: {e}")
         return redirect(f"{frontend_url}?auth_error=server_error")
