@@ -43,9 +43,16 @@ def _extract_api_token_from_headers():
 
     return None
 
+@app.route('/api/health')
+def health():
+    return jsonify({'status': 'ok'})
+
 @app.before_request
 def enforce_api_token():
     if request.method == "OPTIONS":
+        return None
+
+    if request.path == "/api/health":
         return None
 
     if not request.path.startswith("/api/"):
