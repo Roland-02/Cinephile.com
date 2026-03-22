@@ -4,7 +4,8 @@ import random
 import hmac
 import bcrypt
 import secrets
-import mysql.connector
+import psycopg2
+import psycopg2.extras
 import requests as http_requests
 from flask import Flask, jsonify, request, make_response, send_from_directory, redirect
 from flask_cors import CORS
@@ -77,13 +78,13 @@ filteredFilms_global = []
 PAGE_SIZE = int(os.getenv("PAGE_SIZE"))
 films_loaded = False
 
-# Create MySQL database connection
+# Create PostgreSQL database connection
 def create_db_connection():
-    return mysql.connector.connect(
+    return psycopg2.connect(
         host=os.getenv("DB_HOST"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_DATABASE"),
+        dbname=os.getenv("DB_DATABASE"),
         port=int(os.getenv("DB_PORT"))
     )
 
@@ -91,7 +92,7 @@ def load_films_from_db():
     global allFilms_global, films_loaded
     try:
         conn = create_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('SELECT * FROM films')
         allFilms_global = cursor.fetchall()
         cursor.close()
@@ -118,8 +119,8 @@ def login():
             return jsonify({'message': 'Email and password are required'}), 400
         
         conn = create_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
         cursor.execute("SELECT * FROM login WHERE email = %s", (email,))
         result = cursor.fetchone()
         
@@ -163,9 +164,9 @@ def create_account():
             return jsonify({'message': 'Email and password are required'}), 400
         
         hash_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        
+
         conn = create_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         cursor.execute("SELECT * FROM login WHERE email = %s", (email,))
         if cursor.fetchone():
@@ -173,9 +174,9 @@ def create_account():
             conn.close()
             return jsonify({'message': 'User already exists'}), 409
 
-        cursor.execute("INSERT INTO login (user_id, email, password) VALUES (0, %s, %s)", 
+        cursor.execute("INSERT INTO login (email, password) VALUES (%s, %s) RETURNING user_id",
                        (email, hash_password))
-        user_id = cursor.lastrowid
+        user_id = cursor.fetchone()['user_id']
 
         try:
             update_profile_and_vectors(user_id=user_id)
@@ -212,18 +213,18 @@ def get_session():
 def get_or_create_oauth_user(email, provider):
     """Get existing user or create new one for OAuth login."""
     conn = create_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
     cursor.execute("SELECT * FROM login WHERE email = %s", (email,))
     result = cursor.fetchone()
-    
+
     if result:
         user_id = result['user_id']
     else:
         random_password = secrets.token_urlsafe(32)
         hash_password = bcrypt.hashpw(random_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        cursor.execute("INSERT INTO login (user_id, email, password) VALUES (0, %s, %s)", (email, hash_password))
-        user_id = cursor.lastrowid
+        cursor.execute("INSERT INTO login (email, password) VALUES (%s, %s) RETURNING user_id", (email, hash_password))
+        user_id = cursor.fetchone()['user_id']
         conn.commit()
         try:
             update_profile_and_vectors(user_id=user_id)
@@ -569,7 +570,7 @@ def get_liked_films():
     try:
         user_id = request.args.get('user_id')
         conn = create_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         # 1) Get all liked attribute rows for this user
         cursor.execute("""
@@ -637,8 +638,8 @@ def get_loved_films():
     try:
         user_id = request.args.get('user_id')
         conn = create_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
         cursor.execute("SELECT tconst FROM loved_films WHERE user_id = %s", (user_id,))
         results = cursor.fetchall()
         
@@ -669,8 +670,8 @@ def get_watchlist():
     try:
         user_id = request.args.get('user_id')
         conn = create_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
         # Get tconsts from watchlist table
         cursor.execute("SELECT tconst FROM watchlist WHERE user_id = %s", (user_id,))
         watchlist_tconsts = cursor.fetchall()

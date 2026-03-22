@@ -1,14 +1,13 @@
 Flask
 flask-cors
 python-dotenv
-mysql-connector-python
+psycopg2-binary
 bcrypt
 numpy
 pandas
 scikit-learn
 requests
 langdetect
-SQLAlchemy
 schedule
 Flask-Caching
 

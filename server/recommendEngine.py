@@ -6,7 +6,8 @@ import threading
 import numpy as np
 import pandas as pd
 from urllib.parse import quote_plus
-import mysql.connector
+import psycopg2
+import psycopg2.extras
 from dotenv import load_dotenv
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import MinMaxScaler
@@ -19,7 +20,6 @@ from io import BytesIO
 from langdetect import detect
 from collections import Counter
 from multiprocessing import Manager, process
-from sqlalchemy import create_engine
 import schedule
 from flask_caching import Cache
 from flask import Blueprint, jsonify, request
@@ -38,12 +38,12 @@ _thread_local = threading.local()
 
 # Get thread-local database connection
 def get_db_connection():
-    if not hasattr(_thread_local, 'mydb') or not _thread_local.mydb.is_connected():
-        _thread_local.mydb = mysql.connector.connect(
+    if not hasattr(_thread_local, 'mydb') or _thread_local.mydb.closed:
+        _thread_local.mydb = psycopg2.connect(
             host=os.getenv("DB_HOST"),
             user=os.getenv("DB_USER"),
             password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_DATABASE"),
+            dbname=os.getenv("DB_DATABASE"),
             port=int(os.getenv("DB_PORT"))
         )
     return _thread_local.mydb
@@ -117,12 +117,12 @@ def doBatch(shared_data):
         print(f"Error in ThreadPoolExecutor: {e}")
         time.sleep(1 / MAX_REQUESTS_PER_SECOND)
     
-# export film data to mysql
+# export film data to postgres
 def save_mySQL(data):
     # Get thread-local connection
     mydb = get_db_connection()
     mycursor = get_db_cursor()
-    
+
     # Table name in the database
     table_name = "films"
 
@@ -133,12 +133,37 @@ def save_mySQL(data):
     mycursor.execute(delete_query)
     mydb.commit()
 
-    engine = create_engine(
-        f"mysql+mysqlconnector://{os.environ['DB_USER']}:{quote_plus(os.environ['DB_PASSWORD'])}"
-        f"@{os.environ['DB_HOST']}:{int(os.environ['DB_PORT'])}/{os.environ['DB_DATABASE']}"
-    )
+    # Prepare data for batch insert
+    insert_query = """
+        INSERT INTO films
+        (tconst, "primaryTitle", plot, "averageRating", genres, "runtimeMinutes",
+         "startYear", "cast", director, cinematographer, writer, producer, editor, composer, poster)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
 
-    data.to_sql('films', con=engine, if_exists='replace', index=True)
+    values = [
+        (
+            row.get('tconst'),
+            row.get('primaryTitle'),
+            row.get('plot'),
+            row.get('averageRating'),
+            row.get('genres'),
+            row.get('runtimeMinutes'),
+            row.get('startYear'),
+            row.get('cast'),
+            row.get('director'),
+            row.get('cinematographer'),
+            row.get('writer'),
+            row.get('producer'),
+            row.get('editor'),
+            row.get('composer'),
+            row.get('poster')
+        )
+        for index, row in data.iterrows()
+    ]
+
+    mycursor.executemany(insert_query, values)
+    mydb.commit()
 
 # export recommended film interaction data to mysql
 def save_interaction(user_id, tconst, position, similarity):
