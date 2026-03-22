@@ -574,8 +574,8 @@ def get_liked_films():
 
         # 1) Get all liked attribute rows for this user
         cursor.execute("""
-            SELECT tconst, Title, Plot, Rating, Genre, Runtime, Year,
-                   Director, Camera, Writer, Producer, Editor, Composer
+            SELECT tconst, "Title", "Plot", "Rating", "Genre", "Runtime", "Year",
+                   "Director", "Camera", "Writer", "Producer", "Editor", "Composer"
             FROM liked_attributes
             WHERE user_id = %s
         """, (user_id,))
@@ -800,7 +800,7 @@ def save_liked_elements():
         if liked_elements:
             cursor.execute("""
                 INSERT INTO liked_attributes 
-                (user_id, tconst, Title, Plot, Rating, Genre, Runtime, Year, Director, Camera, Writer, Producer, Editor, Composer) 
+                (user_id, tconst, "Title", "Plot", "Rating", "Genre", "Runtime", "Year", "Director", "Camera", "Writer", "Producer", "Editor", "Composer")
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (user_id, tconst, *attribute_values.values()));
 

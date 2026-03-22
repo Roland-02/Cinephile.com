@@ -332,13 +332,14 @@
   .auth-modal-close {
     transition: all $transition-fast;
     color: var(--text-color);
-    
+
     &:hover {
       background-color: var(--grey-light) !important;
+      transform: scale(1.15);
     }
-    
+
     &:active {
-      transform: scale(0.95);
+      transform: scale(0.9);
     }
   }
   
@@ -393,30 +394,56 @@
     }
   }
   
-  // Auth modal buttons - prevent text color change on hover
+  // Auth modal buttons
   .auth-submit-btn {
     &.btn-primary {
       color: var(--text-color);
       background-color: var(--grey-light);
       border-color: var(--border-color);
-      
+      transition: all $transition-fast;
+
       &:hover {
         color: var(--text-color) !important;
         background-color: var(--grey-light);
-        opacity: 0.8;
+        transform: scale(1.03);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      &:active {
+        transform: scale(0.97);
       }
     }
   }
-  
+
+  .auth-social-btn {
+    transition: all $transition-fast;
+
+    &:hover {
+      transform: scale(1.03);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+
   .auth-switch-btn {
     &.btn-outline-primary {
       color: var(--text-color);
       border-color: var(--border-color);
       background-color: transparent;
-      
+      transition: all $transition-fast;
+
       &:hover {
         color: var(--text-color) !important;
         background-color: var(--grey-light);
+        transform: scale(1.03);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      &:active {
+        transform: scale(0.97);
       }
     }
   }
