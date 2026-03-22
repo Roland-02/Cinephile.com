@@ -1,15 +1,15 @@
 services:
   db:
-    image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password
+    image: postgres:16-alpine
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-}
-      MYSQL_DATABASE: ${DB_DATABASE:-}
+      POSTGRES_USER: ${DB_USER:-}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-}
+      POSTGRES_DB: ${DB_DATABASE:-}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
 
   app:
     build:
@@ -32,7 +32,9 @@ services:
       TMDB_API_KEY: ${TMDB_API_KEY:-}
     ports:
       - "8080:8080"
+    depends_on:
+      - db
 
 volumes:
-  mysql_data:
+  postgres_data:
 
