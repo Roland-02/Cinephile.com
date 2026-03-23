@@ -38,11 +38,11 @@ Users select *what* they liked about a film (the plot? a specific actor? the dir
 
 ```
 Vercel (Frontend)              VPS (Backend)
-┌──────────────────┐           ┌──────────────────────┐
-│  React + Vite    │──/api/*──>│  Flask API (Python)   │
-│  SCSS            │──/auth/*─>│  Recommendation Engine│
+┌──────────────────┐           ┌──────────────────────--┐
+│  React + Vite    │──/api/*──>│  Flask API (Python)    │
+│  SCSS            │──/auth/*─>│  Recommendation Engine │
 │                  │           │  PostgreSQL (Docker)   │
-└──────────────────┘           └──────────────────────┘
+└──────────────────┘           └──────────────────────--┘
 ```
 
 Vercel serves the React SPA and proxies `/api/*` and `/auth/*` requests to the Flask backend on the VPS. The backend and database run as Docker Compose services.
