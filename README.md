@@ -1,70 +1,86 @@
-# Film Recommendation App - Cinephile.com
+# Cinephile.com
 
-## Project Overview
+A personalized movie discovery platform powered by a content-based machine learning recommendation engine.
 
-Cinephile.com is an innovative film recommendation website that leverages machine learning algorithms to provide users with personalized film suggestions. With a user-friendly interface and advanced recommendation engine, Cinephile.com helps movie enthusiasts discover films tailored to their tastes.
+**Live site:** [cinephile-com.vercel.app](https://cinephile-com.vercel.app/)
 
-### Tech Stack
+## Tech Stack
 
-- **Frontend:** 
-  - HTML, CSS, JavaScript
-  - Bootstrap for responsive design
-- **Backend:**
-  - Node.js for the server-side application (running on port **8080**)
-  - Flask for the recommendation engine (running on port **8081**)
-  - MySQL for database management
-- **Machine Learning:**
-  - Python for implementing recommendation algorithms
-- **Development Tools:**
-  - npm for package management
-  - MySQL Workbench for database visualization and management
+- **Frontend:** React, Vite, SCSS
+- **Backend:** Flask (Python), PostgreSQL
+- **ML:** scikit-learn (TF-IDF, K-Means, cosine similarity)
+- **Infrastructure:** Docker, Vercel (frontend), VPS (backend)
 
-## Key Features
+## Recommendation Engine
 
-- **Personalized Recommendations:** Utilizes machine learning algorithms to analyze user preferences and suggest relevant films.
-- **User-Friendly Interface:** Easy navigation and search capabilities to enhance the user experience.
-- **API Integration:** Allows for seamless interaction with the recommendation engine through the accessible API in `RecommendEngine.py`.
-- **Multi-Server Architecture:** Operates with two servers to handle front-end requests and backend processing efficiently.
+The system builds a user taste profile across 5 similarity dimensions:
 
-## Achievements
+- **Plot** — TF-IDF vectorization + cosine similarity on film synopses
+- **Cast** — Weighted matching on liked actors/actresses
+- **Crew** — Similarity across directors, cinematographers, writers, producers, editors, composers
+- **Genre** — K-Means clustering (85 clusters) on genre vectors with cosine similarity
+- **Meta** — Euclidean distance on rating, year, and runtime
 
-- Developed a fully functional film recommendation system that has been tested with real user data.
-- Successfully integrated a responsive front-end design, making the application accessible across various devices.
-- Implemented robust error handling and validation mechanisms to ensure a smooth user experience.
+Users select *what* they liked about a film (the plot? a specific actor? the director?), and the engine weighs recommendations accordingly — producing 5 distinct recommendation feeds: combined, storyline, cast, crew, and genre.
 
-## Software Prerequisites
+## Features
 
-To run the application, you will need to have the following installed on your local machine:
+- Browse and filter films by genre, rating, runtime, and decade
+- Like films with granular attribute selection (plot, cast, crew, genre, meta)
+- Love films for strong positive signals
+- Watchlist management
+- Personalized recommendations across 5 categories
+- Profile analytics — favourite actors, filmmakers, and genre distribution charts
+- Search for films and people
+- OAuth 2.0 authentication (Google, Facebook) + email/password
 
-- npm
-- MySQL Workbench
-- A modern web browser (Chrome is recommended)
+## Architecture
 
-### Database Setup
+```
+Vercel (Frontend)              VPS (Backend)
+┌──────────────────┐           ┌──────────────────────┐
+│  React + Vite    │──/api/*──>│  Flask API (Python)   │
+│  SCSS            │──/auth/*─>│  Recommendation Engine│
+│                  │           │  PostgreSQL (Docker)   │
+└──────────────────┘           └──────────────────────┘
+```
 
-- Ensure that the packages in the `node_modules` folder are stored locally.
-- Migrate the database to your local machine by executing the SQL files located in the `/mysql_schema_tables` folder.
-  - Make sure the schema is named `users`.
-  - Update the database host and password in `database.js` to match your local credentials.
+Vercel serves the React SPA and proxies `/api/*` and `/auth/*` requests to the Flask backend on the VPS. The backend and database run as Docker Compose services.
 
-## How to Run the Application
+## Local Development
 
-1. Start the Node.js server:
-   
-   -terminal: node app.js
+### Prerequisites
 
-2. The terminal will display the status and outputs from both servers:
-    
-   -Access the frontend at http://localhost:8080
-   
-   -For direct API requests, use http://127.0.0.1:8081 
+- Docker & Docker Compose
+- Node.js & npm
+- Python 3.13+
 
+### Setup
 
-<img width="1440" alt="Screenshot 2024-04-14 at 17 56 03" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/55ccf4f7-85a8-4abd-a466-c5e432862c1f">
-<br>
-<img width="1440" alt="Screenshot 2024-04-14 at 17 56 45" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/93066a3d-4ecd-44f7-9753-cd55314271d1">
-<br>
-<img width="1440" alt="Screenshot 2024-04-14 at 17 56 27" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/8a04787d-e22f-449a-b4e1-dab830e13232">
-<br>
-<img width="1440" alt="Screenshot 2024-04-14 at 17 56 56" src="https://github.com/Roland-02/Cinephile.com/assets/111765814/76825720-91c8-464a-8b90-14bd2dc06a6a">
-<br>
+1. Clone the repo
+   ```bash
+   git clone https://github.com/Roland-02/Cinephile.com.git
+   cd Cinephile.com
+   ```
+
+2. Create a `.env` file in the project root with the required environment variables:
+   ```
+   DB_HOST=localhost
+   DB_USER=your_db_user
+   DB_PASSWORD=your_db_password
+   DB_DATABASE=cinephile
+   DB_PORT=5432
+   API_TOKEN=your_api_token
+   VITE_API_TOKEN=your_vite_api_token
+   ```
+
+3. Start the backend with Docker:
+   ```bash
+   docker compose up --build
+   ```
+
+4. Or run the frontend separately for development:
+   ```bash
+   npm install
+   npm run dev
+   ```
