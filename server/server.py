@@ -889,50 +889,24 @@ def has_user_interacted():
 # SERVE REACT APP
 # ============================================================================
 
-@app.route('/client/<path:filename>')
-def serve_client_files(filename):
-    """Serve React client files"""
-    try:
-        return send_from_directory('client', filename)
-    except:
-        return "File not found", 404
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DIST_DIR = os.path.join(PROJECT_ROOT, 'dist')
+IMAGES_DIR = os.path.join(PROJECT_ROOT, 'images')
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react_app(path):
-    """Serve React app - all non-API routes go to React"""
     if path.startswith('api/'):
         return "API route not found", 404
 
     if path.startswith('images/'):
-        try:
-            return send_from_directory('.', path)
-        except:
-            return "File not found", 404
+        return send_from_directory(IMAGES_DIR, path[len('images/'):])
 
-    if path.startswith('client/'):
-        try:
-            return send_from_directory('.', path)
-        except:
-            return "File not found", 404
+    dist_candidate = os.path.join(DIST_DIR, path)
+    if path and os.path.isfile(dist_candidate):
+        return send_from_directory(DIST_DIR, path)
 
-    if os.path.exists('index.html'):
-        return send_from_directory('.', 'index.html')
-    elif os.path.exists('dist/index.html'):
-        return send_from_directory('dist', 'index.html')
-    else:
-        return """
-        <html>
-            <body>
-                <h1>React App Not Found</h1>
-                <p>Please either:</p>
-                <ol>
-                    <li>Build the React app: <code>npm install && npm run build</code></li>
-                    <li>Or ensure <code>index.html</code> exists in the project root</li>
-                </ol>
-            </body>
-        </html>
-        """, 404
+    return send_from_directory(DIST_DIR, 'index.html')
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT"))
