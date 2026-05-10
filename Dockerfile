@@ -9,11 +9,8 @@ COPY client ./client
 COPY public ./public
 
 ARG API_TOKEN
-ARG VITE_API_TOKEN
 ARG VITE_API_BASE_URL=""
-RUN VITE_API_TOKEN="${VITE_API_TOKEN:-$API_TOKEN}" \
-    VITE_API_BASE_URL="${VITE_API_BASE_URL}" \
-    npm run build
+RUN VITE_API_BASE_URL="${VITE_API_BASE_URL}" npm run build
 
 FROM python:3.13-slim AS runtime
 WORKDIR /app
