@@ -36,7 +36,7 @@ TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 # Thread-local storage for database connections (thread-safe)
 _thread_local = threading.local()
 
-# Get thread-local database connection
+# Get thread-local database connection (Supabase)
 def get_db_connection():
     if not hasattr(_thread_local, 'mydb') or _thread_local.mydb.closed:
         _thread_local.mydb = psycopg2.connect(
@@ -44,7 +44,8 @@ def get_db_connection():
             user=os.getenv("DB_USER"),
             password=os.getenv("DB_PASSWORD"),
             dbname=os.getenv("DB_DATABASE"),
-            port=int(os.getenv("DB_PORT"))
+            port=int(os.getenv("DB_PORT")),
+            sslmode=os.getenv("DB_SSLMODE", "require")
         )
     return _thread_local.mydb
 

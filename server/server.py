@@ -78,14 +78,15 @@ filteredFilms_global = []
 PAGE_SIZE = int(os.getenv("PAGE_SIZE"))
 films_loaded = False
 
-# Create PostgreSQL database connection
+# Create PostgreSQL database connection (Supabase)
 def create_db_connection():
     return psycopg2.connect(
         host=os.getenv("DB_HOST"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
         dbname=os.getenv("DB_DATABASE"),
-        port=int(os.getenv("DB_PORT"))
+        port=int(os.getenv("DB_PORT")),
+        sslmode=os.getenv("DB_SSLMODE", "require")
     )
 
 def load_films_from_db():

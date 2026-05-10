@@ -1,20 +1,4 @@
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_DATABASE}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_DATABASE}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
   app:
     build:
       context: .
@@ -26,10 +10,5 @@ services:
     environment:
       PORT: 8080
       SERVICE_FQDN_APP_8080: /
-      DB_HOST: ${DB_HOST}
     expose:
       - "8080"
-    depends_on:
-      - db
-volumes:
-  postgres_data:
