@@ -67,44 +67,64 @@ def _extract_clerk_token():
         return auth_header[len("Bearer "):].strip()
     return None
 
-def _get_or_create_local_user(clerk_user_id):
-    """Look up the local user row for this Clerk ID, creating it on first sight."""
-    conn = create_db_connection()
-    try:
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute(
-            "SELECT user_id, role FROM login WHERE clerk_user_id = %s",
-            (clerk_user_id,),
-        )
-        row = cursor.fetchone()
-        if row:
-            return {"id": row["user_id"], "role": row["role"]}
-
-        cursor.execute(
-            "INSERT INTO login (clerk_user_id) VALUES (%s) RETURNING user_id, role",
-            (clerk_user_id,),
-        )
-        new_row = cursor.fetchone()
-        conn.commit()
-        return {"id": new_row["user_id"], "role": new_row["role"]}
-    finally:
-        cursor.close()
-        conn.close()
-
 def _resolve_email_from_clerk(clerk_user_id):
-    """Best-effort fetch of primary email from Clerk for /account/me responses."""
+    """Fetch the user's primary email from Clerk.
+
+    Works for every auth method Clerk supports — email/password, magic link,
+    and third-party OAuth (Google, Facebook, etc.). For OAuth sign-ups Clerk
+    still populates email_addresses with the verified address from the
+    provider and points primary_email_address_id at it.
+    """
     try:
         user = _clerk_client.users.get(user_id=clerk_user_id)
+        emails = getattr(user, "email_addresses", []) or []
         primary_id = getattr(user, "primary_email_address_id", None)
-        for entry in getattr(user, "email_addresses", []) or []:
+        for entry in emails:
             if entry.id == primary_id:
                 return entry.email_address
-        emails = getattr(user, "email_addresses", []) or []
         if emails:
             return emails[0].email_address
     except Exception as e:
         print(f"Clerk user lookup failed for {clerk_user_id}: {e}")
     return None
+
+def _get_or_create_local_user(clerk_user_id):
+    """Look up the local login row, creating it on first sight and backfilling
+    user_email from Clerk for rows created before email was tracked.
+
+    user_id IS the Clerk user_id — no separate mapping column."""
+    conn = create_db_connection()
+    try:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute(
+            "SELECT user_id, role, user_email FROM login WHERE user_id = %s",
+            (clerk_user_id,),
+        )
+        row = cursor.fetchone()
+        if row:
+            email = row["user_email"]
+            if not email:
+                email = _resolve_email_from_clerk(clerk_user_id)
+                if email:
+                    cursor.execute(
+                        "UPDATE login SET user_email = %s WHERE user_id = %s",
+                        (email, clerk_user_id),
+                    )
+                    conn.commit()
+            return {"id": row["user_id"], "role": row["role"], "email": email}
+
+        email = _resolve_email_from_clerk(clerk_user_id)
+        cursor.execute(
+            "INSERT INTO login (user_id, user_email) VALUES (%s, %s) "
+            "RETURNING user_id, role",
+            (clerk_user_id, email),
+        )
+        new_row = cursor.fetchone()
+        conn.commit()
+        return {"id": new_row["user_id"], "role": new_row["role"], "email": email}
+    finally:
+        cursor.close()
+        conn.close()
 
 def _authenticate(require_user):
     """Verify the Clerk session token and attach g.user. Returns an error
@@ -140,6 +160,7 @@ def _authenticate(require_user):
         "id": local["id"],
         "role": role or local["role"],
         "clerkId": clerk_user_id,
+        "email": local["email"],
     }
     return None
 
@@ -206,10 +227,9 @@ def account_me():
     user = g.get('user')
     if not user:
         return jsonify({"message": "Unauthorized"}), 401
-    email = _resolve_email_from_clerk(user["clerkId"])
     return jsonify({
         "id": user["id"],
-        "email": email,
+        "email": user["email"],
         "role": user["role"],
         "clerkId": user["clerkId"],
     })
