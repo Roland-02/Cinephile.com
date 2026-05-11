@@ -90,38 +90,37 @@ def _resolve_email_from_clerk(clerk_user_id):
 
 def _get_or_create_local_user(clerk_user_id):
     """Look up the local login row, creating it on first sight and backfilling
-    user_email from Clerk for rows created before email was tracked.
+    email from Clerk for rows created before email was tracked.
 
     user_id IS the Clerk user_id — no separate mapping column."""
     conn = create_db_connection()
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(
-            "SELECT user_id, role, user_email FROM login WHERE user_id = %s",
+            "SELECT user_id, email FROM login WHERE user_id = %s",
             (clerk_user_id,),
         )
         row = cursor.fetchone()
         if row:
-            email = row["user_email"]
+            email = row["email"]
             if not email:
                 email = _resolve_email_from_clerk(clerk_user_id)
                 if email:
                     cursor.execute(
-                        "UPDATE login SET user_email = %s WHERE user_id = %s",
+                        "UPDATE login SET email = %s WHERE user_id = %s",
                         (email, clerk_user_id),
                     )
                     conn.commit()
-            return {"id": row["user_id"], "role": row["role"], "email": email}
+            return {"id": row["user_id"], "email": email}
 
         email = _resolve_email_from_clerk(clerk_user_id)
         cursor.execute(
-            "INSERT INTO login (user_id, user_email) VALUES (%s, %s) "
-            "RETURNING user_id, role",
+            "INSERT INTO login (user_id, email) VALUES (%s, %s) RETURNING user_id",
             (clerk_user_id, email),
         )
         new_row = cursor.fetchone()
         conn.commit()
-        return {"id": new_row["user_id"], "role": new_row["role"], "email": email}
+        return {"id": new_row["user_id"], "email": email}
     finally:
         cursor.close()
         conn.close()
@@ -158,7 +157,7 @@ def _authenticate(require_user):
     local = _get_or_create_local_user(clerk_user_id)
     g.user = {
         "id": local["id"],
-        "role": role or local["role"],
+        "role": role,
         "clerkId": clerk_user_id,
         "email": local["email"],
     }
