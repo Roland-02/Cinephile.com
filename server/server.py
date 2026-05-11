@@ -2,14 +2,13 @@ import os
 import json
 import random
 import hmac
-import bcrypt
-import secrets
 import psycopg2
 import psycopg2.extras
-import requests as http_requests
-from flask import Flask, jsonify, request, make_response, send_from_directory, redirect
+from flask import Flask, jsonify, request, send_from_directory, g
 from flask_cors import CORS
 from dotenv import load_dotenv
+from clerk_backend_api import Clerk
+from clerk_backend_api.security import verify_token, VerifyTokenOptions, TokenVerificationError
 from recommendEngine import recommend_bp, init_recommend_cache, start_recommendation_scheduler, update_profile_and_vectors, get_user_films
 
 load_dotenv()
@@ -20,28 +19,128 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 CORS(app, origins=[FRONTEND_URL], supports_credentials=True)
 
 API_TOKEN = os.getenv("API_TOKEN")
-
-# OAuth Configuration
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-FACEBOOK_APP_ID = os.getenv("FACEBOOK_APP_ID")
-FACEBOOK_APP_SECRET = os.getenv("FACEBOOK_APP_SECRET")
-OAUTH_REDIRECT_BASE = os.getenv("BASE_URL")
+CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
 
 if not API_TOKEN:
     raise RuntimeError("Missing API_TOKEN environment variable.")
+if not CLERK_SECRET_KEY:
+    raise RuntimeError("Missing CLERK_SECRET_KEY environment variable.")
+
+_CLERK_VERIFY_OPTIONS = VerifyTokenOptions(secret_key=CLERK_SECRET_KEY)
+_clerk_client = Clerk(bearer_auth=CLERK_SECRET_KEY)
+
+# Routes under /api/* that may be hit without a signed-in user. Auth still
+# runs (so g.user is set when present), but missing/invalid Clerk tokens are
+# permitted.
+PUBLIC_API_PATHS = {
+    "/api/health",
+    "/api/indexPageFilms",
+    "/api/filteredPageFilms",
+    "/api/filter",
+    "/api/shuffleFilms",
+    "/api/openClickedFilm",
+    "/api/get_allFilms_index",
+    "/api/datasetLength",
+    "/api/search_general",
+}
+
+# Create PostgreSQL database connection (Supabase)
+def create_db_connection():
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        dbname=os.getenv("DB_DATABASE"),
+        port=int(os.getenv("DB_PORT")),
+        sslmode=os.getenv("DB_SSLMODE", "require")
+    )
 
 def _extract_api_token_from_headers():
     token = request.headers.get("X-API-KEY")
     if token:
         return str(token).strip()
+    return None
 
+def _extract_clerk_token():
     auth_header = request.headers.get("Authorization", "")
     if isinstance(auth_header, str) and auth_header.startswith("Bearer "):
-        token = auth_header[len("Bearer "):].strip()
-        if token:
-            return token
+        return auth_header[len("Bearer "):].strip()
+    return None
 
+def _get_or_create_local_user(clerk_user_id):
+    """Look up the local user row for this Clerk ID, creating it on first sight."""
+    conn = create_db_connection()
+    try:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute(
+            "SELECT user_id, role FROM login WHERE clerk_user_id = %s",
+            (clerk_user_id,),
+        )
+        row = cursor.fetchone()
+        if row:
+            return {"id": row["user_id"], "role": row["role"]}
+
+        cursor.execute(
+            "INSERT INTO login (clerk_user_id) VALUES (%s) RETURNING user_id, role",
+            (clerk_user_id,),
+        )
+        new_row = cursor.fetchone()
+        conn.commit()
+        return {"id": new_row["user_id"], "role": new_row["role"]}
+    finally:
+        cursor.close()
+        conn.close()
+
+def _resolve_email_from_clerk(clerk_user_id):
+    """Best-effort fetch of primary email from Clerk for /account/me responses."""
+    try:
+        user = _clerk_client.users.get(user_id=clerk_user_id)
+        primary_id = getattr(user, "primary_email_address_id", None)
+        for entry in getattr(user, "email_addresses", []) or []:
+            if entry.id == primary_id:
+                return entry.email_address
+        emails = getattr(user, "email_addresses", []) or []
+        if emails:
+            return emails[0].email_address
+    except Exception as e:
+        print(f"Clerk user lookup failed for {clerk_user_id}: {e}")
+    return None
+
+def _authenticate(require_user):
+    """Verify the Clerk session token and attach g.user. Returns an error
+    response when require_user is True and authentication fails."""
+    clerk_token = _extract_clerk_token()
+    if not clerk_token:
+        if require_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        return None
+
+    try:
+        payload = verify_token(clerk_token, _CLERK_VERIFY_OPTIONS)
+    except TokenVerificationError as e:
+        print(f"Clerk verification failed: {e}")
+        if require_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        return None
+    except Exception as e:
+        print(f"Clerk verification error: {e}")
+        if require_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        return None
+
+    clerk_user_id = payload.get("sub")
+    if not clerk_user_id:
+        if require_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        return None
+
+    role = (payload.get("public_metadata") or {}).get("role")
+    local = _get_or_create_local_user(clerk_user_id)
+    g.user = {
+        "id": local["id"],
+        "role": role or local["role"],
+        "clerkId": clerk_user_id,
+    }
     return None
 
 @app.route('/api/health')
@@ -49,22 +148,23 @@ def health():
     return jsonify({'status': 'ok'})
 
 @app.before_request
-def enforce_api_token():
+def enforce_auth():
     if request.method == "OPTIONS":
         return None
-
+    if not request.path.startswith("/api/"):
+        return None
     if request.path == "/api/health":
         return None
 
-    if not request.path.startswith("/api/"):
-        return None
-
     token = _extract_api_token_from_headers()
-    if not token:
+    if not token or not hmac.compare_digest(token, API_TOKEN):
         return jsonify({"message": "Unauthorized"}), 401
 
-    if not hmac.compare_digest(token, API_TOKEN):
-        return jsonify({"message": "Unauthorized"}), 401
+    require_user = request.path not in PUBLIC_API_PATHS
+    err = _authenticate(require_user=require_user)
+    if err is not None:
+        return err
+    return None
 
 init_recommend_cache(app)
 from recommendEngine import cache
@@ -77,17 +177,6 @@ allFilms_global = []
 filteredFilms_global = []
 PAGE_SIZE = int(os.getenv("PAGE_SIZE"))
 films_loaded = False
-
-# Create PostgreSQL database connection (Supabase)
-def create_db_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        dbname=os.getenv("DB_DATABASE"),
-        port=int(os.getenv("DB_PORT")),
-        sslmode=os.getenv("DB_SSLMODE", "require")
-    )
 
 def load_films_from_db():
     global allFilms_global, films_loaded
@@ -108,277 +197,33 @@ def load_films_from_db():
 
 load_films_from_db()
 
-# Authentication routes
-@app.route('/api/login', methods=['POST'])
-def login():
-    try:
-        data = request.get_json()
-        email = data.get('email')
-        password = data.get('password')
-        
-        if not email or not password:
-            return jsonify({'message': 'Email and password are required'}), 400
-        
-        conn = create_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+# ============================================================================
+# AUTH ROUTES
+# ============================================================================
 
-        cursor.execute("SELECT * FROM login WHERE email = %s", (email,))
-        result = cursor.fetchone()
-        
-        if not result:
-            cursor.close()
-            conn.close()
-            return jsonify({'message': 'User not found'}), 401
-        
-        if bcrypt.checkpw(password.encode('utf-8'), result['password'].encode('utf-8')):
-            user_id = result['user_id']
-            
-            try:
-                update_profile_and_vectors(user_id=user_id)
-            except Exception as e:
-                print(f"Warning: Could not update profile: {e}")
+@app.route('/api/account/me', methods=['GET'])
+def account_me():
+    user = g.get('user')
+    if not user:
+        return jsonify({"message": "Unauthorized"}), 401
+    email = _resolve_email_from_clerk(user["clerkId"])
+    return jsonify({
+        "id": user["id"],
+        "email": email,
+        "role": user["role"],
+        "clerkId": user["clerkId"],
+    })
 
-            cursor.close()
-            conn.close()
-
-            response = make_response(jsonify({'success': True, 'message': 'Login successful'}))
-            response.set_cookie('sessionEmail', email, max_age=86400, samesite='None', secure=True)
-            response.set_cookie('sessionID', str(user_id), max_age=86400, samesite='None', secure=True)
-            return response
-        else:
-            cursor.close()
-            conn.close()
-            return jsonify({'message': 'Credentials incorrect'}), 401
-            
-    except Exception as e:
-        print(f"Login error: {e}")
-        return jsonify({'message': 'Internal server error'}), 500
-
-@app.route('/api/createAccount', methods=['POST'])
-def create_account():
-    try:
-        data = request.get_json()
-        email = data.get('email')
-        password = data.get('password')
-        
-        if not email or not password:
-            return jsonify({'message': 'Email and password are required'}), 400
-        
-        hash_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-        conn = create_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-        cursor.execute("SELECT * FROM login WHERE email = %s", (email,))
-        if cursor.fetchone():
-            cursor.close()
-            conn.close()
-            return jsonify({'message': 'User already exists'}), 409
-
-        cursor.execute("INSERT INTO login (email, password) VALUES (%s, %s) RETURNING user_id",
-                       (email, hash_password))
-        user_id = cursor.fetchone()['user_id']
-
-        try:
-            update_profile_and_vectors(user_id=user_id)
-        except Exception as e:
-            print(f"Warning: Could not update profile: {e}")
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        response = make_response(jsonify({'success': True, 'message': 'Account created successfully'}))
-        response.set_cookie('sessionEmail', email, max_age=86400, samesite='None', secure=True)
-        response.set_cookie('sessionID', str(user_id), max_age=86400, samesite='None', secure=True)
-        return response
-        
-    except Exception as e:
-        print(f"Create account error: {e}")
-        return jsonify({'message': 'Internal server error'}), 500
-
-@app.route('/api/signout', methods=['POST'])
-def signout():
-    response = make_response(jsonify({'success': True}))
-    response.set_cookie('sessionEmail', '', expires=0, samesite='None', secure=True)
-    response.set_cookie('sessionID', '', expires=0, samesite='None', secure=True)
-    return response
-
-@app.route('/api/session', methods=['GET'])
-def get_session():
-    email = request.cookies.get('sessionEmail')
-    user_id = request.cookies.get('sessionID')
-    return jsonify({'session': {'email': email, 'id': user_id}})
-
-# OAuth Routes
-def get_or_create_oauth_user(email, provider):
-    """Get existing user or create new one for OAuth login."""
-    conn = create_db_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-    cursor.execute("SELECT * FROM login WHERE email = %s", (email,))
-    result = cursor.fetchone()
-
-    if result:
-        user_id = result['user_id']
-    else:
-        random_password = secrets.token_urlsafe(32)
-        hash_password = bcrypt.hashpw(random_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        cursor.execute("INSERT INTO login (email, password) VALUES (%s, %s) RETURNING user_id", (email, hash_password))
-        user_id = cursor.fetchone()['user_id']
-        conn.commit()
-        try:
-            update_profile_and_vectors(user_id=user_id)
-        except Exception as e:
-            print(f"Warning: Could not update profile: {e}")
-    
-    cursor.close()
-    conn.close()
-    return user_id, email
-
-@app.route('/auth/google')
-def google_auth():
-    """Redirect to Google OAuth."""
-    redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/google/callback"
-    scope = "openid email profile"
-    state = secrets.token_urlsafe(16)
-    
-    auth_url = (
-        f"https://accounts.google.com/o/oauth2/v2/auth?"
-        f"client_id={GOOGLE_CLIENT_ID}&"
-        f"redirect_uri={redirect_uri}&"
-        f"response_type=code&"
-        f"scope={scope}&"
-        f"state={state}&"
-        f"access_type=offline"
-    )
-    return redirect(auth_url)
-
-@app.route('/auth/google/callback')
-def google_callback():
-    """Handle Google OAuth callback."""
-    code = request.args.get('code')
-    error = request.args.get('error')
-    frontend_url = FRONTEND_URL
-    
-    if error:
-        return redirect(f"{frontend_url}?auth_error={error}")
-    
-    if not code:
-        return redirect(f"{frontend_url}?auth_error=no_code")
-    
-    try:
-        redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/google/callback"
-        token_response = http_requests.post(
-            "https://oauth2.googleapis.com/token",
-            data={
-                "code": code,
-                "client_id": GOOGLE_CLIENT_ID,
-                "client_secret": GOOGLE_CLIENT_SECRET,
-                "redirect_uri": redirect_uri,
-                "grant_type": "authorization_code"
-            }
-        )
-        token_data = token_response.json()
-        
-        if "error" in token_data:
-            return redirect(f"{frontend_url}?auth_error={token_data['error']}")
-        
-        access_token = token_data["access_token"]
-        user_response = http_requests.get(
-            "https://www.googleapis.com/oauth2/v2/userinfo",
-            headers={"Authorization": f"Bearer {access_token}"}
-        )
-        user_data = user_response.json()
-        email = user_data.get("email")
-        
-        if not email:
-            return redirect(f"{frontend_url}?auth_error=no_email")
-        
-        user_id, email = get_or_create_oauth_user(email, "google")
-        
-        response = make_response(redirect(f"{frontend_url}?auth_success=true"))
-        response.set_cookie('sessionEmail', email, max_age=86400, samesite='None', secure=True)
-        response.set_cookie('sessionID', str(user_id), max_age=86400, samesite='None', secure=True)
-        return response
-
-    except Exception as e:
-        print(f"Google OAuth error: {e}")
-        return redirect(f"{frontend_url}?auth_error=server_error")
-
-@app.route('/auth/facebook')
-def facebook_auth():
-    """Redirect to Facebook OAuth."""
-    redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/facebook/callback"
-    scope = "email,public_profile"
-    state = secrets.token_urlsafe(16)
-    
-    auth_url = (
-        f"https://www.facebook.com/v18.0/dialog/oauth?"
-        f"client_id={FACEBOOK_APP_ID}&"
-        f"redirect_uri={redirect_uri}&"
-        f"scope={scope}&"
-        f"state={state}"
-    )
-    return redirect(auth_url)
-
-@app.route('/auth/facebook/callback')
-def facebook_callback():
-    """Handle Facebook OAuth callback."""
-    code = request.args.get('code')
-    error = request.args.get('error')
-    frontend_url = FRONTEND_URL
-    
-    if error:
-        return redirect(f"{frontend_url}?auth_error={error}")
-    
-    if not code:
-        return redirect(f"{frontend_url}?auth_error=no_code")
-    
-    try:
-        redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/facebook/callback"
-        token_response = http_requests.get(
-            "https://graph.facebook.com/v18.0/oauth/access_token",
-            params={
-                "code": code,
-                "client_id": FACEBOOK_APP_ID,
-                "client_secret": FACEBOOK_APP_SECRET,
-                "redirect_uri": redirect_uri
-            }
-        )
-        token_data = token_response.json()
-        
-        if "error" in token_data:
-            return redirect(f"{frontend_url}?auth_error={token_data['error']['message']}")
-        
-        access_token = token_data["access_token"]
-        user_response = http_requests.get(
-            "https://graph.facebook.com/me",
-            params={"fields": "id,name,email", "access_token": access_token}
-        )
-        user_data = user_response.json()
-        email = user_data.get("email")
-        
-        if not email:
-            return redirect(f"{frontend_url}?auth_error=no_email_permission")
-        
-        user_id, email = get_or_create_oauth_user(email, "facebook")
-        
-        response = make_response(redirect(f"{frontend_url}?auth_success=true"))
-        response.set_cookie('sessionEmail', email, max_age=86400, samesite='None', secure=True)
-        response.set_cookie('sessionID', str(user_id), max_age=86400, samesite='None', secure=True)
-        return response
-
-    except Exception as e:
-        print(f"Facebook OAuth error: {e}")
-        return redirect(f"{frontend_url}?auth_error=server_error")
+# ============================================================================
+# PUBLIC FILM ROUTES
+# ============================================================================
 
 @app.route('/api/indexPageFilms', methods=['GET'])
 def get_index_page_films():
     try:
         if not films_loaded:
             load_films_from_db()
-        
+
         page = int(request.args.get('page', 1))
         start_index = (page - 1) * PAGE_SIZE
         end_index = start_index + PAGE_SIZE
@@ -406,7 +251,7 @@ def filter_films():
         global filteredFilms_global
         if not films_loaded:
             load_films_from_db()
-        
+
         filter_data = request.get_json(silent=True)
         if not filter_data:
             filter_data = request.args.get('filter')
@@ -415,23 +260,23 @@ def filter_films():
                     filter_data = json.loads(filter_data)
                 except Exception:
                     filter_data = {}
-        
+
         filteredFilms_global = allFilms_global.copy()
-        
+
         if filter_data:
-            if not (filter_data.get('rating') == 'Any' and filter_data.get('genre') == 'Any' and 
+            if not (filter_data.get('rating') == 'Any' and filter_data.get('genre') == 'Any' and
                    filter_data.get('runtime') == 'Any' and filter_data.get('year') == 'Any'):
-                
+
                 if filter_data.get('rating') != 'Any':
                     rating = int(filter_data['rating'])
-                    filteredFilms_global = [f for f in filteredFilms_global 
+                    filteredFilms_global = [f for f in filteredFilms_global
                                            if f.get('averageRating') and int(float(f['averageRating'])) == rating]
-                
+
                 if filter_data.get('genre') != 'Any':
                     genre = filter_data['genre']
-                    filteredFilms_global = [f for f in filteredFilms_global 
+                    filteredFilms_global = [f for f in filteredFilms_global
                                            if genre in (f.get('genres') or '')]
-                
+
                 if filter_data.get('runtime') != 'Any':
                     runtime = filter_data['runtime']
                     runtime_filters = {
@@ -452,9 +297,9 @@ def filter_films():
                             return True
                         except Exception:
                             return False
-                    
+
                     filteredFilms_global = [f for f in filteredFilms_global if is_valid_runtime(f)]
-                
+
                 if filter_data.get('year') != 'Any':
                     year_ranges = {
                         '2020s': (2020, 2029), '2010s': (2010, 2019), '2000s': (2000, 2009),
@@ -463,9 +308,9 @@ def filter_films():
                     }
                     if filter_data['year'] in year_ranges:
                         start_year, end_year = year_ranges[filter_data['year']]
-                        filteredFilms_global = [f for f in filteredFilms_global 
+                        filteredFilms_global = [f for f in filteredFilms_global
                                                if f.get('startYear') and start_year <= int(f['startYear']) <= end_year]
-        
+
         return jsonify(len(filteredFilms_global))
     except Exception as e:
         print(f"Error: {e}")
@@ -477,10 +322,10 @@ def shuffle_films():
         global allFilms_global
         if not films_loaded:
             load_films_from_db()
-        
-        user_id = request.args.get('user_id')
+
+        user = g.get('user')
         exclude_tconsts = []
-        if user_id:
+        if user:
             try:
                 exclude_res = get_user_films()
                 exclude_json = exclude_res.get_json() or {}
@@ -492,7 +337,7 @@ def shuffle_films():
         random.shuffle(shuffled)
         included = [f for f in shuffled if f.get('tconst') not in exclude_tconsts]
         excluded = [f for f in shuffled if f.get('tconst') in exclude_tconsts]
-        
+
         allFilms_global = included + excluded
         return jsonify('Film shuffled')
     except Exception as e:
@@ -504,18 +349,18 @@ def open_clicked_film():
     try:
         if not films_loaded:
             load_films_from_db()
-        
+
         tconst = request.args.get('tconst')
         film_index = next((i for i, f in enumerate(allFilms_global) if f.get('tconst') == tconst), -1)
-        
+
         if film_index == -1:
             return jsonify({'error': 'Film not found'}), 404
-        
+
         page = (film_index // PAGE_SIZE) + 1
         start_index = (page - 1) * PAGE_SIZE
         current_index = film_index - start_index
         counter = film_index
-        
+
         return jsonify({"counter": counter, "currentIndex": current_index})
     except Exception as e:
         print(f"Error: {e}")
@@ -526,7 +371,7 @@ def get_all_films_index():
     try:
         if not films_loaded:
             load_films_from_db()
-        
+
         tconst = request.args.get('tconst')
         film_index = next((i for i, f in enumerate(allFilms_global) if f.get('tconst') == tconst), -1)
         return jsonify(film_index)
@@ -545,35 +390,16 @@ def dataset_length():
         return jsonify({'error': str(e)}), 500
 
 # ============================================================================
-# USER INTERACTION ROUTES
+# USER INTERACTION ROUTES (user_id taken from verified Clerk session via g.user.id)
 # ============================================================================
 
 @app.route('/api/getLikedFilms', methods=['GET'])
 def get_liked_films():
-    """
-    Return all films the user has any liked interaction with, together with
-    all liked elements and liked cast for each film, including full film metadata.
-
-    Response shape:
-    [
-      {
-        "tconst": "tt1234567",
-        "primaryTitle": "...",
-        "poster": "...",
-        "cast": "...",
-        ... (all other film fields),
-        "likedElements": ["Title", "Plot", ...],
-        "likedCast": ["Actor A", "Actor B", ...]
-      },
-      ...
-    ]
-    """
     try:
-        user_id = request.args.get('user_id')
+        user_id = g.user["id"]
         conn = create_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # 1) Get all liked attribute rows for this user
         cursor.execute("""
             SELECT tconst, "Title", "Plot", "Rating", "Genre", "Runtime", "Year",
                    "Director", "Camera", "Writer", "Producer", "Editor", "Composer"
@@ -586,7 +412,6 @@ def get_liked_films():
         for row in attr_results:
             tconst = row['tconst']
             elements = []
-            # Skip the tconst key when checking flags
             for key, value in row.items():
                 if key == 'tconst':
                     continue
@@ -594,7 +419,6 @@ def get_liked_films():
                     elements.append(key)
             liked_elements_by_tconst[tconst] = elements
 
-        # 2) Get all liked cast rows for this user
         cursor.execute("""
             SELECT tconst, name
             FROM liked_cast
@@ -608,7 +432,6 @@ def get_liked_films():
             name = row['name']
             liked_cast_by_tconst.setdefault(tconst, []).append(name)
 
-        # 3) Merge tconsts from both sources
         all_tconsts = set(liked_elements_by_tconst.keys()) | set(liked_cast_by_tconst.keys())
 
         if not all_tconsts:
@@ -616,10 +439,9 @@ def get_liked_films():
             conn.close()
             return jsonify([])
 
-        # 4) Get full film metadata and combine with liked data
         placeholders = ','.join(['%s'] * len(all_tconsts))
         cursor.execute(f"SELECT * FROM films WHERE tconst IN ({placeholders})", tuple(all_tconsts))
-        
+
         liked_films = []
         for film in cursor.fetchall():
             tconst = film['tconst']
@@ -637,13 +459,13 @@ def get_liked_films():
 @app.route('/api/getLovedFilms', methods=['GET'])
 def get_loved_films():
     try:
-        user_id = request.args.get('user_id')
+        user_id = g.user["id"]
         conn = create_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         cursor.execute("SELECT tconst FROM loved_films WHERE user_id = %s", (user_id,))
         results = cursor.fetchall()
-        
+
         cursor.close()
         conn.close()
         return jsonify(results)
@@ -653,42 +475,25 @@ def get_loved_films():
 
 @app.route('/api/getWatchlist', methods=['GET'])
 def get_watchlist():
-    """
-    Return all films in the user's watchlist with full film metadata.
-    
-    Response shape:
-    [
-      {
-        "tconst": "tt1234567",
-        "primaryTitle": "...",
-        "poster": "...",
-        "cast": "...",
-        ... (all other film fields)
-      },
-      ...
-    ]
-    """
     try:
-        user_id = request.args.get('user_id')
+        user_id = g.user["id"]
         conn = create_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # Get tconsts from watchlist table
         cursor.execute("SELECT tconst FROM watchlist WHERE user_id = %s", (user_id,))
         watchlist_tconsts = cursor.fetchall()
-        
+
         if not watchlist_tconsts:
             cursor.close()
             conn.close()
             return jsonify([])
-        
-        # Get full film metadata for all watchlist tconsts
+
         all_tconsts = [row['tconst'] for row in watchlist_tconsts]
         placeholders = ','.join(['%s'] * len(all_tconsts))
         cursor.execute(f"SELECT * FROM films WHERE tconst IN ({placeholders})", tuple(all_tconsts))
-        
+
         watchlist_films = cursor.fetchall()
-        
+
         cursor.close()
         conn.close()
         return jsonify(watchlist_films)
@@ -696,19 +501,17 @@ def get_watchlist():
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
 
-# User interaction routes - love/unlove films, save liked elements, watchlist
 @app.route('/api/loveFilm', methods=['POST'])
 def love_film():
     try:
         global hasUserInteracted
         data = request.get_json()
         tconst = data.get('film_id')
-        user_id = data.get('user_id')
-        
+        user_id = g.user["id"]
+
         conn = create_db_connection()
         cursor = conn.cursor()
 
-        # Ensure mutual exclusivity: remove from liked tables first, then add to loved
         cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s",
                       (user_id, tconst))
         cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s",
@@ -727,7 +530,7 @@ def love_film():
         cache.delete(f'user_genre_recommended{user_id}')
         cache.delete(f'user_profile_{user_id}')
         cache.delete(f'similarity_vectors_{user_id}')
-        
+
         hasUserInteracted = True
         return jsonify('Film saved successfully')
     except Exception as e:
@@ -739,15 +542,15 @@ def unlove_film():
     try:
         global hasUserInteracted
         data = request.get_json()
-        user_id = data.get('user_id')
+        user_id = g.user["id"]
         film_id = data.get('film_id')
-        
+
         conn = create_db_connection()
         cursor = conn.cursor()
-        
-        cursor.execute("DELETE FROM loved_films WHERE user_id = %s AND tconst = %s", 
+
+        cursor.execute("DELETE FROM loved_films WHERE user_id = %s AND tconst = %s",
                       (user_id, film_id))
-        
+
         conn.commit()
         cursor.close()
         conn.close()
@@ -771,48 +574,47 @@ def save_liked_elements():
     try:
         global hasUserInteracted
         data = request.get_json()
-        user_id = data.get('user_id')
+        user_id = g.user["id"]
         tconst = data.get('film_id')
         liked_elements = data.get('elements', [])
         liked_cast = data.get('cast', [])
-        
+
         attribute_values = {
             'Title': 0, 'Plot': 0, 'Rating': 0, 'Genre': 0, 'Runtime': 0,
             'Year': 0, 'Director': 0, 'Camera': 0, 'Writer': 0,
             'Producer': 0, 'Editor': 0, 'Composer': 0
         }
-        
+
         for element in liked_elements:
             attr_name = element.replace('_film', '')
             if attr_name in attribute_values:
                 attribute_values[attr_name] = 1
-        
-        conn = create_db_connection()
-        cursor = conn.cursor();
 
-        # Ensure mutual exclusivity: remove from loved_films if it exists there
+        conn = create_db_connection()
+        cursor = conn.cursor()
+
         cursor.execute("DELETE FROM loved_films WHERE user_id = %s AND tconst = %s",
                       (user_id, tconst))
         cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s",
                       (user_id, tconst))
         cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s",
-                      (user_id, tconst));
+                      (user_id, tconst))
 
         if liked_elements:
             cursor.execute("""
-                INSERT INTO liked_attributes 
+                INSERT INTO liked_attributes
                 (user_id, tconst, "Title", "Plot", "Rating", "Genre", "Runtime", "Year", "Director", "Camera", "Writer", "Producer", "Editor", "Composer")
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (user_id, tconst, *attribute_values.values()));
+            """, (user_id, tconst, *attribute_values.values()))
 
         if liked_cast:
             cast_values = [(user_id, tconst, name) for name in liked_cast]
             cursor.executemany("INSERT INTO liked_cast (user_id, tconst, name) VALUES (%s, %s, %s)",
-                             cast_values);
+                             cast_values)
 
-        conn.commit();
-        cursor.close();
-        conn.close();
+        conn.commit()
+        cursor.close()
+        conn.close()
 
         cache.delete(f'user_content_recommended{user_id}')
         cache.delete(f'user_plot_recommended{user_id}')
@@ -821,7 +623,7 @@ def save_liked_elements():
         cache.delete(f'user_genre_recommended{user_id}')
         cache.delete(f'user_profile_{user_id}')
         cache.delete(f'similarity_vectors_{user_id}')
-        
+
         hasUserInteracted = True
         return jsonify('Data saved successfully')
     except Exception as e:
@@ -833,18 +635,18 @@ def add_watchlist():
     try:
         data = request.get_json()
         film_id = data.get('film_id')
-        user_id = data.get('user_id')
-        
+        user_id = g.user["id"]
+
         conn = create_db_connection()
         cursor = conn.cursor()
-        
-        cursor.execute("INSERT INTO watchlist (user_id, tconst) VALUES (%s, %s)", 
+
+        cursor.execute("INSERT INTO watchlist (user_id, tconst) VALUES (%s, %s)",
                       (user_id, film_id))
-        
+
         conn.commit()
         cursor.close()
         conn.close()
-        
+
         return jsonify('Saved successfully')
     except Exception as e:
         print(f"Error: {e}")
@@ -854,19 +656,19 @@ def add_watchlist():
 def delete_watchlist():
     try:
         data = request.get_json()
-        user_id = data.get('user_id')
+        user_id = g.user["id"]
         film_id = data.get('film_id')
-        
+
         conn = create_db_connection()
         cursor = conn.cursor()
-        
-        cursor.execute("DELETE FROM watchlist WHERE user_id = %s AND tconst = %s", 
+
+        cursor.execute("DELETE FROM watchlist WHERE user_id = %s AND tconst = %s",
                       (user_id, film_id))
-        
+
         conn.commit()
         cursor.close()
         conn.close()
-        
+
         return jsonify('Removed successfully')
     except Exception as e:
         print(f"Error: {e}")
@@ -878,13 +680,6 @@ def has_user_interacted():
     result = hasUserInteracted
     hasUserInteracted = False
     return jsonify({'hasUserInteracted': result})
-
-# ============================================================================
-# PROXY ROUTES TO RECOMMENDATION ENGINE
-# ============================================================================
-
-# Recommendation engine routes are now handled by the recommend_bp blueprint
-# All routes are registered with /api prefix in the blueprint registration above
 
 # ============================================================================
 # SERVE REACT APP
@@ -910,9 +705,8 @@ def serve_react_app(path):
     return send_from_directory(DIST_DIR, 'index.html')
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT"))
+    port = 8080
     print(f"Starting unified Flask server on port {port}...")
     print(f"Recommendation engine routes integrated on same port")
-    
-    app.run(host="0.0.0.0", port=port, debug=False)
 
+    app.run(host="0.0.0.0", port=port, debug=False)

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { getSession } from '../utils/auth';
+import { useSession } from '../contexts/SessionContext';
 import { Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -19,18 +19,19 @@ const Profile = () => {
   const [likedFilms, setLikedFilms] = useState([]);
   const [stats, setStats] = useState({ cast: [], crew: [], genre: [] });
   const [loading, setLoading] = useState(true);
-  const session = getSession();
+  const session = useSession();
   const user_id = session?.id;
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (session?.loading) return;
     if (!user_id) {
       navigate('/login');
       return;
     }
 
     loadProfileData();
-  }, [user_id]);
+  }, [session?.loading, user_id]);
 
   // Load user's loved/liked films and analytics stats
   const loadProfileData = async () => {

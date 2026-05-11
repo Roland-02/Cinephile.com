@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { getSession } from '../utils/auth';
+import { useSession } from '../contexts/SessionContext';
 
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 const PAGE_SIZE = parseInt(import.meta.env.VITE_PAGE_SIZE);
@@ -16,7 +16,7 @@ const Search = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const session = getSession();
+  const session = useSession();
   const user_id = session?.id;
   const navigate = useNavigate();
   const observerTarget = useRef(null);

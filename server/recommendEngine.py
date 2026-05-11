@@ -22,7 +22,7 @@ from collections import Counter
 from multiprocessing import Manager, process
 import schedule
 from flask_caching import Cache
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
 
 load_dotenv()
 warnings.filterwarnings("ignore")
@@ -709,20 +709,11 @@ def recommend_content_films(user_id):
 
 # return all user_ids from db
 def get_user_ids():
-    # Get thread-local connection
     mydb = get_db_connection()
     mycursor = get_db_cursor()
 
-    # SQL query to select all user IDs from the login table
-    sql_query = "SELECT user_id FROM login"
-
-    # Execute the SQL query
-    mycursor.execute(sql_query)
-
-    # Fetch all rows of the result
+    mycursor.execute("SELECT user_id FROM login")
     rows = mycursor.fetchall()
-
-    # Extract user IDs from the fetched rows
     user_ids = [row[0] for row in rows]
 
     return user_ids
@@ -756,9 +747,7 @@ def create_user_ratings_df():
     all_user_feedback = []
 
     for user_id in users:
-        user_id = int(user_id)
-
-        watchlist = get_watchlist(user_id)    
+        watchlist = get_watchlist(user_id)
         user_profile_pkg = get_user_profile(user_id)
         user_profile = user_profile_pkg[0]
         
@@ -936,7 +925,10 @@ allFilms_cluster_labels = initialise_clusters()
 @recommend_bp.route('/update_profile_and_vectors', methods=['POST'])
 def update_profile_and_vectors(user_id=None):
     if user_id is None:
-        user_id = request.args.get("user_id") 
+        try:
+            user_id = g.user["id"] if g else None
+        except (RuntimeError, KeyError, AttributeError):
+            user_id = None
 
     if user_id:
         # get update user profile and loved films
@@ -1066,7 +1058,7 @@ def update_profile_and_vectors(user_id=None):
 @recommend_bp.route('/get_batch', methods=['GET'])
 def get_batch_route():
 
-    user_id = request.args.get("user_id")
+    user_id = g.user["id"]
     category = request.args.get("category")
     page = int(request.args.get("page"))
     batch_size = int(os.getenv("PAGE_SIZE"))
@@ -1099,7 +1091,7 @@ def get_batch_route():
 @recommend_bp.route('/get_liked_staff', methods=['GET'])
 def get_liked_staff():
 
-    user_id = request.args.get("user_id")
+    user_id = g.user["id"]
     get_profile = get_user_profile(user_id)
     user_profile = get_profile[0]
     grouped_likes = collate_liked_groups(user_profile)
@@ -1120,7 +1112,7 @@ def get_liked_staff():
 
 @recommend_bp.route('/get_loved_films', methods=['GET'])
 def get_loved_route():
-    user_id = request.args.get("user_id")
+    user_id = g.user["id"]
     loved_films = get_loved_films(user_id)
     loved_films_dict = loved_films.to_dict(orient='records')
     # Return a plain list of films (no nested "films" key)
@@ -1129,7 +1121,7 @@ def get_loved_route():
 
 @recommend_bp.route('/get_liked_films', methods=['GET'])
 def get_liked_route():
-    user_id = request.args.get("user_id")
+    user_id = g.user["id"]
     user_profile = get_user_profile(user_id)
     liked_films_attr = user_profile[0] 
     liked_films_tconsts = liked_films_attr[liked_films_attr['likeage'] != 1]['tconst']
@@ -1141,7 +1133,7 @@ def get_liked_route():
 
 @recommend_bp.route('/get_user_watchlist', methods=['GET'])
 def get_user_watchlist():
-    user_id = request.args.get("user_id")
+    user_id = g.user["id"]
     watchlist = get_watchlist(user_id)
 
     if watchlist is not None:
@@ -1154,7 +1146,7 @@ def get_user_watchlist():
 
 @recommend_bp.route('/get_user_films', methods=['GET'])
 def get_user_films():
-    user_id = request.args.get("user_id")
+    user_id = g.user["id"]
     user_profile = get_user_profile(user_id)[0]
 
     if user_profile is not None:
@@ -1167,7 +1159,7 @@ def get_user_films():
 
 @recommend_bp.route('/get_profile_stats', methods=['GET'])
 def get_profile_stats():
-    user_id = request.args.get("user_id")
+    user_id = g.user["id"]
     user_profile_tuple = get_user_profile(user_id)
     user_profile_df = user_profile_tuple[0]
     loved_films_df = user_profile_tuple[1]
@@ -1241,7 +1233,7 @@ def search_general():
 
 @recommend_bp.route('/save_recommended_interaction', methods=['POST'])
 def interaction():
-    user_id = request.args.get("user_id")
+    user_id = g.user["id"]
     tconst = request.args.get("tconst")
     position = request.args.get("position")
     similarity = request.args.get("sim")

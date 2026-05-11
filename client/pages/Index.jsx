@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { getSession } from '../utils/auth';
+import { useSession } from '../contexts/SessionContext';
 import NavbarFilter, { useFilter } from '../components/NavbarFilter';
 
 const PAGE_SIZE = parseInt(import.meta.env.VITE_PAGE_SIZE);
@@ -37,7 +37,7 @@ const Index = () => {
   const filterContainerRef = useRef(null);
   const isOutsideLoadingMoreRef = useRef(false);
 
-  const session = getSession();
+  const session = useSession();
   const user_id = session?.id;
   const location = useLocation();
   const { isFilterOpen, closeFilter } = useFilter();
@@ -104,8 +104,7 @@ const Index = () => {
 
   const shuffleAndReset = async () => {
     try {
-      const currentUserId = getSession()?.id;
-      const url = currentUserId ? `/api/shuffleFilms?user_id=${currentUserId}` : `/api/shuffleFilms`;
+      const url = user_id ? `/api/shuffleFilms?user_id=${user_id}` : `/api/shuffleFilms`;
       await axios.post(url);
     } catch {
     }
@@ -525,7 +524,7 @@ const Index = () => {
         const response = await axios.get(`/api/search_general?query=${encoded}&page=${nextPage}`);
         filmsData = response.data || [];
       } else if (meta.source === 'recommend') {
-        const uid = meta.user_id || getSession()?.id;
+        const uid = meta.user_id || user_id;
         const category = meta.category || 'content';
         if (!uid) {
           setOutsideMeta({ ...meta, hasMore: false });
@@ -1073,7 +1072,7 @@ const Index = () => {
     const composers = currentFilm.composer ? currentFilm.composer.split(',').map(c => c.trim()) : [];
 
     return (
-      <div id="film-info" className="h3 text-center" data-email={session?.email} data-id={user_id}>
+      <div id="film-info" className="h3 text-center" data-id={user_id}>
         <div
           id="_filmTitle"
           className={`${likeableClass} ${likedElements.includes('Title') ? 'liked' : ''}`}

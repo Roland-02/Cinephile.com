@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { getSession } from '../utils/auth';
+import { useSession } from '../contexts/SessionContext';
 
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
 
@@ -10,11 +10,12 @@ const Watchlist = () => {
   const [films, setFilms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const session = getSession();
+  const session = useSession();
   const user_id = session?.id;
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (session?.loading) return;
     if (!user_id) {
       navigate('/login');
       return;
@@ -28,7 +29,7 @@ const Watchlist = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [user_id]);
+  }, [session?.loading, user_id]);
 
   // Load user's watchlist from cache or API
   const loadWatchlist = async () => {

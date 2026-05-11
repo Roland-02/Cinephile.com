@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { getSession } from '../utils/auth';
+import { useSession } from '../contexts/SessionContext';
 import NavbarFilter, { useFilter } from '../components/NavbarFilter';
 
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
@@ -23,7 +23,7 @@ const Recommend = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const session = getSession();
+  const session = useSession();
   const user_id = session?.id;
   const navigate = useNavigate();
   const { isFilterOpen, closeFilter } = useFilter();
@@ -134,6 +134,7 @@ const Recommend = () => {
   }, [hasMore, isLoadingMore, loading, user_id, category]);
 
   useEffect(() => {
+    if (session?.loading) return;
     if (!user_id) {
       navigate('/login');
       return;
@@ -151,7 +152,7 @@ const Recommend = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [user_id, refreshProfile]);
+  }, [session?.loading, user_id, refreshProfile]);
 
   useEffect(() => {
     if (user_id) {

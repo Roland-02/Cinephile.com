@@ -1,54 +1,81 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter, useNavigate } from 'react-router-dom';
+import { ClerkProvider } from '@clerk/clerk-react';
 import axios from 'axios';
 import App from './App';
 import './styles/main.scss';
 
 const API_TOKEN = import.meta.env.VITE_API_TOKEN;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-// When set, API calls go to this backend (e.g. Render).
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL);
+if (!CLERK_PUBLISHABLE_KEY) {
+  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY');
+}
 
-axios.defaults.headers.common['X-API-KEY'] = API_TOKEN;
 axios.defaults.baseURL = API_BASE_URL;
 axios.defaults.withCredentials = true;
+if (API_TOKEN) axios.defaults.headers.common['X-API-KEY'] = API_TOKEN;
 
+const getClerkToken = async () => {
+  try {
+    const clerk = typeof window !== 'undefined' ? window.Clerk : null;
+    return clerk?.session ? await clerk.session.getToken() : null;
+  } catch {
+    return null;
+  }
+};
+
+axios.interceptors.request.use(async (config) => {
+  const token = await getClerkToken();
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 const originalFetch = window.fetch.bind(window);
 window.fetch = async (input, init) => {
-  let url = '';
+  const url = typeof input === 'string' ? input : input?.url || '';
+  const isApiCall = url.startsWith('/api/');
+  const nextInput = API_BASE_URL && typeof input === 'string' && url.startsWith('/api/')
+    ? `${API_BASE_URL}${input}`
+    : input;
 
-  if (typeof input === 'string') {
-    url = input;
-  } else if (input && typeof input.url === 'string') {
-    url = input.url;
-  }
-
-  const isApiCall = typeof url === 'string' && url.startsWith('/api/');
-
-  let nextInput = input;
-  if (API_BASE_URL && typeof input === 'string' && input.startsWith('/api/')) {
-    nextInput = `${API_BASE_URL}${input}`;
-  }
-  
-  if (!API_TOKEN || !isApiCall) {
-    return originalFetch(nextInput, init);
-  }
+  if (!isApiCall) return originalFetch(nextInput, init);
 
   const nextInit = init ? { ...init } : {};
   const headers = new Headers(nextInit.headers);
-
-  if (!headers.get('X-API-KEY')) {
-    headers.set('X-API-KEY', API_TOKEN);
-  }
-
+  if (API_TOKEN && !headers.get('X-API-KEY')) headers.set('X-API-KEY', API_TOKEN);
+  const token = await getClerkToken();
+  if (token && !headers.get('Authorization')) headers.set('Authorization', `Bearer ${token}`);
   nextInit.headers = headers;
+
   return originalFetch(nextInput, nextInit);
+};
+
+const ClerkWithRouter = ({ children }) => {
+  const navigate = useNavigate();
+  return (
+    <ClerkProvider
+      publishableKey={CLERK_PUBLISHABLE_KEY}
+      routerPush={(to) => navigate(to)}
+      routerReplace={(to) => navigate(to, { replace: true })}
+      afterSignOutUrl="/"
+    >
+      {children}
+    </ClerkProvider>
+  );
 };
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <ClerkWithRouter>
+        <App />
+      </ClerkWithRouter>
+    </BrowserRouter>
   </React.StrictMode>
 );
-
