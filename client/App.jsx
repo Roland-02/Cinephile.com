@@ -61,6 +61,7 @@ function AppContent() {
         {/* Auth paths keep the Index page rendered underneath; AuthModal
             sits on top via its own fixed-position overlay. */}
         <Route path="/login/*" element={<Index />} />
+        <Route path="/createAccount/*" element={<Index />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <AuthModal />

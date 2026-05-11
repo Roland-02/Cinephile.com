@@ -308,8 +308,18 @@
   padding: $spacing-lg;
 }
 
-.auth-modal-clerk-wrap {
+.auth-modal-content {
   position: relative;
+}
+
+// Clerk renders its own card; strip its background/border/shadow so the
+// form looks naked inside our overlay and the × can sit on its corner.
+.auth-modal-clerk-cardbox,
+.cl-cardBox.auth-modal-clerk-cardbox,
+.auth-modal-clerk-card,
+.cl-card.auth-modal-clerk-card {
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .auth-modal-close {
