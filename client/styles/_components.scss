@@ -299,153 +299,46 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba($color-black, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
+  overflow-y: auto;
+  padding: $spacing-lg;
 }
 
-.auth-modal-content {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  border: $border-width $border-style var(--border-color);
-  border-radius: $border-radius;
-  padding: $spacing-lg;
-  padding-bottom: $spacing-xl;
-  max-width: 450px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
+.auth-modal-clerk-wrap {
   position: relative;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-  
-  h2 {
-    margin: 0;
-    margin-bottom: $spacing-sm;
-    text-align: center;
-    text-decoration: underline;
-    color: var(--text-color);
-  }
-  
-  // Close button
-  .auth-modal-close {
-    transition: all $transition-fast;
-    color: var(--text-color);
+}
 
-    &:hover {
-      background-color: var(--grey-light) !important;
-      transform: scale(1.15);
-    }
+.auth-modal-close {
+  position: absolute;
+  top: $spacing-sm;
+  right: $spacing-sm;
+  width: $spacing-lg;
+  height: $spacing-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-color);
+  opacity: 0.5;
+  transition: opacity $transition-fast;
+  z-index: 1;
 
-    &:active {
-      transform: scale(0.9);
-    }
-  }
-  
-  // Form group with label on top
-  .auth-form-group {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: $spacing-md;
-    
-    .auth-form-label {
-      font-weight: 500;
-      margin-bottom: $spacing-xs;
-      color: var(--text-color);
-      font-size: $font-size-base;
-      display: block;
-    }
-    
-    .form-control {
-      width: 100%;
-      padding: $spacing-sm $spacing-md;
-      border: $border-width $border-style var(--border-color);
-      border-radius: $border-radius;
-      font-size: $font-size-base;
-      transition: border-color $transition-fast, background-color 0.3s ease, color 0.3s ease;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      
-      &:focus {
-        outline: none;
-        border-color: var(--border-color);
-        border-width: 2px;
-      }
-      
-      &::placeholder {
-        color: $color-grey;
-        opacity: 0.7;
-      }
-    }
-  }
-  
-  button[type="button"] {
-    border: $border-width $border-style var(--border-color);
-    background: var(--bg-color);
-    color: var(--text-color);
-    cursor: pointer;
-    padding: $spacing-xs $spacing-sm;
-    font-size: $font-size-lg;
-    transition: all $transition-fast;
-    
-    &:hover {
-      background-color: var(--grey-light);
-    }
-  }
-  
-  // Auth modal buttons
-  .auth-submit-btn {
-    &.btn-primary {
-      color: var(--text-color);
-      background-color: var(--grey-light);
-      border-color: var(--border-color);
-      transition: all $transition-fast;
-
-      &:hover {
-        color: var(--text-color) !important;
-        background-color: var(--grey-light);
-        transform: scale(1.03);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      }
-
-      &:active {
-        transform: scale(0.97);
-      }
-    }
+  svg {
+    width: $spacing-md;
+    height: $spacing-md;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
   }
 
-  .auth-social-btn {
-    transition: all $transition-fast;
-
-    &:hover {
-      transform: scale(1.03);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    &:active {
-      transform: scale(0.97);
-    }
-  }
-
-  .auth-switch-btn {
-    &.btn-outline-primary {
-      color: var(--text-color);
-      border-color: var(--border-color);
-      background-color: transparent;
-      transition: all $transition-fast;
-
-      &:hover {
-        color: var(--text-color) !important;
-        background-color: var(--grey-light);
-        transform: scale(1.03);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      }
-
-      &:active {
-        transform: scale(0.97);
-      }
-    }
-  }
+  &:hover { opacity: 1; }
 }
 

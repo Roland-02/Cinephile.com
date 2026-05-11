@@ -2,13 +2,13 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
+import AuthModal from './components/AuthModal';
 import Index from './pages/Index';
 import Profile from './pages/Profile';
 import Search from './pages/Search';
 import Watchlist from './pages/Watchlist';
 import Recommend from './pages/Recommend';
 import About from './pages/About';
-import { Login, CreateAccount } from './pages/Auth';
 import { FilterProvider } from './components/NavbarFilter';
 import { SessionProvider } from './contexts/SessionContext';
 
@@ -58,10 +58,12 @@ function AppContent() {
         />
         <Route path="/about" element={<About />} />
         <Route path="/info" element={<Navigate to="/about" replace />} />
-        <Route path="/login/*" element={<Login />} />
-        <Route path="/createAccount/*" element={<CreateAccount />} />
+        {/* Auth paths keep the Index page rendered underneath; AuthModal
+            sits on top via its own fixed-position overlay. */}
+        <Route path="/login/*" element={<Index />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <AuthModal />
     </div>
   );
 }
