@@ -1,8 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { SignedIn, SignedOut, useClerk, useAuth } from '@clerk/clerk-react';
+import { useClerk, useAuth } from '@clerk/clerk-react';
 import { useTheme } from '../App';
 import { useFilter } from './NavbarFilter';
+
+// Read the cached session synchronously so the first paint can pick the
+// correct nav variant instead of rendering nothing while Clerk initializes.
+const getCachedSignedIn = () => {
+  try {
+    const raw = localStorage.getItem('cinephile_session_cache');
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    return Boolean(parsed?.clerkUserId);
+  } catch {
+    return false;
+  }
+};
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -10,7 +23,14 @@ const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
   const { isFilterOpen, toggleFilter, closeFilter } = useFilter();
   const { signOut } = useClerk();
-  const { isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
+
+  // Before Clerk reports a definitive state, fall back to the cached value
+  // so the nav contents don't flash in.
+  const [cachedSignedIn] = useState(getCachedSignedIn);
+  const effectiveSignedIn = isLoaded ? isSignedIn : cachedSignedIn;
+  const SignedIn = ({ children }) => (effectiveSignedIn ? <>{children}</> : null);
+  const SignedOut = ({ children }) => (effectiveSignedIn ? null : <>{children}</>);
 
   const toggleMenu = () => {
     const newMenuState = !isMenuOpen;
@@ -197,7 +217,7 @@ const Navbar = () => {
           </div>
 
           {/* Mobile filter button - on the left */}
-          {isSignedIn && (window.location.pathname === '/' || window.location.pathname === '/recommend') && (
+          {effectiveSignedIn && (window.location.pathname === '/' || window.location.pathname === '/recommend') && (
             <button
               className="mobile-filter-btn"
               onClick={handleToggleFilter}
