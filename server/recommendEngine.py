@@ -914,12 +914,50 @@ def recommend_genre_clusters(user_profile, recommendedFilms):
         return x
 
 
-data = loadAllFilms()
+# Film dataset and models are loaded lazily (see init_recommend_data) so that a
+# database outage degrades only the recommendation endpoints instead of crashing
+# the whole server at import time.
+data = None
 attributes = ['primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes','cast' ,'startYear', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer']
-data['total_likeable'] = data.apply(lambda x: count_likeable(x), axis=1)
-data['soup'] = data.apply(lambda x: create_soup(x, attributes), axis=1)
-kmeans = train_kmeans()
-allFilms_cluster_labels = initialise_clusters()
+kmeans = None
+allFilms_cluster_labels = None
+
+_recommend_data_ready = False
+_recommend_init_lock = threading.Lock()
+
+
+def init_recommend_data(force=False):
+    """Load the film dataset and train the models. Safe to call repeatedly:
+    work only happens once unless force=True. Raises on DB failure so callers
+    can decide how to respond (see the blueprint before_request guard)."""
+    global data, kmeans, allFilms_cluster_labels, _recommend_data_ready
+    if _recommend_data_ready and not force:
+        return
+    with _recommend_init_lock:
+        if _recommend_data_ready and not force:
+            return
+        loaded = loadAllFilms()
+        loaded['total_likeable'] = loaded.apply(lambda x: count_likeable(x), axis=1)
+        loaded['soup'] = loaded.apply(lambda x: create_soup(x, attributes), axis=1)
+        data = loaded  # populate the global before train_kmeans/initialise_clusters read it
+        kmeans = train_kmeans()
+        allFilms_cluster_labels = initialise_clusters()
+        _recommend_data_ready = True
+
+
+def recommend_data_ready():
+    return _recommend_data_ready
+
+
+@recommend_bp.before_request
+def _ensure_recommend_data():
+    """Lazily warm the recommender on first request. If the DB is unreachable,
+    return 503 for recommendation endpoints only — the rest of the site stays up."""
+    try:
+        init_recommend_data()
+    except Exception as exc:
+        print(f"Recommendation data unavailable: {exc}")
+        return jsonify({"error": "Recommendation service is temporarily unavailable"}), 503
 
 
 @recommend_bp.route('/update_profile_and_vectors', methods=['POST'])
@@ -1277,7 +1315,28 @@ def get_model_stats():
                     "Hit-rate at Top-50" : f"{hit_rate_top50:.2f}%"})
 
 
-schedule.every(2).weeks.do(INITIALISE_FILM_DATASET) #run intialise dataset every fortnite - add new films
+def _refresh_film_dataset():
+    """Fortnightly: pull in new films, then rebuild the in-memory dataset/models."""
+    INITIALISE_FILM_DATASET()
+    init_recommend_data(force=True)
+
+
+def keep_db_alive():
+    """Daily no-op query so Supabase's free tier never idles long enough to pause
+    (it auto-pauses after ~7 days of inactivity). Reuses the same connection/env
+    as everything else, so there's no extra config to maintain."""
+    try:
+        cur = get_db_connection().cursor()
+        cur.execute("SELECT 1;")
+        cur.fetchone()
+        cur.close()
+        print("DB keep-alive ping OK")
+    except Exception as exc:
+        print(f"DB keep-alive ping failed: {type(exc).__name__}: {exc}")
+
+
+schedule.every(2).weeks.do(_refresh_film_dataset) #run intialise dataset every fortnight - add new films
+schedule.every().day.at("06:00").do(keep_db_alive) #keep Supabase free tier from auto-pausing
 
 
 def start_recommendation_scheduler():
