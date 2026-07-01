@@ -1,34 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, useNavigate } from 'react-router-dom';
-import { ClerkProvider } from '@clerk/clerk-react';
+import { BrowserRouter } from 'react-router-dom';
 import axios from 'axios';
 import App from './App';
+import { getAccessToken } from './contexts/supabaseClient';
 import './styles/main.scss';
 
-const API_TOKEN = import.meta.env.VITE_API_TOKEN;
+const APP_API_KEY = import.meta.env.VITE_APP_API_KEY;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-if (!CLERK_PUBLISHABLE_KEY) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY');
-}
 
 axios.defaults.baseURL = API_BASE_URL;
 axios.defaults.withCredentials = true;
-if (API_TOKEN) axios.defaults.headers.common['X-API-KEY'] = API_TOKEN;
-
-const getClerkToken = async () => {
-  try {
-    const clerk = typeof window !== 'undefined' ? window.Clerk : null;
-    return clerk?.session ? await clerk.session.getToken() : null;
-  } catch {
-    return null;
-  }
-};
+if (APP_API_KEY) axios.defaults.headers.common['X-App-Api-Key'] = APP_API_KEY;
 
 axios.interceptors.request.use(async (config) => {
-  const token = await getClerkToken();
+  const token = await getAccessToken();
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
@@ -48,34 +34,18 @@ window.fetch = async (input, init) => {
 
   const nextInit = init ? { ...init } : {};
   const headers = new Headers(nextInit.headers);
-  if (API_TOKEN && !headers.get('X-API-KEY')) headers.set('X-API-KEY', API_TOKEN);
-  const token = await getClerkToken();
+  if (APP_API_KEY && !headers.get('X-App-Api-Key')) headers.set('X-App-Api-Key', APP_API_KEY);
+  const token = await getAccessToken();
   if (token && !headers.get('Authorization')) headers.set('Authorization', `Bearer ${token}`);
   nextInit.headers = headers;
 
   return originalFetch(nextInput, nextInit);
 };
 
-const ClerkWithRouter = ({ children }) => {
-  const navigate = useNavigate();
-  return (
-    <ClerkProvider
-      publishableKey={CLERK_PUBLISHABLE_KEY}
-      routerPush={(to) => navigate(to)}
-      routerReplace={(to) => navigate(to, { replace: true })}
-      afterSignOutUrl="/"
-    >
-      {children}
-    </ClerkProvider>
-  );
-};
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <ClerkWithRouter>
-        <App />
-      </ClerkWithRouter>
+      <App />
     </BrowserRouter>
   </React.StrictMode>
 );

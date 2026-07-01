@@ -7,8 +7,8 @@ import psycopg2.extras
 from flask import Flask, jsonify, request, send_from_directory, g
 from flask_cors import CORS
 from dotenv import load_dotenv
-from clerk_backend_api import Clerk
-from clerk_backend_api.security import verify_token, VerifyTokenOptions, TokenVerificationError
+import jwt
+from jwt import PyJWKClient
 from recommendEngine import recommend_bp, init_recommend_cache, start_recommendation_scheduler, update_profile_and_vectors, get_user_films
 
 load_dotenv()
@@ -18,19 +18,22 @@ app = Flask(__name__)
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 CORS(app, origins=[FRONTEND_URL], supports_credentials=True)
 
-API_TOKEN = os.getenv("API_TOKEN")
-CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
+APP_API_KEY = os.getenv("APP_API_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+# Optional: set only for projects still issuing HS256 (legacy) access tokens.
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 
-if not API_TOKEN:
-    raise RuntimeError("Missing API_TOKEN environment variable.")
-if not CLERK_SECRET_KEY:
-    raise RuntimeError("Missing CLERK_SECRET_KEY environment variable.")
+if not APP_API_KEY:
+    raise RuntimeError("Missing APP_API_KEY environment variable.")
+if not SUPABASE_URL:
+    raise RuntimeError("Missing SUPABASE_URL environment variable.")
 
-_CLERK_VERIFY_OPTIONS = VerifyTokenOptions(secret_key=CLERK_SECRET_KEY)
-_clerk_client = Clerk(bearer_auth=CLERK_SECRET_KEY)
+# Supabase access tokens are signed with the project's asymmetric keys (ES256/
+# RS256) exposed via JWKS. Lazily-initialised client caches the keys.
+_jwks_client = PyJWKClient(f"{SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json")
 
 # Routes under /api/* that may be hit without a signed-in user. Auth still
-# runs (so g.user is set when present), but missing/invalid Clerk tokens are
+# runs (so g.user is set when present), but missing/invalid session tokens are
 # permitted.
 PUBLIC_API_PATHS = {
     "/api/health",
@@ -56,109 +59,117 @@ def create_db_connection():
     )
 
 def _extract_api_token_from_headers():
-    token = request.headers.get("X-API-KEY")
+    token = request.headers.get("X-App-Api-Key")
     if token:
         return str(token).strip()
     return None
 
-def _extract_clerk_token():
+def _extract_bearer_token():
     auth_header = request.headers.get("Authorization", "")
     if isinstance(auth_header, str) and auth_header.startswith("Bearer "):
         return auth_header[len("Bearer "):].strip()
     return None
 
-def _resolve_email_from_clerk(clerk_user_id):
-    """Fetch the user's primary email from Clerk.
+def _verify_supabase_token(token):
+    """Verify a Supabase access token and return its claims, or None if invalid.
 
-    Works for every auth method Clerk supports — email/password, magic link,
-    and third-party OAuth (Google, Facebook, etc.). For OAuth sign-ups Clerk
-    still populates email_addresses with the verified address from the
-    provider and points primary_email_address_id at it.
+    Supabase signs access tokens with the project's asymmetric keys (ES256/
+    RS256) published at the JWKS endpoint. Older projects issue HS256 tokens
+    signed with the shared JWT secret; SUPABASE_JWT_SECRET enables that path.
     """
     try:
-        user = _clerk_client.users.get(user_id=clerk_user_id)
-        emails = getattr(user, "email_addresses", []) or []
-        primary_id = getattr(user, "primary_email_address_id", None)
-        for entry in emails:
-            if entry.id == primary_id:
-                return entry.email_address
-        if emails:
-            return emails[0].email_address
+        header = jwt.get_unverified_header(token)
+        if header.get("alg") == "HS256":
+            if not SUPABASE_JWT_SECRET:
+                return None
+            return jwt.decode(
+                token, SUPABASE_JWT_SECRET, algorithms=["HS256"],
+                audience="authenticated",
+            )
+        signing_key = _jwks_client.get_signing_key_from_jwt(token)
+        return jwt.decode(
+            token, signing_key.key, algorithms=["ES256", "RS256"],
+            audience="authenticated",
+        )
     except Exception as e:
-        print(f"Clerk user lookup failed for {clerk_user_id}: {e}")
-    return None
+        print(f"Supabase token verification failed: {e}")
+        return None
 
-def _get_or_create_local_user(clerk_user_id):
-    """Look up the local login row, creating it on first sight and backfilling
-    email from Clerk for rows created before email was tracked.
+def _get_or_create_local_user(auth_id, email):
+    """Resolve the canonical app user (login row) for a Supabase user.
 
-    user_id IS the Clerk user_id — no separate mapping column."""
+    login.user_id stays the canonical app id that every interaction table
+    references. We link a Supabase user to it by:
+      1. auth_id (fast path once linked);
+      2. email — matches an existing Clerk-era row and backfills auth_id,
+         preserving that user's saved data across the migration;
+      3. otherwise insert a new row keyed by the Supabase uuid.
+    """
     conn = create_db_connection()
     try:
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
         cursor.execute(
-            "SELECT user_id, email FROM login WHERE user_id = %s",
-            (clerk_user_id,),
+            "SELECT user_id, email, role FROM login WHERE auth_id = %s",
+            (auth_id,),
         )
         row = cursor.fetchone()
         if row:
-            email = row["email"]
-            if not email:
-                email = _resolve_email_from_clerk(clerk_user_id)
-                if email:
-                    cursor.execute(
-                        "UPDATE login SET email = %s WHERE user_id = %s",
-                        (email, clerk_user_id),
-                    )
-                    conn.commit()
-            return {"id": row["user_id"], "email": email}
+            return {"id": row["user_id"], "email": row["email"], "role": row["role"]}
 
-        email = _resolve_email_from_clerk(clerk_user_id)
+        if email:
+            cursor.execute(
+                "SELECT user_id, email, role FROM login WHERE email = %s",
+                (email,),
+            )
+            row = cursor.fetchone()
+            if row:
+                cursor.execute(
+                    "UPDATE login SET auth_id = %s WHERE user_id = %s",
+                    (auth_id, row["user_id"]),
+                )
+                conn.commit()
+                return {"id": row["user_id"], "email": row["email"], "role": row["role"]}
+
         cursor.execute(
-            "INSERT INTO login (user_id, email) VALUES (%s, %s) RETURNING user_id",
-            (clerk_user_id, email),
+            "INSERT INTO login (user_id, auth_id, email) VALUES (%s, %s, %s) "
+            "RETURNING user_id, email, role",
+            (auth_id, auth_id, email),
         )
         new_row = cursor.fetchone()
         conn.commit()
-        return {"id": new_row["user_id"], "email": email}
+        return {"id": new_row["user_id"], "email": new_row["email"], "role": new_row["role"]}
     finally:
         cursor.close()
         conn.close()
 
 def _authenticate(require_user):
-    """Verify the Clerk session token and attach g.user. Returns an error
+    """Verify the Supabase session token and attach g.user. Returns an error
     response when require_user is True and authentication fails."""
-    clerk_token = _extract_clerk_token()
-    if not clerk_token:
+    token = _extract_bearer_token()
+    if not token:
         if require_user:
             return jsonify({"message": "Unauthorized"}), 401
         return None
 
-    try:
-        payload = verify_token(clerk_token, _CLERK_VERIFY_OPTIONS)
-    except TokenVerificationError as e:
-        print(f"Clerk verification failed: {e}")
-        if require_user:
-            return jsonify({"message": "Unauthorized"}), 401
-        return None
-    except Exception as e:
-        print(f"Clerk verification error: {e}")
+    payload = _verify_supabase_token(token)
+    if not payload:
         if require_user:
             return jsonify({"message": "Unauthorized"}), 401
         return None
 
-    clerk_user_id = payload.get("sub")
-    if not clerk_user_id:
+    auth_id = payload.get("sub")
+    if not auth_id:
         if require_user:
             return jsonify({"message": "Unauthorized"}), 401
         return None
 
-    role = (payload.get("public_metadata") or {}).get("role")
-    local = _get_or_create_local_user(clerk_user_id)
+    email = payload.get("email")
+    local = _get_or_create_local_user(auth_id, email)
     g.user = {
         "id": local["id"],
-        "role": role,
-        "clerkId": clerk_user_id,
+        "role": local["role"],
+        "userId": auth_id,
         "email": local["email"],
     }
     return None
@@ -177,7 +188,7 @@ def enforce_auth():
         return None
 
     token = _extract_api_token_from_headers()
-    if not token or not hmac.compare_digest(token, API_TOKEN):
+    if not token or not hmac.compare_digest(token, APP_API_KEY):
         return jsonify({"message": "Unauthorized"}), 401
 
     require_user = request.path not in PUBLIC_API_PATHS
@@ -230,7 +241,7 @@ def account_me():
         "id": user["id"],
         "email": user["email"],
         "role": user["role"],
-        "clerkId": user["clerkId"],
+        "userId": user["userId"],
     })
 
 # ============================================================================
@@ -409,7 +420,7 @@ def dataset_length():
         return jsonify({'error': str(e)}), 500
 
 # ============================================================================
-# USER INTERACTION ROUTES (user_id taken from verified Clerk session via g.user.id)
+# USER INTERACTION ROUTES (user_id taken from verified Supabase session via g.user.id)
 # ============================================================================
 
 @app.route('/api/getLikedFilms', methods=['GET'])

@@ -2,7 +2,7 @@ Flask
 flask-cors
 python-dotenv
 psycopg2-binary
-clerk-backend-api
+PyJWT[crypto]
 numpy
 pandas
 scikit-learn

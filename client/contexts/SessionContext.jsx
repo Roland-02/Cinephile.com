@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useAuth, useUser, useClerk } from '@clerk/clerk-react';
 import axios from 'axios';
+import { supabase } from './supabaseClient';
 
 const CACHE_KEY = 'cinephile_session_cache';
 
@@ -11,7 +11,7 @@ const readCache = () => {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object' && parsed.id && parsed.clerkUserId) {
+    if (parsed && typeof parsed === 'object' && parsed.id && parsed.userId) {
       return parsed;
     }
   } catch {
@@ -33,14 +33,12 @@ const clearCache = () => {
   }
 };
 
-export const SessionProvider = ({ children }) => {
-  const { isLoaded: authLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
-  const clerk = useClerk();
+const EMPTY = { id: null, email: null, role: null, userId: null, loading: false };
 
+export const SessionProvider = ({ children }) => {
   const [session, setSession] = useState(() => {
     const cached = readCache();
-    return cached ? { ...cached, loading: !authLoaded } : { id: null, email: null, role: null, clerkUserId: null, loading: true };
+    return cached ? { ...cached, loading: true } : { ...EMPTY, loading: true };
   });
 
   const refresh = useCallback(async () => {
@@ -50,53 +48,59 @@ export const SessionProvider = ({ children }) => {
         id: res.data.id,
         email: res.data.email,
         role: res.data.role,
-        clerkUserId: res.data.clerkId,
+        userId: res.data.userId,
         loading: false,
       };
       setSession(next);
-      writeCache({ id: next.id, email: next.email, role: next.role, clerkUserId: next.clerkUserId });
+      writeCache({ id: next.id, email: next.email, role: next.role, userId: next.userId });
       return next;
     } catch {
       return null;
     }
   }, []);
 
-  // Reconcile cache with Clerk's current user; revalidate against the server.
+  // Reconcile cache with Supabase's current user, then revalidate against the
+  // server. Fires on initial load and on every Supabase auth state change
+  // (sign-in, sign-out, token refresh).
   useEffect(() => {
-    if (!authLoaded) return;
+    let active = true;
 
-    if (!isSignedIn) {
-      clearCache();
-      setSession({ id: null, email: null, role: null, clerkUserId: null, loading: false });
-      return;
-    }
+    const reconcile = (supabaseUser) => {
+      if (!active) return;
 
-    const clerkId = user?.id || null;
-    const cached = readCache();
+      if (!supabaseUser) {
+        clearCache();
+        setSession({ ...EMPTY, loading: false });
+        return;
+      }
 
-    if (cached && clerkId && cached.clerkUserId !== clerkId) {
-      clearCache();
-      setSession({ id: null, email: null, role: null, clerkUserId: null, loading: true });
-    } else if (cached) {
-      setSession({ ...cached, loading: false });
-    } else {
-      setSession((prev) => ({ ...prev, loading: true }));
-    }
+      const userId = supabaseUser.id || null;
+      const cached = readCache();
 
-    refresh();
-  }, [authLoaded, isSignedIn, user?.id, refresh]);
+      if (cached && userId && cached.userId !== userId) {
+        // A different user signed in — drop stale data and re-fetch.
+        clearCache();
+        setSession({ ...EMPTY, loading: true });
+      } else if (cached) {
+        setSession({ ...cached, loading: false });
+      } else {
+        setSession((prev) => ({ ...prev, loading: true }));
+      }
 
-  // Clerk fires this on sign-out — wipe local cache so a different user
-  // signing in next can't read stale data.
-  useEffect(() => {
-    if (!clerk) return;
-    const unsubscribe = clerk.addListener(({ user: u }) => {
-      if (!u) clearCache();
-    });
-    return () => {
-      try { unsubscribe?.(); } catch {}
+      refresh();
     };
-  }, [clerk]);
+
+    supabase.auth.getSession().then(({ data }) => reconcile(data.session?.user ?? null));
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, supaSession) => {
+      reconcile(supaSession?.user ?? null);
+    });
+
+    return () => {
+      active = false;
+      sub?.subscription?.unsubscribe();
+    };
+  }, [refresh]);
 
   return (
     <SessionContext.Provider value={{ session, refresh }}>

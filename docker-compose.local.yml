@@ -1,0 +1,9 @@
+# Local-only compose layer. NOT auto-merged (only docker-compose.override.yml is),
+# so pass it explicitly:
+#   docker compose -f docker-compose.yaml -f docker-compose.local.yml up -d
+# Publishes the app port to the host so you can open http://localhost:8080.
+# Not used by the production deploy. Safe to gitignore.
+services:
+  app:
+    ports:
+      - "8080:8080"

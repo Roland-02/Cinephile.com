@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useClerk, useAuth } from '@clerk/clerk-react';
 import { useTheme } from '../App';
 import { useFilter } from './NavbarFilter';
+import { supabase } from '../contexts/supabaseClient';
 
 // Read the cached session synchronously so the first paint can pick the
-// correct nav variant instead of rendering nothing while Clerk initializes.
+// correct nav variant instead of rendering nothing while Supabase initializes.
 const getCachedSignedIn = () => {
   try {
     const raw = localStorage.getItem('cinephile_session_cache');
     if (!raw) return false;
     const parsed = JSON.parse(raw);
-    return Boolean(parsed?.clerkUserId);
+    return Boolean(parsed?.userId);
   } catch {
     return false;
   }
@@ -22,10 +22,24 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { isFilterOpen, toggleFilter, closeFilter } = useFilter();
-  const { signOut } = useClerk();
-  const { isLoaded, isSignedIn } = useAuth();
+  const [auth, setAuth] = useState({ isLoaded: false, isSignedIn: false });
 
-  // Before Clerk reports a definitive state, fall back to the cached value
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (active) setAuth({ isLoaded: true, isSignedIn: !!data.session });
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (active) setAuth({ isLoaded: true, isSignedIn: !!session });
+    });
+    return () => {
+      active = false;
+      sub?.subscription?.unsubscribe();
+    };
+  }, []);
+  const { isLoaded, isSignedIn } = auth;
+
+  // Before Supabase reports a definitive state, fall back to the cached value
   // so the nav contents don't flash in.
   const [cachedSignedIn] = useState(getCachedSignedIn);
   const effectiveSignedIn = isLoaded ? isSignedIn : cachedSignedIn;
@@ -66,7 +80,8 @@ const Navbar = () => {
   const handleSignOut = async (e) => {
     e.preventDefault();
     localStorage.clear();
-    await signOut({ redirectUrl: '/' });
+    await supabase.auth.signOut();
+    navigate('/');
   };
 
   const handleTitleClick = () => {

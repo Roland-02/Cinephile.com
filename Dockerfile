@@ -8,7 +8,11 @@ COPY vite.config.js index.html ./
 COPY client ./client
 COPY public ./public
 
-ARG API_TOKEN
+ARG APP_API_KEY
+ARG PAGE_SIZE
+ARG VITE_API_BASE_URL
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
 RUN npm run build
 
 FROM python:3.13-slim AS runtime

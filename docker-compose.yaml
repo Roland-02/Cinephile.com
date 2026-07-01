@@ -3,7 +3,11 @@ services:
     build:
       context: .
       args:
-        API_TOKEN: ${API_TOKEN}
+        APP_API_KEY: ${APP_API_KEY}
+        PAGE_SIZE: ${PAGE_SIZE}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
     restart: unless-stopped
     env_file:
       - .env
