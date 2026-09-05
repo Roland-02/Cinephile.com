@@ -35,7 +35,7 @@ TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 # Thread-local storage for database connections (thread-safe)
 _thread_local = threading.local()
 
-# Get thread-local database connection (Supabase)
+# Get thread-local database connection (Neon)
 def get_db_connection():
     if not hasattr(_thread_local, 'mydb') or _thread_local.mydb.closed:
         _thread_local.mydb = psycopg2.connect(
@@ -383,27 +383,6 @@ def get_liked_cast(user_id):
     liked_cast_df = pd.DataFrame(cast, columns=['tconst', 'name'])
 
     return liked_cast_df
-
-# Get user watchlist from database
-def get_watchlist(user_id):
-    mycursor = get_db_cursor()
-
-    sql_query = "SELECT * FROM watchlist WHERE user_id = %s"
-
-    mycursor.execute(sql_query, (user_id,))
-
-    watchlist_fetch = mycursor.fetchall()
-
-    tconst_list = [row[1] for row in watchlist_fetch]
-    attributes_template = ['tconst','primaryTitle', 'plot', 'averageRating', 'genres', 'runtimeMinutes', 'startYear', 'cast', 'director', 'cinematographer', 'writer', 'producer', 'editor', 'composer', 'poster']
-    watchlist_df = pd.DataFrame(columns=attributes_template)
-
-    x = 0
-    for tconst in tconst_list:
-        watchlist_df.loc[x] = data[data['tconst'] == tconst][attributes_template].values[0]
-        x+=1
-
-    return watchlist_df
 
 # calculate % of liked attributes of film in profile
 def calculate_percentage(row):
@@ -859,28 +838,6 @@ def get_batch_route():
     return jsonify(batch)
     
 
-@recommend_bp.route('/get_loved_films', methods=['GET'])
-def get_loved_route():
-    user_id = g.user["id"]
-    loved_films = get_loved_films(user_id)
-    loved_films_dict = loved_films.to_dict(orient='records')
-    # Return a plain list of films (no nested "films" key)
-    return jsonify(loved_films_dict)
-
-
-@recommend_bp.route('/get_user_watchlist', methods=['GET'])
-def get_user_watchlist():
-    user_id = g.user["id"]
-    watchlist = get_watchlist(user_id)
-
-    if watchlist is not None:
-        watchlist_dict = watchlist.to_dict(orient='records')
-
-        return jsonify({"watchlist": watchlist_dict})
-    else:
-        return jsonify({"watchlist": {}})
-
-
 def get_user_films():
     user_id = g.user["id"]
     user_profile = get_user_profile(user_id)[0]
@@ -968,13 +925,13 @@ def search_general():
 
 
 def _refresh_film_dataset():
-    """Fortnightly: pull in new films, then rebuild the in-memory dataset/models."""
+    """Weekly: pull in new films, then rebuild the in-memory dataset/models."""
     INITIALISE_FILM_DATASET()
     init_recommend_data(force=True)
 
 
 
-schedule.every(1).weeks.do(_refresh_film_dataset) #run intialise dataset every fortnight - add new films
+schedule.every(1).weeks.do(_refresh_film_dataset)  # pull in newly released films
 
 
 def start_recommendation_scheduler():

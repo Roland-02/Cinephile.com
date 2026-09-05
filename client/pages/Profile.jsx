@@ -74,9 +74,9 @@ const Profile = () => {
     
     try {
       const [statsRes, lovedRes, likedRes] = await Promise.all([
-        axios.get(`/api/get_profile_stats?user_id=${user_id}`),
-        axios.get(`/api/get_loved_films?user_id=${user_id}`),
-        axios.get(`/api/getLikedFilms?user_id=${user_id}`)
+        axios.get('/api/get_profile_stats'),
+        axios.get('/api/getLovedFilms'),
+        axios.get('/api/getLikedFilms')
       ]);
       
       const profileStats = statsRes.data;

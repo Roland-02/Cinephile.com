@@ -60,7 +60,7 @@ const Recommend = () => {
       }
       
       const response = await axios.get(
-        `/api/get_batch?user_id=${user_id}&category=${category}&page=1`
+        `/api/get_batch?category=${category}&page=1`
       );
       const filmsData = response.data || [];
       
@@ -85,7 +85,7 @@ const Recommend = () => {
   const updateProfileAndLoad = async () => {
     setLoading(true);
     try {
-      await axios.post(`/api/update_profile_and_vectors?user_id=${user_id}`);
+      await axios.post('/api/update_profile_and_vectors');
       
       const cacheKey = `recommendations_${user_id}`;
       localStorage.removeItem(cacheKey);
@@ -107,7 +107,7 @@ const Recommend = () => {
       const nextPage = currentPageRef.current + 1;
       setIsLoadingMore(true);
       
-      axios.get(`/api/get_batch?user_id=${user_id}&category=${category}&page=${nextPage}`)
+      axios.get(`/api/get_batch?category=${category}&page=${nextPage}`)
         .then(response => {
           const filmsData = response.data || [];
           

@@ -253,6 +253,25 @@ from recommendEngine import cache
 app.register_blueprint(recommend_bp, url_prefix='/api')
 start_recommendation_scheduler()
 
+
+# Every cached view of a user's taste is derived from their saved films, so a
+# change to any of them invalidates the whole set. Kept in one place: adding a
+# recommendation category means adding it here only.
+RECOMMENDATION_CACHE_KEYS = (
+    'user_content_recommended{id}',
+    'user_plot_recommended{id}',
+    'user_cast_recommended{id}',
+    'user_crew_recommended{id}',
+    'user_genre_recommended{id}',
+    'user_profile_{id}',
+    'similarity_vectors_{id}',
+)
+
+
+def invalidate_user_recommendations(user_id):
+    for key in RECOMMENDATION_CACHE_KEYS:
+        cache.delete(key.format(id=user_id))
+
 allFilms_global = []
 filteredFilms_global = []
 PAGE_SIZE = int(os.getenv("PAGE_SIZE"))
@@ -535,11 +554,22 @@ def get_loved_films():
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         cursor.execute("SELECT tconst FROM loved_films WHERE user_id = %s", (user_id,))
-        results = cursor.fetchall()
+        loved_tconsts = cursor.fetchall()
+
+        if not loved_tconsts:
+            cursor.close()
+            conn.close()
+            return jsonify([])
+
+        all_tconsts = [row['tconst'] for row in loved_tconsts]
+        placeholders = ','.join(['%s'] * len(all_tconsts))
+        cursor.execute(f"SELECT * FROM films WHERE tconst IN ({placeholders})", tuple(all_tconsts))
+
+        loved_films = cursor.fetchall()
 
         cursor.close()
         conn.close()
-        return jsonify(results)
+        return jsonify(loved_films)
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -593,13 +623,7 @@ def love_film():
         cursor.close()
         conn.close()
 
-        cache.delete(f'user_content_recommended{user_id}')
-        cache.delete(f'user_plot_recommended{user_id}')
-        cache.delete(f'user_cast_recommended{user_id}')
-        cache.delete(f'user_crew_recommended{user_id}')
-        cache.delete(f'user_genre_recommended{user_id}')
-        cache.delete(f'user_profile_{user_id}')
-        cache.delete(f'similarity_vectors_{user_id}')
+        invalidate_user_recommendations(user_id)
         return jsonify('Film saved successfully')
     except Exception as e:
         print(f"Error: {e}")
@@ -622,13 +646,7 @@ def unlove_film():
         cursor.close()
         conn.close()
 
-        cache.delete(f'user_content_recommended{user_id}')
-        cache.delete(f'user_plot_recommended{user_id}')
-        cache.delete(f'user_cast_recommended{user_id}')
-        cache.delete(f'user_crew_recommended{user_id}')
-        cache.delete(f'user_genre_recommended{user_id}')
-        cache.delete(f'user_profile_{user_id}')
-        cache.delete(f'similarity_vectors_{user_id}')
+        invalidate_user_recommendations(user_id)
         return jsonify('Removed successfully')
     except Exception as e:
         print(f"Error: {e}")
@@ -680,13 +698,7 @@ def save_liked_elements():
         cursor.close()
         conn.close()
 
-        cache.delete(f'user_content_recommended{user_id}')
-        cache.delete(f'user_plot_recommended{user_id}')
-        cache.delete(f'user_cast_recommended{user_id}')
-        cache.delete(f'user_crew_recommended{user_id}')
-        cache.delete(f'user_genre_recommended{user_id}')
-        cache.delete(f'user_profile_{user_id}')
-        cache.delete(f'similarity_vectors_{user_id}')
+        invalidate_user_recommendations(user_id)
         return jsonify('Data saved successfully')
     except Exception as e:
         print(f"Error: {e}")

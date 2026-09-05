@@ -50,8 +50,8 @@ const Watchlist = () => {
     
     // If cache not available or invalid, fetch from API
     try {
-      const response = await axios.get(`/api/get_user_watchlist?user_id=${user_id}`);
-      const watchlist = response.data.watchlist || response.data || [];
+      const response = await axios.get('/api/getWatchlist');
+      const watchlist = response.data || [];
       setFilms(watchlist);
       
       // Update cache with full film data

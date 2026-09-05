@@ -58,8 +58,8 @@ const clearToken = () => {
 
 // --- auth state notifications -------------------------------------------
 
-// Replaces Supabase's onAuthStateChange. Components subscribe and are told
-// when the session appears or disappears.
+// Components subscribe here and are told when the session appears or
+// disappears, so the UI reacts to sign-in and sign-out without polling.
 const listeners = new Set();
 
 const notify = () => {
@@ -79,9 +79,9 @@ export const onAuthChange = (fn) => {
 
 export const isSignedIn = () => !!readToken();
 
-// The seam the rest of the app uses: axios and the fetch wrapper in main.jsx
-// call this to attach `Authorization: Bearer`. Signature unchanged from the
-// Supabase version so callers did not have to move.
+// The seam the rest of the app uses: the axios interceptor and the fetch
+// wrapper in main.jsx call this to attach `Authorization: Bearer`. Async so
+// callers need not change if this ever has to refresh a token.
 export const getAccessToken = async () => readToken();
 
 // --- Google Identity Services -------------------------------------------

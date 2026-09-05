@@ -29,7 +29,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY server ./server
 COPY images ./images
-COPY index.html ./index.html
 COPY --from=web_build /app/dist ./dist
 
 ENV PORT=8080

@@ -37,7 +37,7 @@ const Navbar = () => {
   }, []);
   const { isLoaded, isSignedIn } = auth;
 
-  // Before Supabase reports a definitive state, fall back to the cached value
+  // Until the session resolves (isLoaded), fall back to the last known state
   // so the nav contents don't flash in.
   const [cachedSignedIn] = useState(getCachedSignedIn);
   const effectiveSignedIn = isLoaded ? isSignedIn : cachedSignedIn;

@@ -63,9 +63,9 @@ const Index = () => {
       else {
         try {
           const [watchListRes, likedRes, lovedRes] = await Promise.all([
-            axios.get(`/api/getWatchlist?user_id=${user_id}`),
-            axios.get(`/api/getLikedFilms?user_id=${user_id}`),
-            axios.get(`/api/getLovedFilms?user_id=${user_id}`),
+            axios.get('/api/getWatchlist'),
+            axios.get('/api/getLikedFilms'),
+            axios.get('/api/getLovedFilms'),
           ]);
           // Ensure we store full film objects with metadata
           const userData = {
@@ -102,7 +102,7 @@ const Index = () => {
 
   const shuffleAndReset = async () => {
     try {
-      const url = user_id ? `/api/shuffleFilms?user_id=${user_id}` : `/api/shuffleFilms`;
+      const url = '/api/shuffleFilms';
       await axios.post(url);
     } catch {
     }
