@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { supabase } from './supabaseClient';
+import { isSignedIn as readSignedIn, onAuthChange } from './authClient';
 
 const CACHE_KEY = 'cinephile_session_cache';
 
@@ -59,46 +59,48 @@ export const SessionProvider = ({ children }) => {
     }
   }, []);
 
-  // Reconcile cache with Supabase's current user, then revalidate against the
-  // server. Fires on initial load and on every Supabase auth state change
-  // (sign-in, sign-out, token refresh).
+  // Reconcile the cache with whether a session token is present, then
+  // revalidate against the server. Runs on load and on every auth change.
+  //
+  // The server is the authority on identity: /api/account/me returns the
+  // canonical login row, so a stale cache is corrected within one request
+  // rather than trusted. That also covers the case where a different Google
+  // account signs in -- refresh() overwrites the cache with the new user.
   useEffect(() => {
     let active = true;
 
-    const reconcile = (supabaseUser) => {
+    const reconcile = (signedIn) => {
       if (!active) return;
 
-      if (!supabaseUser) {
+      if (!signedIn) {
         clearCache();
         setSession({ ...EMPTY, loading: false });
         return;
       }
 
-      const userId = supabaseUser.id || null;
       const cached = readCache();
-
-      if (cached && userId && cached.userId !== userId) {
-        // A different user signed in — drop stale data and re-fetch.
-        clearCache();
-        setSession({ ...EMPTY, loading: true });
-      } else if (cached) {
+      if (cached) {
         setSession({ ...cached, loading: false });
       } else {
         setSession((prev) => ({ ...prev, loading: true }));
       }
 
-      refresh();
+      refresh().then((next) => {
+        // The token names a different user than the cache did: drop what was
+        // shown and keep only what the server just confirmed.
+        if (active && next && cached && next.userId !== cached.userId) {
+          setSession(next);
+        }
+      });
     };
 
-    supabase.auth.getSession().then(({ data }) => reconcile(data.session?.user ?? null));
+    reconcile(readSignedIn());
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, supaSession) => {
-      reconcile(supaSession?.user ?? null);
-    });
+    const unsubscribe = onAuthChange(reconcile);
 
     return () => {
       active = false;
-      sub?.subscription?.unsubscribe();
+      unsubscribe();
     };
   }, [refresh]);
 

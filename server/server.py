@@ -2,6 +2,7 @@ import os
 import json
 import random
 import hmac
+from datetime import datetime, timedelta, timezone
 import psycopg2
 import psycopg2.extras
 from flask import Flask, jsonify, request, send_from_directory, g
@@ -19,24 +20,42 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 CORS(app, origins=[FRONTEND_URL], supports_credentials=True)
 
 APP_API_KEY = os.getenv("APP_API_KEY")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-# Optional: set only for projects still issuing HS256 (legacy) access tokens.
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+
+# Google is the identity provider: it owns passwords, 2FA and account recovery.
+# The browser obtains a Google ID token via Google Identity Services and posts
+# it to /api/auth/google; we verify it and issue our own session token from
+# there on. Nothing about user credentials is stored or managed here.
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+
+# Signs the app's own session tokens. Distinct from APP_API_KEY, which only
+# gates the API surface and is shipped to the browser.
+APP_JWT_SECRET = os.getenv("APP_JWT_SECRET")
 
 if not APP_API_KEY:
     raise RuntimeError("Missing APP_API_KEY environment variable.")
-if not SUPABASE_URL:
-    raise RuntimeError("Missing SUPABASE_URL environment variable.")
+if not GOOGLE_CLIENT_ID:
+    raise RuntimeError("Missing GOOGLE_CLIENT_ID environment variable.")
+if not APP_JWT_SECRET:
+    raise RuntimeError("Missing APP_JWT_SECRET environment variable.")
 
-# Supabase access tokens are signed with the project's asymmetric keys (ES256/
-# RS256) exposed via JWKS. Lazily-initialised client caches the keys.
-_jwks_client = PyJWKClient(f"{SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json")
+# Google publishes its signing keys here; PyJWKClient caches them.
+GOOGLE_CERTS_URL = "https://www.googleapis.com/oauth2/v3/certs"
+GOOGLE_ISSUERS = ("accounts.google.com", "https://accounts.google.com")
+_google_jwks_client = PyJWKClient(GOOGLE_CERTS_URL)
+
+# Our own session tokens. Google ID tokens last only an hour, which would mean
+# an hourly re-prompt; we verify Google's token once at sign-in and then issue
+# a longer-lived token of our own.
+APP_TOKEN_ISSUER = "cinephile"
+APP_TOKEN_TTL = timedelta(days=30)
 
 # Routes under /api/* that may be hit without a signed-in user. Auth still
 # runs (so g.user is set when present), but missing/invalid session tokens are
 # permitted.
 PUBLIC_API_PATHS = {
     "/api/health",
+    # Sign-in itself cannot require a session token.
+    "/api/auth/google",
     "/api/indexPageFilms",
     "/api/filteredPageFilms",
     "/api/filter",
@@ -47,7 +66,7 @@ PUBLIC_API_PATHS = {
     "/api/search_general",
 }
 
-# Create PostgreSQL database connection (Supabase)
+# Create PostgreSQL database connection (Neon)
 def create_db_connection():
     return psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -70,40 +89,74 @@ def _extract_bearer_token():
         return auth_header[len("Bearer "):].strip()
     return None
 
-def _verify_supabase_token(token):
-    """Verify a Supabase access token and return its claims, or None if invalid.
+def _verify_google_id_token(credential):
+    """Verify a Google ID token and return its claims, or None if invalid.
 
-    Supabase signs access tokens with the project's asymmetric keys (ES256/
-    RS256) published at the JWKS endpoint. Older projects issue HS256 tokens
-    signed with the shared JWT secret; SUPABASE_JWT_SECRET enables that path.
+    Google signs ID tokens with RS256 keys published at GOOGLE_CERTS_URL. The
+    audience must be this app's OAuth client id, otherwise a token minted for
+    any other Google application would be accepted here.
     """
     try:
-        header = jwt.get_unverified_header(token)
-        if header.get("alg") == "HS256":
-            if not SUPABASE_JWT_SECRET:
-                return None
-            return jwt.decode(
-                token, SUPABASE_JWT_SECRET, algorithms=["HS256"],
-                audience="authenticated",
-            )
-        signing_key = _jwks_client.get_signing_key_from_jwt(token)
-        return jwt.decode(
-            token, signing_key.key, algorithms=["ES256", "RS256"],
-            audience="authenticated",
+        signing_key = _google_jwks_client.get_signing_key_from_jwt(credential)
+        claims = jwt.decode(
+            credential, signing_key.key, algorithms=["RS256"],
+            audience=GOOGLE_CLIENT_ID,
         )
     except Exception as e:
-        print(f"Supabase token verification failed: {e}")
+        print(f"Google ID token verification failed: {e}")
+        return None
+
+    # PyJWT does not check `iss`, and Google uses two spellings of it.
+    if claims.get("iss") not in GOOGLE_ISSUERS:
+        print(f"Google ID token rejected: unexpected issuer {claims.get('iss')!r}")
+        return None
+    # An unverified address must never match a login row by email.
+    if not claims.get("email") or claims.get("email_verified") is not True:
+        print("Google ID token rejected: missing or unverified email")
+        return None
+    return claims
+
+
+def _issue_app_token(auth_id, email):
+    """Mint this app's own session token for an already-authenticated user."""
+    now = datetime.now(timezone.utc)
+    return jwt.encode(
+        {
+            "sub": auth_id,
+            "email": email,
+            "iss": APP_TOKEN_ISSUER,
+            "aud": APP_TOKEN_ISSUER,
+            "iat": now,
+            "exp": now + APP_TOKEN_TTL,
+        },
+        APP_JWT_SECRET,
+        algorithm="HS256",
+    )
+
+
+def _verify_app_token(token):
+    """Verify one of our own session tokens and return its claims, or None."""
+    try:
+        return jwt.decode(
+            token, APP_JWT_SECRET, algorithms=["HS256"],
+            audience=APP_TOKEN_ISSUER, issuer=APP_TOKEN_ISSUER,
+        )
+    except Exception as e:
+        print(f"Session token verification failed: {e}")
         return None
 
 def _get_or_create_local_user(auth_id, email):
-    """Resolve the canonical app user (login row) for a Supabase user.
+    """Resolve the canonical app user (login row) for an external identity.
 
     login.user_id stays the canonical app id that every interaction table
-    references. We link a Supabase user to it by:
+    references. We link an identity-provider user to it by:
       1. auth_id (fast path once linked);
-      2. email — matches an existing Clerk-era row and backfills auth_id,
-         preserving that user's saved data across the migration;
-      3. otherwise insert a new row keyed by the Supabase uuid.
+      2. email — matches a row created under an earlier provider and backfills
+         auth_id, preserving that user's saved data across the migration;
+      3. otherwise insert a new row keyed by the provider's subject id.
+
+    This is the mechanism that carried users through Clerk -> Supabase and now
+    Supabase -> Google; auth_id is the only column that changes.
     """
     conn = create_db_connection()
     try:
@@ -144,7 +197,7 @@ def _get_or_create_local_user(auth_id, email):
         conn.close()
 
 def _authenticate(require_user):
-    """Verify the Supabase session token and attach g.user. Returns an error
+    """Verify the app session token and attach g.user. Returns an error
     response when require_user is True and authentication fails."""
     token = _extract_bearer_token()
     if not token:
@@ -152,7 +205,7 @@ def _authenticate(require_user):
             return jsonify({"message": "Unauthorized"}), 401
         return None
 
-    payload = _verify_supabase_token(token)
+    payload = _verify_app_token(token)
     if not payload:
         if require_user:
             return jsonify({"message": "Unauthorized"}), 401
@@ -231,6 +284,43 @@ load_films_from_db()
 # ============================================================================
 # AUTH ROUTES
 # ============================================================================
+
+@app.route('/api/auth/google', methods=['POST'])
+def auth_google():
+    """Exchange a Google ID token for one of this app's session tokens.
+
+    The browser gets the credential from Google Identity Services; Google has
+    already authenticated the person by then. We verify the token's signature
+    and audience, resolve (or re-link) the local login row, and hand back a
+    session token the SPA sends as a bearer on every subsequent request.
+    """
+    data = request.get_json(silent=True) or {}
+    credential = data.get('credential')
+    if not credential:
+        return jsonify({"message": "Missing credential"}), 400
+
+    claims = _verify_google_id_token(credential)
+    if not claims:
+        return jsonify({"message": "Invalid Google credential"}), 401
+
+    auth_id = claims.get("sub")
+    email = claims.get("email")
+    if not auth_id:
+        return jsonify({"message": "Invalid Google credential"}), 401
+
+    # Resolves by auth_id, else by email — backfilling auth_id and preserving
+    # the saved films of accounts created under earlier auth providers.
+    local = _get_or_create_local_user(auth_id, email)
+
+    return jsonify({
+        "token": _issue_app_token(auth_id, local["email"]),
+        "user": {
+            "id": local["id"],
+            "email": local["email"],
+            "role": local["role"],
+            "userId": auth_id,
+        },
+    })
 
 @app.route('/api/account/me', methods=['GET'])
 def account_me():
@@ -420,7 +510,7 @@ def dataset_length():
         return jsonify({'error': str(e)}), 500
 
 # ============================================================================
-# USER INTERACTION ROUTES (user_id taken from verified Supabase session via g.user.id)
+# USER INTERACTION ROUTES (user_id taken from the verified session via g.user.id)
 # ============================================================================
 
 @app.route('/api/getLikedFilms', methods=['GET'])

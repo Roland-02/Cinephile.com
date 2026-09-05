@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import axios from 'axios';
 import App from './App';
-import { getAccessToken } from './contexts/supabaseClient';
+import { getAccessToken } from './contexts/authClient';
 import './styles/main.scss';
 
 const APP_API_KEY = import.meta.env.VITE_APP_API_KEY;

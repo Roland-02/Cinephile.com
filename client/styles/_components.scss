@@ -324,67 +324,17 @@
   flex-direction: column;
 }
 
+.auth-google-mount {
+  display: flex;
+  justify-content: center;
+  margin: $spacing-md 0;
+  min-height: 44px;
+}
+
 .auth-title {
   margin: 0 0 $spacing-md;
   text-align: center;
   font-size: 1.4rem;
-}
-
-.auth-google-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: $spacing-sm;
-  width: 100%;
-  padding: $spacing-sm;
-  @include border-black;
-  border-radius: $border-radius;
-  background: transparent;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: background-color $transition-fast;
-
-  &:hover { background-color: var(--grey-light); }
-}
-
-.auth-divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: $spacing-md 0;
-  color: var(--text-color);
-  opacity: 0.6;
-
-  &::before,
-  &::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid var(--grey-light);
-  }
-
-  span { padding: 0 $spacing-sm; font-size: 0.85rem; }
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-sm;
-}
-
-.auth-label {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-xs;
-  font-size: 0.85rem;
-}
-
-.auth-input {
-  padding: $spacing-sm;
-  @include border-black;
-  border-radius: $border-radius;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  font-size: 0.95rem;
 }
 
 .auth-error {
@@ -397,36 +347,6 @@
   margin: 0;
   font-size: 0.85rem;
   opacity: 0.8;
-}
-
-.auth-submit {
-  margin-top: $spacing-sm;
-  padding: $spacing-sm;
-  @include border-black;
-  border-radius: $border-radius;
-  background-color: var(--text-color);
-  color: var(--bg-color);
-  cursor: pointer;
-  transition: opacity $transition-fast;
-
-  &:hover { opacity: 0.85; }
-  &:disabled { opacity: 0.6; cursor: default; }
-}
-
-.auth-switch {
-  margin: $spacing-md 0 0;
-  text-align: center;
-  font-size: 0.85rem;
-}
-
-.auth-switch-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--text-color);
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
 }
 
 .auth-modal-close {

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../App';
 import { useFilter } from './NavbarFilter';
-import { supabase } from '../contexts/supabaseClient';
+import { isSignedIn as readSignedIn, onAuthChange, signOut } from '../contexts/authClient';
 
 // Read the cached session synchronously so the first paint can pick the
-// correct nav variant instead of rendering nothing while Supabase initializes.
+// correct nav variant instead of rendering nothing while auth initializes.
 const getCachedSignedIn = () => {
   try {
     const raw = localStorage.getItem('cinephile_session_cache');
@@ -26,15 +26,13 @@ const Navbar = () => {
 
   useEffect(() => {
     let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) setAuth({ isLoaded: true, isSignedIn: !!data.session });
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) setAuth({ isLoaded: true, isSignedIn: !!session });
+    setAuth({ isLoaded: true, isSignedIn: readSignedIn() });
+    const unsubscribe = onAuthChange((signedIn) => {
+      if (active) setAuth({ isLoaded: true, isSignedIn: signedIn });
     });
     return () => {
       active = false;
-      sub?.subscription?.unsubscribe();
+      unsubscribe();
     };
   }, []);
   const { isLoaded, isSignedIn } = auth;
@@ -80,7 +78,7 @@ const Navbar = () => {
   const handleSignOut = async (e) => {
     e.preventDefault();
     localStorage.clear();
-    await supabase.auth.signOut();
+    await signOut();
     navigate('/');
   };
 

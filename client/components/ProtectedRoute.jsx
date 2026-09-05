@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { supabase } from '../contexts/supabaseClient';
+import { isSignedIn as readSignedIn, onAuthChange } from '../contexts/authClient';
 
 const ProtectedRoute = ({ children }) => {
   const location = useLocation();
@@ -9,17 +9,16 @@ const ProtectedRoute = ({ children }) => {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) setAuth({ isLoaded: true, isSignedIn: !!data.session });
-    });
+    // The token is in localStorage, so this is synchronous -- no loading flash.
+    setAuth({ isLoaded: true, isSignedIn: readSignedIn() });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) setAuth({ isLoaded: true, isSignedIn: !!session });
+    const unsubscribe = onAuthChange((signedIn) => {
+      if (active) setAuth({ isLoaded: true, isSignedIn: signedIn });
     });
 
     return () => {
       active = false;
-      sub?.subscription?.unsubscribe();
+      unsubscribe();
     };
   }, []);
 
