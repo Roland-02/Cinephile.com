@@ -1,10 +1,10 @@
 # Migrating Cinephile.com off Supabase
 
 **Date:** 2026-09-05
-**Status:** Approved, not yet implemented
+**Status:** Implemented locally; production cutover pending
 
 Two independent migrations, executed and verified separately: the database moves
-to Neon, then authentication moves to better-auth. Conflating them makes any
+to Neon, then authentication moves to Google. Conflating them makes any
 failure ambiguous about its cause, so Phase 1 ends with a fully working site
 still authenticating against Supabase.
 
@@ -43,12 +43,21 @@ was written for the Clerk-to-Supabase migration — this application has already
 survived one auth provider change through exactly this mechanism.
 
 The consequence is that no user records and no password hashes need migrating.
-Each of the two users signs up once with their existing email address, and the
-email fallback re-links `login.auth_id` automatically, preserving their saved
-films. **No bespoke user-migration script will be written.** The correct work is
+Each user signs in once with their existing Google account, and the email
+fallback re-links `login.auth_id` automatically, preserving their saved films. **No bespoke user-migration script will be written.** The correct work is
 to verify this path fires, which the acceptance test below does.
 
-There are two users: one email + password, one Google OAuth.
+The `login` table holds **three** rows, not two: the third,
+`diagtest_1782864076@example.com`, is a diagnostic artifact. The two real
+accounts are `wobowizard2@gmail.com` and `asharena2003@gmail.com`, both still
+carrying Clerk-era `user_3...` ids.
+
+`asharena2003@gmail.com` has **`auth_id` = NULL** — that account never signed in
+under Supabase and is still a pure Clerk-era row. It also holds the only real
+saved data in the database (1 loved film, 1 liked attribute). The email fallback
+is therefore not a convenience for that user; it is the only thing standing
+between them and data loss. The fallback query has no `auth_id` predicate, so a
+NULL row does match and is backfilled.
 
 ## Constraints
 
@@ -198,151 +207,108 @@ line.
 
 ---
 
-# Phase 2 — Authentication to better-auth
+# Phase 2 — Authentication to Google
 
-## The runtime problem
+## Why not better-auth
 
-better-auth is a TypeScript/Node library and cannot run inside Flask. There is
-currently no Node server: `package.json` is Vite-only, with no express, hono or
-next. better-auth therefore requires introducing a Node runtime.
+The original plan was better-auth behind a Node sidecar. That was abandoned
+during implementation: better-auth is a TypeScript library with no Python port,
+so it requires a Node runtime, a second container, a second dependency tree and a
+Flask reverse proxy — a large permanent cost for one feature in a Flask + React
+codebase. `better-auth/react` does not avoid this; it is an HTTP client whose
+`baseURL` must point at a better-auth **server**, which is Node-only.
 
-This is **not** solved by rewriting the backend in Node. `recommendEngine.py` is
-1,357 lines of scikit-learn/numpy/pandas; porting it is out of scope and a bad
-trade.
+Two facts made a much smaller design possible:
+
+1. `server.py` already verifies bearer tokens with `PyJWKClient` against a JWKS
+   URL — the standard OIDC mechanism. Any OIDC issuer drops into that seam.
+2. **Both real users are Gmail accounts** (`wobowizard2@gmail.com`,
+   `asharena2003@gmail.com`). Google alone covers 100% of the user base.
+
+So Google *is* the identity provider. Google owns passwords, 2FA and account
+recovery; this application stores no credentials and manages no sign-in flow.
+No new runtime, no new container, no new service, and no third-party SaaS beyond
+Google itself.
 
 ## Architecture
 
-A new `auth/` directory holds a small Hono service with its own `package.json`
-and Dockerfile, hosting better-auth at `/api/auth/*` and connecting to the same
-Neon database through a `pg.Pool`.
-
-In `docker-compose.yaml` it is a second service that is **internal only**:
-`expose: "8081"`, no published port, and no `SERVICE_FQDN_*` label. **Traefik
-configuration is untouched.**
-
-Flask gains a single reverse-proxy route:
-
-```python
-@app.route('/api/auth/<path:subpath>', methods=['GET', 'POST', 'OPTIONS'])
+```
+browser --(Google Identity Services)--> Google
+browser --POST /api/auth/google {credential}--> Flask
+Flask   --verify RS256 against Google JWKS--> issue app session token
+browser --Authorization: Bearer <app token>--> Flask (all later requests)
 ```
 
-forwarding to `http://auth:8081/api/auth/<subpath>` over the internal Docker
-network, passing through the request body, `Cookie` and `Authorization` headers,
-and returning the upstream status, body and **all** `Set-Cookie` headers. The
-last point needs care: `requests` collapses duplicate response headers, so the
-proxy reads them via `raw.headers.get_all('Set-Cookie')`. `requests` is already a
-dependency.
+Google ID tokens last only an hour, which would mean an hourly re-prompt. Flask
+therefore verifies Google's token **once** at sign-in and issues its own
+30-day session token, which is what every subsequent request carries.
 
-Flask matches more specific rules before the SPA catch-all at
-`@app.route('/<path:path>')`, so no reordering is required.
+## Flask
 
-This was chosen over exposing the Node service through its own Traefik path
-router because it changes no routing topology — the piece most likely to take the
-live site down — keeps a single exposed service, keeps session cookies
-first-party with no SameSite or CORS complications, and is trivially revertible.
-The cost is one proxy hop for auth requests only, which is immaterial at two
-users.
+`_verify_supabase_token` is replaced by three functions:
 
-better-auth's `BETTER_AUTH_URL` is set to the **public** site URL despite being
-proxied, because it determines the token issuer, cookie domain and OAuth redirect
-URIs.
+- `_verify_google_id_token(credential)` — verifies RS256 against
+  `https://www.googleapis.com/oauth2/v3/certs` with `audience=GOOGLE_CLIENT_ID`.
+  It additionally checks `iss` (PyJWT does not, and Google uses two spellings)
+  and **rejects an unverified email**, so an unverified address can never match a
+  `login` row.
+- `_issue_app_token(auth_id, email)` — HS256, signed with `APP_JWT_SECRET`,
+  `iss`/`aud` of `cinephile`, 30-day expiry.
+- `_verify_app_token(token)` — verifies the above.
 
-## Database schema
+One new route, `POST /api/auth/google`, added to `PUBLIC_API_PATHS` because
+sign-in cannot itself require a session. `_authenticate` now calls
+`_verify_app_token`; everything downstream of it is unchanged.
 
-better-auth's own tables are generated with:
+`_get_or_create_local_user` is **not modified**. Its auth_id-then-email
+resolution carried users through Clerk to Supabase and now carries them to
+Google; `auth_id` is the only column that changes.
 
-```bash
-npx @better-auth/cli@latest generate
-npx @better-auth/cli@latest migrate
-```
-
-producing `user`, `session`, `account`, `verification`, and `jwks` (from the JWT
-plugin). None collide with `login` or any existing application table. They live
-in the same Neon database.
-
-## Flask token verification
-
-`server.py` already verifies tokens with `PyJWKClient` against a JWKS URL, so
-this is a URL and claim swap rather than an architectural change. `PyJWT[crypto]`
-stays.
-
-better-auth's JWT plugin serves JWKS at **`/api/auth/jwks`** by default (not
-`/.well-known/jwks.json`; `jwks.jwksPath` can override), and both issuer and
-audience default to `BASE_URL`. Confirmed against current better-auth docs rather
-than from memory.
-
-The two URLs are deliberately split:
-
-- **JWKS fetch** targets the internal address `http://auth:8081/api/auth/jwks`,
-  so key retrieval never leaves the Docker network.
-- **issuer and audience validation** use the public site URL, because that is
-  what better-auth stamps into tokens.
-
-The legacy HS256 branch and `SUPABASE_JWT_SECRET` are deleted once the
-ES256/RS256 path is confirmed working. Note that `SUPABASE_JWT_SECRET` is already
-empty in `.env` (the assignment carries only a trailing comment), so that branch
-returns `None` today and is already dead code — removing it carries no risk.
-
-### The email claim is load-bearing
-
-`_authenticate()` passes `payload.get("email")` into `_get_or_create_local_user`,
-and that email is what re-links each user's existing `login` row. If better-auth's
-JWT payload does not carry `email`, the fallback cannot match and the migration
-silently creates new empty user rows instead of preserving saved films.
-
-Therefore: inspect a real issued token during implementation and confirm `email`
-is present. If it is absent, add `jwt.definePayload` to include it. This is
-verified before the acceptance test, not discovered by it.
-
-`sub` maps to the better-auth user id by default, which is what `auth_id` stores.
+The legacy HS256 branch and `SUPABASE_JWT_SECRET` are deleted. That branch was
+already dead: `SUPABASE_JWT_SECRET` was empty, so it returned `None` on every
+call.
 
 ## Client
 
-`client/contexts/supabaseClient.js` is replaced by an `authClient.js` exporting a
-better-auth React client. `getAccessToken` keeps its exact existing signature —
-`async () => string | null` — so the axios interceptor and `window.fetch` wrapper
-in `main.jsx` change only their import. That helper is the seam; only its
-internals are swapped.
+`supabaseClient.js` is replaced by `authClient.js`, which loads Google Identity
+Services, renders Google's button, exchanges the credential for the app token,
+and stores it in `localStorage`. `getAccessToken` keeps its exact signature
+(`async () => string | null`), so `main.jsx` changes only its import.
 
-better-auth JWTs are short-lived (15 minutes by default), so `getAccessToken`
-caches the token with its expiry rather than calling `/api/auth/token` on every
-request.
+`onAuthChange` replaces Supabase's `onAuthStateChange` as a small subscriber set.
 
-**Six files change, not four.** The Supabase surface in use:
+Six files: `authClient.js` (new), `SessionContext.jsx`, `ProtectedRoute.jsx`,
+`Navbar.jsx`, `AuthModal.jsx`, `main.jsx`. `supabaseClient.js` is deleted and
+`@supabase/supabase-js` removed from `package.json`.
 
-| File | Uses |
-|---|---|
-| `client/contexts/supabaseClient.js` | replaced wholesale |
-| `client/contexts/SessionContext.jsx` | `getSession`, `onAuthStateChange` |
-| `client/components/ProtectedRoute.jsx` | `getSession`, `onAuthStateChange` |
-| `client/components/Navbar.jsx` | `getSession`, `onAuthStateChange`, `signOut` |
-| `client/components/AuthModal.jsx` | `signUp`, `signInWithPassword`, `signInWithOAuth` |
-| `client/main.jsx` | imports `getAccessToken` |
+`AuthModal` loses its email/password form entirely — there is no password to
+collect. Eight now-dead CSS rules were removed with it.
 
-`onAuthStateChange` has no direct better-auth equivalent; it maps onto the
-reactive `useSession` store. That is a small restructure in `SessionContext.jsx`
-and `Navbar.jsx` rather than a line-for-line substitution.
+## Google configuration
 
-`@supabase/supabase-js` is removed from `package.json`.
-
-## Google OAuth
-
-A new Google OAuth client is created with redirect URI
-`https://<site>/api/auth/callback/google`, pointing at the application rather
-than at Supabase. The old Supabase-era client is left in place until the
-migration is confirmed, then removed.
+Google Identity Services uses **Authorized JavaScript origins**, not redirect
+URIs, because there is no redirect leg. The OAuth client needs the site origin
+(and `http://localhost:8080` for local work) listed there.
 
 ## Environment variables
 
+Added: `GOOGLE_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID` (same value, not secret),
+`APP_JWT_SECRET` (server-only).
+
 Retired: `SUPABASE_URL`, `SUPABASE_JWT_SECRET`, `VITE_SUPABASE_URL`,
-`VITE_SUPABASE_ANON_KEY`. The two `VITE_*` values appear in **three** places —
-`.env`, Dockerfile `ARG`s, and `docker-compose.yaml` `build.args` — and are
-removed from all three.
+`VITE_SUPABASE_ANON_KEY` — removed from `.env`, the Dockerfile `ARG`s and
+`docker-compose.yaml` `build.args`.
 
-Added: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`,
-`GOOGLE_CLIENT_SECRET`, `AUTH_INTERNAL_URL`.
+## What is given up
 
----
+No password reset, email verification, session revocation or rate limiting —
+better-auth would have supplied these. With Google as the provider, the first two
+are Google's problem and do not apply. Session revocation and rate limiting would
+have to be built if ever needed; with two users they are not.
+
+Sign-in is Google-only. Adding another provider later means either a second OIDC
+issuer in the same seam or a hosted provider — the token-verification seam is
+provider-agnostic, so that change is contained.
 
 # Acceptance
 
@@ -352,26 +318,36 @@ comparison against captured numbers rather than an impression.
 
 After the swap:
 
-1. The email + password user signs up with their existing email; the Google user
-   signs in with Google.
-2. `login.auth_id` is confirmed to have been rewritten to the new better-auth
-   user id **on the existing row** — no new `login` row was inserted, and
-   `user_id` is unchanged.
-3. Loved films and watchlist match the counts captured beforehand.
+1. Both users sign in with Google using their existing Gmail addresses.
+2. `login.auth_id` is confirmed to have been rewritten to the Google subject id
+   **on the existing row** — no new `login` row was inserted, and `user_id` is
+   unchanged.
+3. Loved films, liked attributes and watchlist match the counts captured
+   beforehand.
 4. Protected routes reject an absent or invalid token, and `/api/account/me`
    returns the correct identity.
+
+**Verified locally.** Signing in with a new subject id against
+`asharena2003@gmail.com` left `user_id` as `user_3F0GDJ0QuAxKJVMWmdIA8YhDHVA`,
+backfilled `auth_id`, returned the loved film `tt3060492`, and kept the `login`
+row count at 3. All table checksums still match the original Supabase source.
+The row was then reset to NULL so the real sign-in performs the real re-link.
 
 ## Rollback
 
 Phase 1 rolls back by pointing `DB_*` at Supabase again. Phase 2 rolls back by
-reverting the client bundle and the Flask JWKS configuration. The Supabase
+reverting the commit: the Supabase client, its env vars and the old token
+verification return together. The Supabase
 project stays live throughout and is deleted only on explicit confirmation.
 
 ## Out of scope
 
 - Onboarding Cinephile's deployment to deploykit. Provisioning uses the kit's
   `database` step only; this may be revisited afterwards as separate work.
-- Porting `recommendEngine.py` to Node.
+- Porting `recommendEngine.py` to Node — the reason a Node backend was never
+  on the table.
+- Email + password sign-in. Both users are Gmail accounts, so Google covers them
+  entirely.
 - Any change to Coolify or Traefik routing.
 - `dist/index.html` is tracked in git despite `dist/` being gitignored. A
   pre-existing quirk, noted and left alone.
