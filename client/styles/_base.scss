@@ -53,8 +53,7 @@ body {
 }
 
 // Global container styles
-.container,
-.container-fluid {
+.container {
   background-color: var(--bg-color) !important;
 }
 
@@ -104,7 +103,6 @@ button,
 
 // Cards and panels
 .card,
-.panel,
 .modal-content {
   background-color: var(--bg-color) !important;
   color: var(--text-color) !important;
@@ -115,11 +113,6 @@ button,
 
 
 // Utility classes
-.error-label {
-  color: $color-red;
-  font-size: $font-size-base;
-}
-
 .medium-text {
   font-size: $font-size-md;
   text-align: center;
@@ -236,15 +229,3 @@ svg.clickable {
     box-shadow: 0 0 30px rgba(255, 166, 0, 0.6);
   }
 }
-
-// Flex utilities
-.row.display-flex {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.row.display-flex > [class*='col-'] {
-  display: flex;
-  flex-direction: column;
-}
-

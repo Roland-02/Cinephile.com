@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useSession } from '../contexts/SessionContext';
@@ -6,7 +6,6 @@ import NavbarFilter, { useFilter } from '../components/NavbarFilter';
 
 const PAGE_SIZE = parseInt(import.meta.env.VITE_PAGE_SIZE);
 const baseImagePath = 'https://image.tmdb.org/t/p/w500';
-const OUTSIDE_META_KEY = 'films-source-meta';
 
 const Index = () => {
   const [filmCache, setFilmCache] = useState([]);
@@ -35,7 +34,6 @@ const Index = () => {
   const isLoadingUserDataRef = useRef(false);
   const loadedPagesRef = useRef(new Set()); // Track which pages have been appended to in-memory cache
   const filterContainerRef = useRef(null);
-  const isOutsideLoadingMoreRef = useRef(false);
 
   const session = useSession();
   const user_id = session?.id;
@@ -375,7 +373,6 @@ const Index = () => {
       const filmsSource = localStorage.getItem('films-source');
       // Calculate page number: filmIndex 0 → page 1, filmIndex 10 → page 2, filmIndex 20 → page 3, etc.
       const startPage = Math.floor(startGlobalIndex / PAGE_SIZE) + 1;
-      const endPage = Math.floor(filmIndex / PAGE_SIZE) + 1;
 
       let allFilmsData = [];
 
@@ -480,94 +477,6 @@ const Index = () => {
     } finally {
       setLoading(false);
       isLoadingRef.current = false;
-    }
-  };
-
-  const getOutsideMeta = () => {
-    try {
-      const raw = localStorage.getItem(OUTSIDE_META_KEY);
-      if (!raw) return null;
-      const meta = JSON.parse(raw);
-      if (!meta || typeof meta !== 'object') return null;
-      return meta;
-    } catch {
-      return null;
-    }
-  };
-
-  const setOutsideMeta = (meta) => {
-    try {
-      localStorage.setItem(OUTSIDE_META_KEY, JSON.stringify(meta));
-    } catch {
-    }
-  };
-
-  const fetchMoreOutsideFilms = async () => {
-    if (isOutsideLoadingMoreRef.current) return false;
-    const meta = getOutsideMeta();
-    if (!meta) return false;
-    if (meta.hasMore === false) return false;
-
-    isOutsideLoadingMoreRef.current = true;
-
-    try {
-      const nextPage = (meta.page || 1) + 1;
-      let filmsData = [];
-
-      if (meta.source === 'search') {
-        const queryStr = meta.query;
-        if (!queryStr) {
-          setOutsideMeta({ ...meta, hasMore: false });
-          return false;
-        }
-        const encoded = encodeURIComponent(queryStr);
-        const response = await axios.get(`/api/search_general?query=${encoded}&page=${nextPage}`);
-        filmsData = response.data || [];
-      } else if (meta.source === 'recommend') {
-        const uid = meta.user_id || user_id;
-        const category = meta.category || 'content';
-        if (!uid) {
-          setOutsideMeta({ ...meta, hasMore: false });
-          return false;
-        }
-        const response = await axios.get(`/api/get_batch?user_id=${uid}&category=${category}&page=${nextPage}`);
-        filmsData = response.data || [];
-      } else {
-        return false;
-      }
-
-      if (!Array.isArray(filmsData) || filmsData.length === 0) {
-        setOutsideMeta({ ...meta, hasMore: false });
-        return false;
-      }
-
-      let existing = [];
-      try {
-        existing = JSON.parse(localStorage.getItem('films-source') || '[]');
-      } catch {
-        existing = [];
-      }
-
-      const existingIds = new Set(existing.map((f) => f && f.tconst).filter(Boolean));
-      const deduped = filmsData.filter((f) => f && f.tconst && !existingIds.has(f.tconst));
-      const updated = [...existing, ...deduped];
-
-      try {
-        localStorage.setItem('films-source', JSON.stringify(updated));
-      } catch {
-      }
-
-      setOutsideMeta({
-        ...meta,
-        page: nextPage,
-        hasMore: filmsData.length === PAGE_SIZE
-      });
-
-      return deduped.length > 0;
-    } catch {
-      return false;
-    } finally {
-      isOutsideLoadingMoreRef.current = false;
     }
   };
 

@@ -5,7 +5,6 @@ import warnings
 import threading
 import numpy as np
 import pandas as pd
-from urllib.parse import quote_plus
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
@@ -19,7 +18,7 @@ import concurrent.futures
 from io import BytesIO
 from langdetect import detect
 from collections import Counter
-from multiprocessing import Manager, process
+from multiprocessing import Manager
 import schedule
 from flask_caching import Cache
 from flask import Blueprint, jsonify, request, g
@@ -166,29 +165,6 @@ def save_mySQL(data):
     mycursor.executemany(insert_query, values)
     mydb.commit()
 
-# export recommended film interaction data to mysql
-def save_interaction(user_id, tconst, position, similarity):
-    # Get thread-local connection
-    mydb = get_db_connection()
-    mycursor = get_db_cursor()
-    
-    table_name = "recommended_film_interactions"
-
-    # Check if the given user_id and tconst combination already exists
-    select_query = "SELECT * FROM {} WHERE user_id = %s AND tconst = %s".format(table_name)
-    mycursor.execute(select_query, (user_id, tconst))
-    existing_row = mycursor.fetchone()
-
-    if existing_row:
-        delete_query = "DELETE FROM {} WHERE user_id = %s AND tconst = %s".format(table_name)
-        mycursor.execute(delete_query, (user_id, tconst))
-        
-
-    # Insert the new interaction record
-    insert_query = "INSERT INTO {} (user_id, tconst, position, similarity) VALUES (%s, %s, %s, %s)".format(table_name)
-    mycursor.execute(insert_query, (user_id, tconst, position, similarity))
-    mydb.commit()
-
 def INITIALISE_FILM_DATASET():
     print('Downloading tables...')
 
@@ -324,7 +300,6 @@ def INITIALISE_FILM_DATASET():
 
 # Load all films from database into DataFrame
 def loadAllFilms():
-    mydb = get_db_connection()
     mycursor = get_db_cursor()
     sql_query = "SELECT * FROM films"
     mycursor.execute(sql_query)
@@ -347,7 +322,6 @@ def count_likeable(row):
 
 # Get user's loved films from database
 def get_loved_films(user_id):
-    mydb = get_db_connection()
     mycursor = get_db_cursor()
 
     sql_query = "SELECT tconst FROM loved_films WHERE user_id = %s"
@@ -365,7 +339,6 @@ def get_loved_films(user_id):
 # get user liked attributes from db
 def get_liked_attributes(user_id):
     # Get thread-local connection
-    mydb = get_db_connection()
     mycursor = get_db_cursor()
 
     sql_query = "SELECT * FROM liked_attributes WHERE user_id = %s"
@@ -398,7 +371,6 @@ def get_liked_attributes(user_id):
 # get user liked cast from db
 def get_liked_cast(user_id):
     # Get thread-local connection
-    mydb = get_db_connection()
     mycursor = get_db_cursor()
 
     sql_query = "SELECT * FROM liked_cast WHERE user_id = %s"
@@ -414,7 +386,6 @@ def get_liked_cast(user_id):
 
 # Get user watchlist from database
 def get_watchlist(user_id):
-    mydb = get_db_connection()
     mycursor = get_db_cursor()
 
     sql_query = "SELECT * FROM watchlist WHERE user_id = %s"
@@ -482,15 +453,6 @@ def get_user_profile(user_id):
     user_profile.drop(columns=['num_liked_atts', 'total_likeable'], inplace=True)
 
     return (user_profile, lovedFilms)
-
-# get array of names from inputted dataframe
-def extract_names(data):
-    names = set()
-    for column in data.columns:
-        for value in data[column]:
-            if value and isinstance(value, str) and value.lower() not in ['none', 'null', 'nan']:
-                names.update(value.split(", "))
-    return list(names)
 
 # split user profile into likes by group
 def collate_liked_groups(user_profile):
@@ -623,231 +585,6 @@ def top_5_genres(genres_series):
     
     return top_5
 
-# repeat of get_conent_recommendations - for evaluation metrics
-def recommend_content_films(user_id):
-    # get update user profile and loved films
-
-    user_id = str(user_id)
-    get_profile = get_user_profile(user_id)
-    user_profile = get_profile[0]
-
-    # get groups of liked attributes
-    grouped_likes = collate_liked_groups(user_profile)
-    liked_plot = grouped_likes[0]
-    liked_cast = grouped_likes[1]
-    liked_crew = grouped_likes[2]
-    liked_genre = grouped_likes[3]
-    liked_meta = grouped_likes[4]
-
-    # Define the list of features excluding 'likeage'
-    plot_features = [col for col in liked_plot.columns if col != 'likeage']
-    crew_features = [col for col in liked_crew.columns if col != 'likeage']
-    cast_features = [col for col in liked_cast.columns if col != 'likeage']
-    genre_features = [col for col in liked_genre.columns if col != 'likeage']
-    meta_features = [col for col in liked_meta.columns if col != 'likeage']
-
-    # Create similarity vectors in parallel using ThreadPoolExecutor
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_INDEX_THREADS) as executor:
-        plot_future = executor.submit(create_similarity_vector, data[plot_features], liked_plot[plot_features])
-        crew_future = executor.submit(create_similarity_vector, data[crew_features], liked_crew[crew_features])
-        cast_future = executor.submit(create_similarity_vector, data[cast_features], liked_cast[cast_features])
-        genre_future = executor.submit(create_similarity_vector, data[genre_features], liked_genre[genre_features])
-        meta_future = executor.submit(create_euclidean_vector, data[meta_features], liked_meta[meta_features])
-        
-        plot_matrix = plot_future.result()
-        crew_matrix = crew_future.result()
-        cast_matrix = cast_future.result()
-        genre_matrix = genre_future.result()
-        meta_matrix = meta_future.result()
-
-    # Similarity vectors for each group
-    similarity_vectors = {
-        'plot': plot_matrix,
-        'cast': cast_matrix,
-        'crew': crew_matrix,
-        'genre': genre_matrix,
-        'meta': meta_matrix
-    }
-
-    user_profile_groups = {
-        'plot': liked_plot,
-        'cast': liked_cast,
-        'crew': liked_crew,
-        'genre': liked_genre,
-        'meta': liked_meta
-    }
-
-    weighted_scores = {}
-    
-    # scale similarity score in respective vector based on likeage of feature
-    for group, attributes in user_profile_groups.items():
-        similarity_vector = similarity_vectors[group]
-        likeage_array = np.array(list(attributes['likeage'].tolist()))
-
-        # assign weights to recommendations based on ratings
-        weighted_similarity = similarity_vector * likeage_array
-
-        # dictionary of groups and weighted similarity vectors 
-        weighted_scores[group] = weighted_similarity
-
-     # combine weighted similarity scores across all groups
-    combined_scores = np.sum(list(weighted_scores.values()), axis=0)
-
-    # calculate mean similarity scores
-    mean_similarity = np.mean(combined_scores, axis=1)
-
-    # sort the mean similarity scores and retrieve the top N indices
-    sorted_indices = np.argsort(mean_similarity)[::-1]
-
-    sorted_films = data.iloc[sorted_indices]
-
-    sorted_films['similarity'] = mean_similarity[sorted_indices] / 5
-
-    filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(user_profile['tconst'])] #NOT FILTERING RIGHT NOW
-
-    return sorted_films
-
-# return all user_ids from db
-def get_user_ids():
-    mydb = get_db_connection()
-    mycursor = get_db_cursor()
-
-    mycursor.execute("SELECT user_id FROM login")
-    rows = mycursor.fetchall()
-    user_ids = [row[0] for row in rows]
-
-    return user_ids
-
-# get interaction data between user and recommended films
-def get_recommended_interaction_data():
-    # Get thread-local connection
-    mydb = get_db_connection()
-    mycursor = get_db_cursor()
-
-    # Table name in the database
-    table_name = "recommended_film_interactions"
-
-    # Define the SQL query to select interaction data for the given user_id
-    select_query = "SELECT * FROM {}".format(table_name)
-
-    # Execute the select query with user_id parameter
-    mycursor.execute(select_query)
-
-    # Fetch all rows of the result
-    interaction_data = mycursor.fetchall()
-
-    # Create a DataFrame from the fetched data
-    df = pd.DataFrame(interaction_data, columns=["user_id", "tconst", "position", "similarity"])
-
-    return df
-
-# create df of user film ratings based on db data
-def create_user_ratings_df():
-    users = get_user_ids()
-    all_user_feedback = []
-
-    for user_id in users:
-        watchlist = get_watchlist(user_id)
-        user_profile_pkg = get_user_profile(user_id)
-        user_profile = user_profile_pkg[0]
-        
-        user_feedback_temp = user_profile[['tconst', 'likeage']] #pd.merge(interacted_films[interacted_films['user_id'] == user_id], user_profile[['tconst', 'likeage']], on='tconst', how='left')
-        user_feedback_temp['user_id'] = user_id
-
-        # Set likeage to 0.5 for films in the watchlist
-        watchlist_tconsts = watchlist['tconst']
-        user_feedback_temp.loc[user_feedback_temp['tconst'].isin(watchlist_tconsts), 'likeage'] = 0.5
-
-        # Append the user feedback to the list
-        all_user_feedback.append(user_feedback_temp)
-
-    user_feedback = pd.concat(all_user_feedback, ignore_index=True)
-    user_feedback.fillna(0, inplace=True)
-    order = ['user_id', 'tconst', 'likeage']
-    user_feedback = user_feedback[order]
-    user_feedback.rename(columns={'likeage': 'rating'}, inplace=True)
-
-    return user_feedback
-
-# count occurrences of A in B
-def count_occurrences(A, B):
-    tally = 0
-    for item in B:
-        if item in A:
-            tally += 1
-    return tally
-
-# return precision of recommendations at k (0-1)
-def calculate_precision_at_k(user_interactions, recommended_films, k):
-    total_precision = 0
-    num_users = len(user_interactions)
-    
-    for user_id, user_interacted_films in user_interactions.items():
-        
-        # get recommended films for the user
-        recommended_top_k = recommended_films.get(user_id, [])['tconst'][:k]
-
-        # count how many relevant items appear in top-k recommended films
-        num_true_positives = count_occurrences(user_interacted_films, recommended_top_k)
-        
-        # calculate precision for users
-        precision_at_k = num_true_positives / k if k > 0 else 0
-        
-        # accumulate precision for all users
-        total_precision += precision_at_k
-    
-    # average precision across all users
-    average_precision_at_k = total_precision / num_users
-    return average_precision_at_k
-
-# return recall of recommendations at k (0-1)
-def calculate_recall_at_k(user_interactions, recommended_films, k):
-    total_recall = 0
-    num_users = len(user_interactions)
-    
-    for user_id, user_interacted_films in user_interactions.items():
-        num_user_films = len(user_interacted_films)
-
-        # get recommended films for the user
-        recommended_top_k = recommended_films.get(user_id, [])['tconst'][:k]
-        
-        # count how many relevant items appear in top-k recommended films
-        num_true_positives = count_occurrences(user_interacted_films, recommended_top_k)
-        
-        # calculate recall for user
-        recall_at_n = num_true_positives / num_user_films if num_user_films > 0 else 0
-        
-        # accumulate recall for all users
-        total_recall += recall_at_n
-    
-    # average recall across all users
-    average_recall_at_n = total_recall / num_users
-    return average_recall_at_n
-
-# perform single hit rate calculation
-def calculate_hit_rate(df, n):
-    top_n = df[df['position'] <= n]
-    hit_rate = len(top_n) / len(df)
-    return hit_rate
-
-# return hit rate of recommendations (list of 0-1 values for top10, top25 and top50)
-def generate_hit_rate_stats():
-    users = get_user_ids()
-    recommended_interaction_data = get_recommended_interaction_data()
-    rates = []
-    for i in [10, 25, 50]:
-        hit_rate = 0
-        user_len = 0
-        for user_id in users:
-            user_interaction = recommended_interaction_data[recommended_interaction_data['user_id'] == user_id]
-            if(len(user_interaction) > 0):
-                user_len += 1
-                hit_rate += calculate_hit_rate(user_interaction, i)
-
-        hit_rate = hit_rate / user_len
-        rates.append(hit_rate)
-
-    return rates
 
 # GENRE CLUSTERING
 
@@ -943,10 +680,6 @@ def init_recommend_data(force=False):
         kmeans = train_kmeans()
         allFilms_cluster_labels = initialise_clusters()
         _recommend_data_ready = True
-
-
-def recommend_data_ready():
-    return _recommend_data_ready
 
 
 @recommend_bp.before_request
@@ -1126,28 +859,6 @@ def get_batch_route():
     return jsonify(batch)
     
 
-@recommend_bp.route('/get_liked_staff', methods=['GET'])
-def get_liked_staff():
-
-    user_id = g.user["id"]
-    get_profile = get_user_profile(user_id)
-    user_profile = get_profile[0]
-    grouped_likes = collate_liked_groups(user_profile)
-
-    liked_cast = grouped_likes[1]
-    liked_crew = grouped_likes[2]
-    liked_cast_names = ''
-    liked_crew_names = ''
-
-    if not liked_cast.empty:
-        liked_cast_names = extract_names(liked_cast)
-
-    if not liked_crew.empty:
-        liked_crew_names = extract_names(liked_crew)
-
-    return jsonify({"liked_cast": liked_cast_names, "liked_crew": liked_crew_names})
-      
-
 @recommend_bp.route('/get_loved_films', methods=['GET'])
 def get_loved_route():
     user_id = g.user["id"]
@@ -1155,18 +866,6 @@ def get_loved_route():
     loved_films_dict = loved_films.to_dict(orient='records')
     # Return a plain list of films (no nested "films" key)
     return jsonify(loved_films_dict)
-
-
-@recommend_bp.route('/get_liked_films', methods=['GET'])
-def get_liked_route():
-    user_id = g.user["id"]
-    user_profile = get_user_profile(user_id)
-    liked_films_attr = user_profile[0] 
-    liked_films_tconsts = liked_films_attr[liked_films_attr['likeage'] != 1]['tconst']
-    liked_films = data[data['tconst'].isin(liked_films_tconsts)]
-    liked_films_dict = liked_films.to_dict(orient='records')
-    # Return a plain list of films (no nested "films" key)
-    return jsonify(liked_films_dict)
 
 
 @recommend_bp.route('/get_user_watchlist', methods=['GET'])
@@ -1182,7 +881,6 @@ def get_user_watchlist():
         return jsonify({"watchlist": {}})
 
 
-@recommend_bp.route('/get_user_films', methods=['GET'])
 def get_user_films():
     user_id = g.user["id"]
     user_profile = get_user_profile(user_id)[0]
@@ -1269,74 +967,14 @@ def search_general():
         return jsonify([])
 
 
-@recommend_bp.route('/save_recommended_interaction', methods=['POST'])
-def interaction():
-    user_id = g.user["id"]
-    tconst = request.args.get("tconst")
-    position = request.args.get("position")
-    similarity = request.args.get("sim")
-    save_interaction(user_id, tconst, position, similarity)
-    return jsonify({"message":"interaction stored successfully"})
-
-
-@recommend_bp.route('/recommender_performance', methods=['GET'])
-def get_model_stats():
-    # output hit rate, precision-k, recall-k
-    all_interactions = create_user_ratings_df()
-    users = all_interactions['user_id'].unique()
-    user_interactions = {}
-    for index, row in all_interactions.iterrows():
-        user_id = row['user_id']
-        tconst = row['tconst']
-        
-        if user_id in user_interactions:
-            user_interactions[user_id].append(tconst)
-        else:
-            user_interactions[user_id] = [tconst]
-
-    user_films = {}
-    for user_id in users:
-        recommended = recommend_content_films(user_id)
-        user_films[user_id] = recommended
-
-    precision = calculate_precision_at_k(user_interactions, user_films, 100) * 100
-    recall = calculate_recall_at_k(user_interactions, user_films, 100) * 100
-    f1 = (2 * precision * recall) / (precision + recall)
-    hit_rate = generate_hit_rate_stats()
-    hit_rate_top10 = hit_rate[0] * 100
-    hit_rate_top25 = hit_rate[1] * 100
-    hit_rate_top50 = hit_rate[2] * 100
-
-    return jsonify({"Average Precision@10" : f"{precision:.2f}%", 
-                    "Average Recall@10" : f"{recall:.2f}%",
-                    "Average F1@10" : f"{f1:.2f}%",
-                    "Hit-rate at Top-10" : f"{hit_rate_top10:.2f}%", 
-                    "Hit-rate at Top-25" : f"{hit_rate_top25:.2f}%",
-                    "Hit-rate at Top-50" : f"{hit_rate_top50:.2f}%"})
-
-
 def _refresh_film_dataset():
     """Fortnightly: pull in new films, then rebuild the in-memory dataset/models."""
     INITIALISE_FILM_DATASET()
     init_recommend_data(force=True)
 
 
-def keep_db_alive():
-    """Daily no-op query so Supabase's free tier never idles long enough to pause
-    (it auto-pauses after ~7 days of inactivity). Reuses the same connection/env
-    as everything else, so there's no extra config to maintain."""
-    try:
-        cur = get_db_connection().cursor()
-        cur.execute("SELECT 1;")
-        cur.fetchone()
-        cur.close()
-        print("DB keep-alive ping OK")
-    except Exception as exc:
-        print(f"DB keep-alive ping failed: {type(exc).__name__}: {exc}")
 
-
-schedule.every(2).weeks.do(_refresh_film_dataset) #run intialise dataset every fortnight - add new films
-schedule.every().day.at("06:00").do(keep_db_alive) #keep Supabase free tier from auto-pausing
+schedule.every(1).weeks.do(_refresh_film_dataset) #run intialise dataset every fortnight - add new films
 
 
 def start_recommendation_scheduler():

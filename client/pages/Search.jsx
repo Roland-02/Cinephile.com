@@ -137,16 +137,8 @@ const Search = () => {
   };
 
   const handleFilmClick = (film, filmIndex) => {
-    const meta = {
-      source: 'search',
-      query: buildQueryParam(searchQueries),
-      page: currentPage,
-      hasMore: hasMore,
-    };
-
     localStorage.setItem('filmIndex', filmIndex);
     localStorage.setItem('films-source', JSON.stringify(films));
-    localStorage.setItem('films-source-meta', JSON.stringify(meta));
     navigate('/index');
   };
 

@@ -10,7 +10,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import jwt
 from jwt import PyJWKClient
-from recommendEngine import recommend_bp, init_recommend_cache, start_recommendation_scheduler, update_profile_and_vectors, get_user_films
+from recommendEngine import recommend_bp, init_recommend_cache, start_recommendation_scheduler, get_user_films
 
 load_dotenv()
 
@@ -60,9 +60,6 @@ PUBLIC_API_PATHS = {
     "/api/filteredPageFilms",
     "/api/filter",
     "/api/shuffleFilms",
-    "/api/openClickedFilm",
-    "/api/get_allFilms_index",
-    "/api/datasetLength",
     "/api/search_general",
 }
 
@@ -256,7 +253,6 @@ from recommendEngine import cache
 app.register_blueprint(recommend_bp, url_prefix='/api')
 start_recommendation_scheduler()
 
-hasUserInteracted = False
 allFilms_global = []
 filteredFilms_global = []
 PAGE_SIZE = int(os.getenv("PAGE_SIZE"))
@@ -464,51 +460,6 @@ def shuffle_films():
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/openClickedFilm', methods=['GET'])
-def open_clicked_film():
-    try:
-        if not films_loaded:
-            load_films_from_db()
-
-        tconst = request.args.get('tconst')
-        film_index = next((i for i, f in enumerate(allFilms_global) if f.get('tconst') == tconst), -1)
-
-        if film_index == -1:
-            return jsonify({'error': 'Film not found'}), 404
-
-        page = (film_index // PAGE_SIZE) + 1
-        start_index = (page - 1) * PAGE_SIZE
-        current_index = film_index - start_index
-        counter = film_index
-
-        return jsonify({"counter": counter, "currentIndex": current_index})
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/get_allFilms_index', methods=['GET'])
-def get_all_films_index():
-    try:
-        if not films_loaded:
-            load_films_from_db()
-
-        tconst = request.args.get('tconst')
-        film_index = next((i for i, f in enumerate(allFilms_global) if f.get('tconst') == tconst), -1)
-        return jsonify(film_index)
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/datasetLength', methods=['GET'])
-def dataset_length():
-    try:
-        if not films_loaded:
-            load_films_from_db()
-        return jsonify(len(allFilms_global))
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
-
 # ============================================================================
 # USER INTERACTION ROUTES (user_id taken from the verified session via g.user.id)
 # ============================================================================
@@ -624,7 +575,6 @@ def get_watchlist():
 @app.route('/api/loveFilm', methods=['POST'])
 def love_film():
     try:
-        global hasUserInteracted
         data = request.get_json()
         tconst = data.get('film_id')
         user_id = g.user["id"]
@@ -650,8 +600,6 @@ def love_film():
         cache.delete(f'user_genre_recommended{user_id}')
         cache.delete(f'user_profile_{user_id}')
         cache.delete(f'similarity_vectors_{user_id}')
-
-        hasUserInteracted = True
         return jsonify('Film saved successfully')
     except Exception as e:
         print(f"Error: {e}")
@@ -660,7 +608,6 @@ def love_film():
 @app.route('/api/unloveFilm', methods=['POST'])
 def unlove_film():
     try:
-        global hasUserInteracted
         data = request.get_json()
         user_id = g.user["id"]
         film_id = data.get('film_id')
@@ -682,8 +629,6 @@ def unlove_film():
         cache.delete(f'user_genre_recommended{user_id}')
         cache.delete(f'user_profile_{user_id}')
         cache.delete(f'similarity_vectors_{user_id}')
-
-        hasUserInteracted = True
         return jsonify('Removed successfully')
     except Exception as e:
         print(f"Error: {e}")
@@ -692,7 +637,6 @@ def unlove_film():
 @app.route('/api/saveLikedElements', methods=['POST'])
 def save_liked_elements():
     try:
-        global hasUserInteracted
         data = request.get_json()
         user_id = g.user["id"]
         tconst = data.get('film_id')
@@ -743,8 +687,6 @@ def save_liked_elements():
         cache.delete(f'user_genre_recommended{user_id}')
         cache.delete(f'user_profile_{user_id}')
         cache.delete(f'similarity_vectors_{user_id}')
-
-        hasUserInteracted = True
         return jsonify('Data saved successfully')
     except Exception as e:
         print(f"Error: {e}")
@@ -794,13 +736,6 @@ def delete_watchlist():
         print(f"Error: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/hasUserInteracted', methods=['GET'])
-def has_user_interacted():
-    global hasUserInteracted
-    result = hasUserInteracted
-    hasUserInteracted = False
-    return jsonify({'hasUserInteracted': result})
-
 # ============================================================================
 # SERVE REACT APP
 # ============================================================================
@@ -827,6 +762,5 @@ def serve_react_app(path):
 if __name__ == "__main__":
     port = 8080
     print(f"Starting unified Flask server on port {port}...")
-    print(f"Recommendation engine routes integrated on same port")
 
     app.run(host="0.0.0.0", port=port, debug=False)

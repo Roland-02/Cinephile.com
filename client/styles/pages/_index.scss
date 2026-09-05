@@ -195,12 +195,6 @@
     margin-bottom: $spacing-xs;
   }
 
-  // Empty state styling
-  &.crew-box-empty {
-    opacity: 0.6;
-    cursor: default !important;
-  }
-  
   // Mobile responsive - smaller boxes, allow wrapping
   @include mobile {
     min-width: 120px;

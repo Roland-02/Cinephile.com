@@ -43,14 +43,6 @@
   }
 }
 
-.clickable-film {
-  cursor: pointer;
-  
-  &:hover {
-    cursor: pointer;
-  }
-}
-
 // Profile stats
 .favourite-item {
   width: 100%;
@@ -84,11 +76,6 @@ li {
 .notFound {
   height: 100%;
   width: 100%;
-}
-
-.notFound-ctg {
-  height: 100%;
-  width: 50%;
 }
 
 
