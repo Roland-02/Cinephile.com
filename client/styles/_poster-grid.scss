@@ -4,7 +4,7 @@
 //
 // Search, Recommend and Watchlist render identical poster markup, and each page
 // partial used to carry its own copy of these rules. Because those partials use
-// unscoped global selectors, the three copies were never actually independent —
+// unscoped global selectors, the three copies were never actually independent -
 // they merged in the cascade and every page got the same result, assembled from
 // whichever declaration happened to load last. What follows is that merged
 // result, written once.

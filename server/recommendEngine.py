@@ -41,7 +41,7 @@ TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 # ============================================================================
 
 # Films per page. Shared by the API's pagination and, via vite.config.js, by
-# the client — the two must agree or page boundaries drift apart.
+# the client - the two must agree or page boundaries drift apart.
 PAGE_SIZE = int(os.getenv("PAGE_SIZE"))
 
 # One definition of how to reach the database.
@@ -718,7 +718,7 @@ def init_recommend_data(force=False):
 @recommend_bp.before_request
 def _ensure_recommend_data():
     """Lazily warm the recommender on first request. If the DB is unreachable,
-    return 503 for recommendation endpoints only — the rest of the site stays up."""
+    return 503 for recommendation endpoints only - the rest of the site stays up."""
     try:
         init_recommend_data()
     except Exception as exc:

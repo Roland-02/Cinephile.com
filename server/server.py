@@ -147,7 +147,7 @@ def _get_or_create_local_user(auth_id, email):
     login.user_id stays the canonical app id that every interaction table
     references. We link an identity-provider user to it by:
       1. auth_id (fast path once linked);
-      2. email — matches a row created under an earlier provider and backfills
+      2. email - matches a row created under an earlier provider and backfills
          auth_id, preserving that user's saved data across the migration;
       3. otherwise insert a new row keyed by the provider's subject id.
 
@@ -353,7 +353,7 @@ def auth_google():
     if not auth_id:
         return jsonify({"message": "Invalid Google credential"}), 401
 
-    # Resolves by auth_id, else by email — backfilling auth_id and preserving
+    # Resolves by auth_id, else by email - backfilling auth_id and preserving
     # the saved films of accounts created under earlier auth providers.
     local = _get_or_create_local_user(auth_id, email)
 
