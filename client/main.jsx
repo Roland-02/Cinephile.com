@@ -22,26 +22,6 @@ axios.interceptors.request.use(async (config) => {
   return config;
 });
 
-const originalFetch = window.fetch.bind(window);
-window.fetch = async (input, init) => {
-  const url = typeof input === 'string' ? input : input?.url || '';
-  const isApiCall = url.startsWith('/api/');
-  const nextInput = API_BASE_URL && typeof input === 'string' && url.startsWith('/api/')
-    ? `${API_BASE_URL}${input}`
-    : input;
-
-  if (!isApiCall) return originalFetch(nextInput, init);
-
-  const nextInit = init ? { ...init } : {};
-  const headers = new Headers(nextInit.headers);
-  if (APP_API_KEY && !headers.get('X-App-Api-Key')) headers.set('X-App-Api-Key', APP_API_KEY);
-  const token = await getAccessToken();
-  if (token && !headers.get('Authorization')) headers.set('Authorization', `Bearer ${token}`);
-  nextInit.headers = headers;
-
-  return originalFetch(nextInput, nextInit);
-};
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>

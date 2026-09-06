@@ -233,11 +233,12 @@ const Index = () => {
             const newCachedPages = { __filters: parsedFilters };
             
             for (let pageNum = 1; pageNum <= targetPageNum; pageNum++) {
-              const res = await fetch(`/api/filteredPageFilms?page=${pageNum}`);
-              if (!res.ok) {
+              let pageData;
+              try {
+                pageData = (await axios.get(`/api/filteredPageFilms?page=${pageNum}`)).data;
+              } catch {
                 break;
               }
-              const pageData = await res.json();
               const pageKey = `page_${pageNum}`;
               newCachedPages[pageKey] = pageData;
               allPages.push(...pageData);
@@ -397,12 +398,12 @@ const Index = () => {
         if (cachedPages[pageKey]) {
           allFilmsData = cachedPages[pageKey];
         } else {
-          const response = await fetch(`/api/filteredPageFilms?page=${pageNum}`);
-          if (response.ok) {
-            const pageData = await response.json();
+          try {
+            const pageData = (await axios.get(`/api/filteredPageFilms?page=${pageNum}`)).data;
             cachedPages[pageKey] = pageData;
             localStorage.setItem('indexPageFilms', JSON.stringify(cachedPages));
             allFilmsData = pageData;
+          } catch {
           }
         }
       } else if (filmsSource) {
@@ -434,12 +435,12 @@ const Index = () => {
           allFilmsData = cachedPages[pageKey];
         } else {
           // Page not in localStorage, fetch from server
-          const response = await fetch(`/api/indexPageFilms?page=${pageNum}`);
-          if (response.ok) {
-            const pageData = await response.json();
+          try {
+            const pageData = (await axios.get(`/api/indexPageFilms?page=${pageNum}`)).data;
             cachedPages[pageKey] = pageData;
             localStorage.setItem('indexPageFilms', JSON.stringify(cachedPages));
             allFilmsData = pageData;
+          } catch {
           }
         }
       }
@@ -887,8 +888,11 @@ const Index = () => {
       const response = await axios.post('/api/filter', filter);
       if (response.data !== undefined && response.data !== null) {
         // Fetch first filtered page and cache it immediately
-        const firstPageRes = await fetch('/api/filteredPageFilms?page=1');
-        const firstPageData = firstPageRes.ok ? await firstPageRes.json() : [];
+        let firstPageData = [];
+        try {
+          firstPageData = (await axios.get('/api/filteredPageFilms?page=1')).data || [];
+        } catch {
+        }
 
         // Persist the first filtered page so the carousel shows results right away
         let cachedPages = {};

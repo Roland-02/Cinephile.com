@@ -24,14 +24,6 @@
 }
 
 // Button styles
-@mixin button-base {
-  background-color: $color-white;
-  color: $color-black;
-  cursor: pointer;
-  transition: opacity $transition-fast;
-}
-
-
 // Media queries
 @mixin mobile {
   @media screen and (max-width: $breakpoint-md) {
@@ -39,3 +31,95 @@
   }
 }
 
+
+// Slide-out panels
+//
+// The navigation menu (from the right) and the filter menu (from the left) are
+// the same component with a different side. These carry the shared rules; the
+// call sites add only what genuinely differs.
+
+@mixin slide-out-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: $navbar-z-index + 10;
+  opacity: 0;
+  transition: opacity $transition-fast;
+  pointer-events: none;
+
+  @include mobile {
+    display: block;
+
+    &.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+  }
+}
+
+// $side: the edge the panel slides in from. $edge: the border it carries on its
+// inward-facing side. $shadow-x: horizontal offset of its drop shadow.
+@mixin slide-out-panel($side, $edge, $shadow-x) {
+  position: fixed;
+  top: 0;
+  #{$side}: -280px;
+  width: 280px;
+  height: 100%;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border-#{$edge}: $border-width $border-style var(--border-color);
+  z-index: 111;
+  transition: #{$side} $transition-fast, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  overflow-y: auto;
+  box-shadow: $shadow-x 0 8px rgba(0, 0, 0, 0.2);
+
+  @include mobile {
+    &.open {
+      #{$side}: 0;
+    }
+  }
+
+  @media (min-width: 992px) {
+    display: none;
+  }
+}
+
+@mixin slide-out-header {
+  padding: $spacing-lg;
+  border-bottom: $border-width $border-style var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+
+  h2 {
+    margin: 0;
+    font-size: $font-size-xl;
+    letter-spacing: 1px;
+    color: var(--text-color);
+  }
+}
+
+@mixin slide-out-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+
+  svg {
+    fill: currentColor;
+  }
+}

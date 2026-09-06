@@ -3,12 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../App';
 import { useFilter } from './NavbarFilter';
 import { isSignedIn as readSignedIn, onAuthChange, signOut } from '../contexts/authClient';
+import { CACHE_KEY } from '../contexts/SessionContext';
 
 // Read the cached session synchronously so the first paint can pick the
 // correct nav variant instead of rendering nothing while auth initializes.
 const getCachedSignedIn = () => {
   try {
-    const raw = localStorage.getItem('cinephile_session_cache');
+    const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return false;
     const parsed = JSON.parse(raw);
     return Boolean(parsed?.userId);

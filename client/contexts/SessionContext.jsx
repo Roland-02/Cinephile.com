@@ -2,7 +2,9 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import axios from 'axios';
 import { isSignedIn as readSignedIn, onAuthChange } from './authClient';
 
-const CACHE_KEY = 'cinephile_session_cache';
+// Exported so other components can read the same cache without duplicating
+// the key; a rename here must not silently strand a reader.
+export const CACHE_KEY = 'cinephile_session_cache';
 
 const SessionContext = createContext(null);
 

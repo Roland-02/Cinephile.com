@@ -3,10 +3,11 @@ import time
 import json
 import warnings
 import threading
-import numpy as np
-import pandas as pd
+from contextlib import contextmanager
 import psycopg2
 import psycopg2.extras
+import numpy as np
+import pandas as pd
 from dotenv import load_dotenv
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import MinMaxScaler
@@ -32,26 +33,81 @@ MAX_REQUESTS_PER_SECOND = 50
 MAX_INDEX_THREADS = 25
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
-# Thread-local storage for database connections (thread-safe)
+# ============================================================================
+# SHARED CONFIG AND DATABASE ACCESS
+#
+# server.py imports these from here. It cannot live in server.py instead:
+# server.py already imports this module, so the dependency only runs one way.
+# ============================================================================
+
+# Films per page. Shared by the API's pagination and, via vite.config.js, by
+# the client — the two must agree or page boundaries drift apart.
+PAGE_SIZE = int(os.getenv("PAGE_SIZE"))
+
+# One definition of how to reach the database.
+DB_SETTINGS = {
+    "host": os.getenv("DB_HOST"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "dbname": os.getenv("DB_DATABASE"),
+    "port": int(os.getenv("DB_PORT")),
+    "sslmode": os.getenv("DB_SSLMODE", "require"),
+}
+
 _thread_local = threading.local()
 
-# Get thread-local database connection (Neon)
+
+def connect():
+    """A new connection. The caller closes it. Used by the request handlers,
+    where a connection must not outlive the request."""
+    return psycopg2.connect(**DB_SETTINGS)
+
+
 def get_db_connection():
-    if not hasattr(_thread_local, 'mydb') or _thread_local.mydb.closed:
-        _thread_local.mydb = psycopg2.connect(
-            host=os.getenv("DB_HOST"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            dbname=os.getenv("DB_DATABASE"),
-            port=int(os.getenv("DB_PORT")),
-            sslmode=os.getenv("DB_SSLMODE", "require")
-        )
-    return _thread_local.mydb
+    """This thread's connection, reconnecting if it has been closed.
+
+    The recommender fires many queries in sequence and would waste time
+    reconnecting for each one.
+    """
+    conn = getattr(_thread_local, "conn", None)
+    if conn is None or conn.closed:
+        conn = psycopg2.connect(**DB_SETTINGS)
+        _thread_local.conn = conn
+    return conn
+
 
 def get_db_cursor():
-    if not hasattr(_thread_local, 'mycursor'):
-        _thread_local.mycursor = get_db_connection().cursor()
-    return _thread_local.mycursor
+    """This thread's cursor, tied to the connection it was opened on.
+
+    Rebuilt whenever that connection changed or the cursor was closed. Checking
+    only whether a cursor exists is not enough: get_db_connection() replaces a
+    dropped connection, and a cursor belonging to the dead one would still be
+    handed back.
+    """
+    conn = get_db_connection()
+    cur = getattr(_thread_local, "cursor", None)
+    if cur is None or cur.closed or cur.connection is not conn:
+        cur = conn.cursor()
+        _thread_local.cursor = cur
+    return cur
+
+
+@contextmanager
+def request_cursor(commit=False):
+    """A dict cursor on its own connection, closed however the block exits.
+
+    Replaces the connect / cursor / close sequence that every request handler
+    repeated, including on the error paths where several of them leaked.
+    """
+    conn = connect()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        yield cursor
+        if commit:
+            conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
 
 cache = None
 
@@ -449,7 +505,6 @@ def collate_liked_groups(user_profile):
     # Iterate over the dictionary and create group dataframes
     for group_name, columns in group_columns.items():
         group_df = user_profile[columns].copy()
-        # group_df = group_df.dropna(subset=columns[:-1], how='all')
         group_dataframes.append(group_df)
 
     return group_dataframes
@@ -517,7 +572,6 @@ def get_content_recommendations(user_profile_groups, similarity_vectors):
 
     sorted_films['similarity'] = mean_similarity[sorted_indices] / 5
 
-    # filtered_recommendations = sorted_films[~sorted_films['tconst'].isin(exclude_films['tconst'])]
 
     return sorted_films
 
@@ -811,7 +865,7 @@ def get_batch_route():
     user_id = g.user["id"]
     category = request.args.get("category")
     page = int(request.args.get("page"))
-    batch_size = int(os.getenv("PAGE_SIZE"))
+    batch_size = PAGE_SIZE
 
 
     films_json = cache.get(f'user_{category}_recommended{user_id}')
@@ -893,7 +947,7 @@ def get_profile_stats():
 def search_general():
     filters_str = request.args.get("query")
     page = int(request.args.get("page", 1))  # Default to page 1 if not provided
-    page_size = int(os.getenv("PAGE_SIZE"))
+    page_size = PAGE_SIZE
 
     if filters_str:
         if page < 1:

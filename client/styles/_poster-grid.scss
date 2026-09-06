@@ -1,0 +1,97 @@
+@use 'variables' as *;
+
+// Shared film-poster grid.
+//
+// Search, Recommend and Watchlist render identical poster markup, and each page
+// partial used to carry its own copy of these rules. Because those partials use
+// unscoped global selectors, the three copies were never actually independent —
+// they merged in the cascade and every page got the same result, assembled from
+// whichever declaration happened to load last. What follows is that merged
+// result, written once.
+//
+// Load order matters: `_profile.scss` declares its own `.film-poster` base rule
+// which these override, so this partial must stay last in main.scss. Scoping
+// the page partials properly would remove that constraint.
+
+.poster-wrapper {
+  width: calc((100% - 3 * #{$spacing-sm}) / 4);
+  max-width: 350px;
+  aspect-ratio: 2 / 3;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: transform $transition-fast;
+
+  &:hover {
+    cursor: pointer;
+    transform: scale(1.03);
+  }
+}
+
+.film-poster {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  object-fit: cover;
+  display: block;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.caption {
+  display: none;
+}
+
+.poster-wrapper:hover .caption {
+  display: block;
+}
+
+figure {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  text-align: left;
+  margin: 0;
+
+  &:hover {
+    cursor: pointer;
+
+    figcaption {
+      display: flex;
+    }
+  }
+}
+
+figcaption {
+  position: absolute;
+  inset: 0;
+  display: none;
+  color: var(--text-color);
+  font-size: $font-size-xs;
+  text-align: left;
+  padding: $spacing-sm;
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: 0.95;
+  background-color: var(--bg-color);
+  box-sizing: border-box;
+
+  p {
+    margin-bottom: $spacing-xs;
+    line-height: 1.3;
+    margin-top: 0;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    strong {
+      font-weight: 600;
+    }
+  }
+}

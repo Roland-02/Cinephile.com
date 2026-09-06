@@ -2,6 +2,7 @@ import os
 import json
 import random
 import hmac
+from functools import wraps
 from datetime import datetime, timedelta, timezone
 import psycopg2
 import psycopg2.extras
@@ -10,7 +11,16 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import jwt
 from jwt import PyJWKClient
-from recommendEngine import recommend_bp, init_recommend_cache, start_recommendation_scheduler, get_user_films
+
+from recommendEngine import (
+    recommend_bp,
+    init_recommend_cache,
+    start_recommendation_scheduler,
+    get_user_films,
+    PAGE_SIZE,
+    connect as create_db_connection,
+    request_cursor,
+)
 
 load_dotenv()
 
@@ -62,17 +72,6 @@ PUBLIC_API_PATHS = {
     "/api/shuffleFilms",
     "/api/search_general",
 }
-
-# Create PostgreSQL database connection (Neon)
-def create_db_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        dbname=os.getenv("DB_DATABASE"),
-        port=int(os.getenv("DB_PORT")),
-        sslmode=os.getenv("DB_SSLMODE", "require")
-    )
 
 def _extract_api_token_from_headers():
     token = request.headers.get("X-App-Api-Key")
@@ -272,20 +271,50 @@ def invalidate_user_recommendations(user_id):
     for key in RECOMMENDATION_CACHE_KEYS:
         cache.delete(key.format(id=user_id))
 
+
+def handle_errors(fn):
+    """Return a JSON 500 instead of an HTML error page, and log the cause.
+
+    Every route repeated this try/except; the connection cleanup that used to
+    sit alongside it now lives in db.request_cursor, which also runs on the
+    error path where several routes previously leaked a connection.
+    """
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except Exception as e:
+            print(f"Error in {fn.__name__}: {e}")
+            return jsonify({'error': str(e)}), 500
+    return wrapper
+
+
+def films_saved_by_user(table, user_id):
+    """Full film rows for the tconsts this user has saved in `table`.
+
+    `table` is always an internal literal, never request data.
+    """
+    with request_cursor() as cursor:
+        cursor.execute(f"SELECT tconst FROM {table} WHERE user_id = %s", (user_id,))
+        rows = cursor.fetchall()
+        if not rows:
+            return []
+
+        tconsts = [row['tconst'] for row in rows]
+        placeholders = ','.join(['%s'] * len(tconsts))
+        cursor.execute(f"SELECT * FROM films WHERE tconst IN ({placeholders})", tuple(tconsts))
+        return cursor.fetchall()
+
 allFilms_global = []
 filteredFilms_global = []
-PAGE_SIZE = int(os.getenv("PAGE_SIZE"))
 films_loaded = False
 
 def load_films_from_db():
     global allFilms_global, films_loaded
     try:
-        conn = create_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute('SELECT * FROM films')
-        allFilms_global = cursor.fetchall()
-        cursor.close()
-        conn.close()
+        with request_cursor() as cursor:
+            cursor.execute('SELECT * FROM films')
+            allFilms_global = cursor.fetchall()
         random.shuffle(allFilms_global)
         films_loaded = True
         print(f"Loaded {len(allFilms_global)} films from database")
@@ -301,6 +330,7 @@ load_films_from_db()
 # ============================================================================
 
 @app.route('/api/auth/google', methods=['POST'])
+@handle_errors
 def auth_google():
     """Exchange a Google ID token for one of this app's session tokens.
 
@@ -354,142 +384,129 @@ def account_me():
 # ============================================================================
 
 @app.route('/api/indexPageFilms', methods=['GET'])
+@handle_errors
 def get_index_page_films():
-    try:
-        if not films_loaded:
-            load_films_from_db()
+    if not films_loaded:
+        load_films_from_db()
 
-        page = int(request.args.get('page', 1))
-        start_index = (page - 1) * PAGE_SIZE
-        end_index = start_index + PAGE_SIZE
-        films_for_page = allFilms_global[start_index:end_index]
-        return jsonify(films_for_page)
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    page = int(request.args.get('page', 1))
+    start_index = (page - 1) * PAGE_SIZE
+    end_index = start_index + PAGE_SIZE
+    films_for_page = allFilms_global[start_index:end_index]
+    return jsonify(films_for_page)
 
 @app.route('/api/filteredPageFilms', methods=['GET'])
+@handle_errors
 def get_filtered_page_films():
-    try:
-        page = int(request.args.get('page', 1))
-        start_index = (page - 1) * PAGE_SIZE
-        end_index = start_index + PAGE_SIZE
-        films_for_page = filteredFilms_global[start_index:end_index]
-        return jsonify(films_for_page)
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    page = int(request.args.get('page', 1))
+    start_index = (page - 1) * PAGE_SIZE
+    end_index = start_index + PAGE_SIZE
+    films_for_page = filteredFilms_global[start_index:end_index]
+    return jsonify(films_for_page)
 
 @app.route('/api/filter', methods=['POST'])
+@handle_errors
 def filter_films():
-    try:
-        global filteredFilms_global
-        if not films_loaded:
-            load_films_from_db()
+    global filteredFilms_global
+    if not films_loaded:
+        load_films_from_db()
 
-        filter_data = request.get_json(silent=True)
-        if not filter_data:
-            filter_data = request.args.get('filter')
-            if isinstance(filter_data, str):
-                try:
-                    filter_data = json.loads(filter_data)
-                except Exception:
-                    filter_data = {}
+    filter_data = request.get_json(silent=True)
+    if not filter_data:
+        filter_data = request.args.get('filter')
+        if isinstance(filter_data, str):
+            try:
+                filter_data = json.loads(filter_data)
+            except Exception:
+                filter_data = {}
 
-        filteredFilms_global = allFilms_global.copy()
+    filteredFilms_global = allFilms_global.copy()
 
-        if filter_data:
-            if not (filter_data.get('rating') == 'Any' and filter_data.get('genre') == 'Any' and
-                   filter_data.get('runtime') == 'Any' and filter_data.get('year') == 'Any'):
+    if filter_data:
+        if not (filter_data.get('rating') == 'Any' and filter_data.get('genre') == 'Any' and
+               filter_data.get('runtime') == 'Any' and filter_data.get('year') == 'Any'):
 
-                if filter_data.get('rating') != 'Any':
-                    rating = int(filter_data['rating'])
+            if filter_data.get('rating') != 'Any':
+                rating = int(filter_data['rating'])
+                filteredFilms_global = [f for f in filteredFilms_global
+                                       if f.get('averageRating') and int(float(f['averageRating'])) == rating]
+
+            if filter_data.get('genre') != 'Any':
+                genre = filter_data['genre']
+                filteredFilms_global = [f for f in filteredFilms_global
+                                       if genre in (f.get('genres') or '')]
+
+            if filter_data.get('runtime') != 'Any':
+                runtime = filter_data['runtime']
+                runtime_filters = {
+                    '≤ 1Hr': lambda x: x <= 60,
+                    '≤ 1Hr 30m': lambda x: 60 < x <= 90,
+                    '≤ 2Hrs': lambda x: 90 < x <= 120,
+                    '≤ 2Hrs 30m': lambda x: 120 < x <= 150,
+                    '≤ 3Hrs': lambda x: 150 < x <= 180,
+                    'really long...': lambda x: x > 180
+                }
+
+                def is_valid_runtime(film):
+                    film_runtime = film.get('runtimeMinutes')
+                    try:
+                        runtime_val = float(film_runtime)
+                        if runtime in runtime_filters:
+                            return runtime_filters[runtime](runtime_val)
+                        return True
+                    except Exception:
+                        return False
+
+                filteredFilms_global = [f for f in filteredFilms_global if is_valid_runtime(f)]
+
+            if filter_data.get('year') != 'Any':
+                year_ranges = {
+                    '2020s': (2020, 2029), '2010s': (2010, 2019), '2000s': (2000, 2009),
+                    '1990s': (1990, 1999), '1980s': (1980, 1989), '1970s': (1970, 1979),
+                    '1960s': (1960, 1969), '1950s': (1950, 1959)
+                }
+                if filter_data['year'] in year_ranges:
+                    start_year, end_year = year_ranges[filter_data['year']]
                     filteredFilms_global = [f for f in filteredFilms_global
-                                           if f.get('averageRating') and int(float(f['averageRating'])) == rating]
+                                           if f.get('startYear') and start_year <= int(f['startYear']) <= end_year]
 
-                if filter_data.get('genre') != 'Any':
-                    genre = filter_data['genre']
-                    filteredFilms_global = [f for f in filteredFilms_global
-                                           if genre in (f.get('genres') or '')]
-
-                if filter_data.get('runtime') != 'Any':
-                    runtime = filter_data['runtime']
-                    runtime_filters = {
-                        '≤ 1Hr': lambda x: x <= 60,
-                        '≤ 1Hr 30m': lambda x: 60 < x <= 90,
-                        '≤ 2Hrs': lambda x: 90 < x <= 120,
-                        '≤ 2Hrs 30m': lambda x: 120 < x <= 150,
-                        '≤ 3Hrs': lambda x: 150 < x <= 180,
-                        'really long...': lambda x: x > 180
-                    }
-
-                    def is_valid_runtime(film):
-                        film_runtime = film.get('runtimeMinutes')
-                        try:
-                            runtime_val = float(film_runtime)
-                            if runtime in runtime_filters:
-                                return runtime_filters[runtime](runtime_val)
-                            return True
-                        except Exception:
-                            return False
-
-                    filteredFilms_global = [f for f in filteredFilms_global if is_valid_runtime(f)]
-
-                if filter_data.get('year') != 'Any':
-                    year_ranges = {
-                        '2020s': (2020, 2029), '2010s': (2010, 2019), '2000s': (2000, 2009),
-                        '1990s': (1990, 1999), '1980s': (1980, 1989), '1970s': (1970, 1979),
-                        '1960s': (1960, 1969), '1950s': (1950, 1959)
-                    }
-                    if filter_data['year'] in year_ranges:
-                        start_year, end_year = year_ranges[filter_data['year']]
-                        filteredFilms_global = [f for f in filteredFilms_global
-                                               if f.get('startYear') and start_year <= int(f['startYear']) <= end_year]
-
-        return jsonify(len(filteredFilms_global))
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    return jsonify(len(filteredFilms_global))
 
 @app.route('/api/shuffleFilms', methods=['POST'])
+@handle_errors
 def shuffle_films():
-    try:
-        global allFilms_global
-        if not films_loaded:
-            load_films_from_db()
+    global allFilms_global
+    if not films_loaded:
+        load_films_from_db()
 
-        user = g.get('user')
-        exclude_tconsts = []
-        if user:
-            try:
-                exclude_res = get_user_films()
-                exclude_json = exclude_res.get_json() or {}
-                exclude_tconsts = exclude_json.get('tconsts', [])
-            except:
-                pass
+    user = g.get('user')
+    exclude_tconsts = []
+    if user:
+        try:
+            exclude_res = get_user_films()
+            exclude_json = exclude_res.get_json() or {}
+            exclude_tconsts = exclude_json.get('tconsts', [])
+        except:
+            pass
 
-        shuffled = allFilms_global.copy()
-        random.shuffle(shuffled)
-        included = [f for f in shuffled if f.get('tconst') not in exclude_tconsts]
-        excluded = [f for f in shuffled if f.get('tconst') in exclude_tconsts]
+    shuffled = allFilms_global.copy()
+    random.shuffle(shuffled)
+    included = [f for f in shuffled if f.get('tconst') not in exclude_tconsts]
+    excluded = [f for f in shuffled if f.get('tconst') in exclude_tconsts]
 
-        allFilms_global = included + excluded
-        return jsonify('Film shuffled')
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    allFilms_global = included + excluded
+    return jsonify('Film shuffled')
 
 # ============================================================================
 # USER INTERACTION ROUTES (user_id taken from the verified session via g.user.id)
 # ============================================================================
 
 @app.route('/api/getLikedFilms', methods=['GET'])
+@handle_errors
 def get_liked_films():
-    try:
-        user_id = g.user["id"]
-        conn = create_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    user_id = g.user["id"]
 
+    with request_cursor() as cursor:
         cursor.execute("""
             SELECT tconst, "Title", "Plot", "Rating", "Genre", "Runtime", "Year",
                    "Director", "Camera", "Writer", "Producer", "Editor", "Composer"
@@ -523,10 +540,7 @@ def get_liked_films():
             liked_cast_by_tconst.setdefault(tconst, []).append(name)
 
         all_tconsts = set(liked_elements_by_tconst.keys()) | set(liked_cast_by_tconst.keys())
-
         if not all_tconsts:
-            cursor.close()
-            conn.close()
             return jsonify([])
 
         placeholders = ','.join(['%s'] * len(all_tconsts))
@@ -539,79 +553,26 @@ def get_liked_films():
             film['likedCast'] = liked_cast_by_tconst.get(tconst, [])
             liked_films.append(film)
 
-        cursor.close()
-        conn.close()
-        return jsonify(liked_films)
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    return jsonify(liked_films)
 
 @app.route('/api/getLovedFilms', methods=['GET'])
+@handle_errors
 def get_loved_films():
-    try:
-        user_id = g.user["id"]
-        conn = create_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-        cursor.execute("SELECT tconst FROM loved_films WHERE user_id = %s", (user_id,))
-        loved_tconsts = cursor.fetchall()
-
-        if not loved_tconsts:
-            cursor.close()
-            conn.close()
-            return jsonify([])
-
-        all_tconsts = [row['tconst'] for row in loved_tconsts]
-        placeholders = ','.join(['%s'] * len(all_tconsts))
-        cursor.execute(f"SELECT * FROM films WHERE tconst IN ({placeholders})", tuple(all_tconsts))
-
-        loved_films = cursor.fetchall()
-
-        cursor.close()
-        conn.close()
-        return jsonify(loved_films)
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    return jsonify(films_saved_by_user('loved_films', g.user["id"]))
 
 @app.route('/api/getWatchlist', methods=['GET'])
+@handle_errors
 def get_watchlist():
-    try:
-        user_id = g.user["id"]
-        conn = create_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-        cursor.execute("SELECT tconst FROM watchlist WHERE user_id = %s", (user_id,))
-        watchlist_tconsts = cursor.fetchall()
-
-        if not watchlist_tconsts:
-            cursor.close()
-            conn.close()
-            return jsonify([])
-
-        all_tconsts = [row['tconst'] for row in watchlist_tconsts]
-        placeholders = ','.join(['%s'] * len(all_tconsts))
-        cursor.execute(f"SELECT * FROM films WHERE tconst IN ({placeholders})", tuple(all_tconsts))
-
-        watchlist_films = cursor.fetchall()
-
-        cursor.close()
-        conn.close()
-        return jsonify(watchlist_films)
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    return jsonify(films_saved_by_user('watchlist', g.user["id"]))
 
 @app.route('/api/loveFilm', methods=['POST'])
+@handle_errors
 def love_film():
-    try:
-        data = request.get_json()
-        tconst = data.get('film_id')
-        user_id = g.user["id"]
+    data = request.get_json()
+    tconst = data.get('film_id')
+    user_id = g.user["id"]
 
-        conn = create_db_connection()
-        cursor = conn.cursor()
-
+    with request_cursor(commit=True) as cursor:
         cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s",
                       (user_id, tconst))
         cursor.execute("DELETE FROM liked_cast WHERE user_id = %s AND tconst = %s",
@@ -619,62 +580,44 @@ def love_film():
         cursor.execute("INSERT INTO loved_films (user_id, tconst) VALUES (%s, %s)",
                       (user_id, tconst))
 
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        invalidate_user_recommendations(user_id)
-        return jsonify('Film saved successfully')
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    invalidate_user_recommendations(user_id)
+    return jsonify('Film saved successfully')
 
 @app.route('/api/unloveFilm', methods=['POST'])
+@handle_errors
 def unlove_film():
-    try:
-        data = request.get_json()
-        user_id = g.user["id"]
-        film_id = data.get('film_id')
+    data = request.get_json()
+    user_id = g.user["id"]
+    film_id = data.get('film_id')
 
-        conn = create_db_connection()
-        cursor = conn.cursor()
-
+    with request_cursor(commit=True) as cursor:
         cursor.execute("DELETE FROM loved_films WHERE user_id = %s AND tconst = %s",
                       (user_id, film_id))
 
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        invalidate_user_recommendations(user_id)
-        return jsonify('Removed successfully')
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    invalidate_user_recommendations(user_id)
+    return jsonify('Removed successfully')
 
 @app.route('/api/saveLikedElements', methods=['POST'])
+@handle_errors
 def save_liked_elements():
-    try:
-        data = request.get_json()
-        user_id = g.user["id"]
-        tconst = data.get('film_id')
-        liked_elements = data.get('elements', [])
-        liked_cast = data.get('cast', [])
+    data = request.get_json()
+    user_id = g.user["id"]
+    tconst = data.get('film_id')
+    liked_elements = data.get('elements', [])
+    liked_cast = data.get('cast', [])
 
-        attribute_values = {
-            'Title': 0, 'Plot': 0, 'Rating': 0, 'Genre': 0, 'Runtime': 0,
-            'Year': 0, 'Director': 0, 'Camera': 0, 'Writer': 0,
-            'Producer': 0, 'Editor': 0, 'Composer': 0
-        }
+    attribute_values = {
+        'Title': 0, 'Plot': 0, 'Rating': 0, 'Genre': 0, 'Runtime': 0,
+        'Year': 0, 'Director': 0, 'Camera': 0, 'Writer': 0,
+        'Producer': 0, 'Editor': 0, 'Composer': 0
+    }
 
-        for element in liked_elements:
-            attr_name = element.replace('_film', '')
-            if attr_name in attribute_values:
-                attribute_values[attr_name] = 1
+    for element in liked_elements:
+        attr_name = element.replace('_film', '')
+        if attr_name in attribute_values:
+            attribute_values[attr_name] = 1
 
-        conn = create_db_connection()
-        cursor = conn.cursor()
-
+    with request_cursor(commit=True) as cursor:
         cursor.execute("DELETE FROM loved_films WHERE user_id = %s AND tconst = %s",
                       (user_id, tconst))
         cursor.execute("DELETE FROM liked_attributes WHERE user_id = %s AND tconst = %s",
@@ -694,59 +637,34 @@ def save_liked_elements():
             cursor.executemany("INSERT INTO liked_cast (user_id, tconst, name) VALUES (%s, %s, %s)",
                              cast_values)
 
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        invalidate_user_recommendations(user_id)
-        return jsonify('Data saved successfully')
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    invalidate_user_recommendations(user_id)
+    return jsonify('Data saved successfully')
 
 @app.route('/api/addWatchlist', methods=['POST'])
+@handle_errors
 def add_watchlist():
-    try:
-        data = request.get_json()
-        film_id = data.get('film_id')
-        user_id = g.user["id"]
+    data = request.get_json()
+    film_id = data.get('film_id')
+    user_id = g.user["id"]
 
-        conn = create_db_connection()
-        cursor = conn.cursor()
-
+    with request_cursor(commit=True) as cursor:
         cursor.execute("INSERT INTO watchlist (user_id, tconst) VALUES (%s, %s)",
                       (user_id, film_id))
 
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        return jsonify('Saved successfully')
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    return jsonify('Saved successfully')
 
 @app.route('/api/deleteWatchlist', methods=['POST'])
+@handle_errors
 def delete_watchlist():
-    try:
-        data = request.get_json()
-        user_id = g.user["id"]
-        film_id = data.get('film_id')
+    data = request.get_json()
+    user_id = g.user["id"]
+    film_id = data.get('film_id')
 
-        conn = create_db_connection()
-        cursor = conn.cursor()
-
+    with request_cursor(commit=True) as cursor:
         cursor.execute("DELETE FROM watchlist WHERE user_id = %s AND tconst = %s",
                       (user_id, film_id))
 
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        return jsonify('Removed successfully')
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    return jsonify('Removed successfully')
 
 # ============================================================================
 # SERVE REACT APP

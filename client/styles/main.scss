@@ -13,3 +13,6 @@
 @use 'pages/search';
 @use 'pages/watchlist';
 
+// Must stay last: overrides the .film-poster base rule in pages/profile.
+@use 'poster-grid';
+
