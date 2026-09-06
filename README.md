@@ -37,10 +37,6 @@ The recommendation engine is a Flask blueprint mounted on the same app under
 request and returns 503 for recommendation routes only if the database is
 unreachable, so the rest of the site stays up.
 
-Coolify assigns the public domain via `SERVICE_FQDN_APP_8080` in
-`docker-compose.yaml`. The deployment is hand-rolled rather than managed by
-deploykit; only the Neon database was provisioned through it.
-
 ## Authentication
 
 Google is the identity provider — it owns passwords, 2FA and account recovery.
@@ -61,10 +57,6 @@ Separately, every `/api/*` request must carry an `X-App-Api-Key` header. Note
 that this key is compiled into the public JS bundle, so it filters undirected
 traffic rather than authorising anyone; the session token above is the real
 authorisation.
-
-Google Identity Services uses **Authorized JavaScript origins**, not redirect
-URIs — there is no redirect leg. The OAuth client needs the site origin and
-`http://localhost:8080` listed there.
 
 ## Recommendation Engine
 
@@ -95,69 +87,6 @@ them via TMDB, and rebuilds the in-memory models.
 - Profile analytics — favourite actors, filmmakers, genre distribution
 - Search across films and people
 - Sign in with Google
-
-## Environment
-
-Create a `.env` file in the project root.
-
-**Required — the server refuses to start without these:**
-
-| Variable | Purpose |
-|---|---|
-| `APP_API_KEY` | Gates the `/api/*` surface; also compiled into the client bundle |
-| `APP_JWT_SECRET` | Signs the app's own session tokens. Must differ from `APP_API_KEY` |
-| `GOOGLE_CLIENT_ID` | Google OAuth client id, used as the ID-token audience |
-
-**Required — no default, the app will fail at runtime without them:**
-
-| Variable | Purpose |
-|---|---|
-| `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE`, `DB_PORT` | Neon connection |
-| `PAGE_SIZE` | Films per page, shared by the API and the client |
-| `TMDB_API_KEY` | Enriching new films during the weekly dataset refresh |
-
-**Build-time, read by Vite:**
-
-| Variable | Purpose |
-|---|---|
-| `VITE_GOOGLE_CLIENT_ID` | Same client id, needed in the browser |
-| `VITE_API_BASE_URL` | API origin. Empty in production (same origin); the dev proxy target |
-
-**Optional:**
-
-| Variable | Default |
-|---|---|
-| `DB_SSLMODE` | `require` |
-| `FRONTEND_URL` | `http://localhost:3000` — the CORS origin |
-
-`PAGE_SIZE` and `APP_API_KEY` are mapped into the bundle as `VITE_PAGE_SIZE` and
-`VITE_APP_API_KEY` by `vite.config.js`; you do not set the `VITE_` forms yourself.
-
-## Local Development
-
-### Prerequisites
-
-Docker and Docker Compose, Node.js and npm, Python 3.13+.
-
-### Full stack in Docker
-
-`docker-compose.yaml` alone does not publish a host port — production sits behind
-Traefik. Add the local layer to reach it directly:
-
-```bash
-docker compose -f docker-compose.yaml -f docker-compose.local.yml up -d --build
-```
-
-Then open <http://localhost:8080>.
-
-### Frontend against a running backend
-
-```bash
-npm install
-npm run dev
-```
-
-Vite serves on port 3000 and proxies `/api` to `VITE_API_BASE_URL`.
 
 ## Repository Layout
 
