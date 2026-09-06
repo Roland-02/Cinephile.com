@@ -39,24 +39,10 @@ unreachable, so the rest of the site stays up.
 
 ## Authentication
 
-Google is the identity provider — it owns passwords, 2FA and account recovery.
-No credential ever reaches this application.
-
-1. The browser obtains a Google ID token via Google Identity Services.
-2. It posts that token once to `POST /api/auth/google`.
-3. The server verifies the signature against Google's JWKS with
-   `audience=GOOGLE_CLIENT_ID`, and checks the issuer and `email_verified`.
-4. It returns the app's own HS256 session token (30-day TTL), which the SPA
-   sends as `Authorization: Bearer` on every later request.
-
-Users are resolved by the provider's subject id, falling back to a match on
-verified email — which is what carried existing accounts through the Clerk →
-Supabase → Google migrations without losing their saved films.
-
-Separately, every `/api/*` request must carry an `X-App-Api-Key` header. Note
-that this key is compiled into the public JS bundle, so it filters undirected
-traffic rather than authorising anyone; the session token above is the real
-authorisation.
+Google is the identity provider — no credential ever reaches this application.
+The browser obtains a Google ID token, posts it once to `/api/auth/google`, and
+the server verifies it before issuing its own 30-day session token, which the
+SPA then sends as `Authorization: Bearer` on every request.
 
 ## Recommendation Engine
 
