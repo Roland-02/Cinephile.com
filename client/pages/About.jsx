@@ -77,6 +77,7 @@ const About = () => {
                   <li><strong>React JS</strong> (built with <strong>Vite</strong>)</li>
                   <li><strong>SASS/SCSS</strong> for styling and theming</li>
                   <li><strong>Axios</strong> for API requests</li>
+                  <li><strong>Google</strong> for Auth</li>
                 </ul>
               </div>
 
@@ -85,7 +86,8 @@ const About = () => {
                 <ul className="about-tech-list">
                   <li><strong>Python Flask</strong> web server</li>
                   <li><strong>Python</strong> Recommendation Engine</li>
-                  <li><strong>MySQL</strong> for storage</li>
+                  <li><strong>PostgreSQL</strong> (hosted on <strong>Neon</strong>)</li>
+                  <li><strong>Docker</strong> for deployment</li>
                 </ul>
               </div>
 
