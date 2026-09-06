@@ -1,0 +1,332 @@
+# VENDORED from deploykit (tag v1). deploykit generates this project's CI/CD;
+# it is not a live dependency of a run, so the pipeline lives here and runs on
+# its own. Re-copy it from deploykit when that pipeline changes.
+#
+# It cannot be referenced across repositories anyway: GitHub only lets a PRIVATE
+# repository's reusable workflow be called by other private repositories, and
+# this repository is public while deploykit is private.
+#
+# pipeline — build once, promote a pointer tag, redeploy.
+#
+# Generic: no project name, service name, port or health path appears here.
+# Consumers call it with a thin caller emitted by `deploy.sh cicd --emit`, and
+# pin a TAG (@v1) rather than @main so a change here cannot break every project
+# at once.
+#
+# The build runs once per commit and publishes ghcr.io/<owner>/<prefix>-<svc>:sha-<short>.
+# Promotion moves :staging or :production onto that same immutable manifest, so
+# production ships the artifact that was tested rather than a fresh resolve of
+# whatever the dependency ranges happen to mean today.
+name: pipeline
+
+on:
+  workflow_call:
+    inputs:
+      services:
+        description: 'JSON array: [{"name":"web","context":"./client","dockerfile":"./client/Dockerfile.prod"}]'
+        required: true
+        type: string
+      image_prefix:
+        description: "Image name prefix, e.g. spotifyapp -> ghcr.io/<owner>/spotifyapp-web"
+        required: true
+        type: string
+      owner:
+        description: "Lowercase GHCR namespace, e.g. roland-02"
+        required: true
+        type: string
+      tier:
+        description: '"staging" or "production"'
+        required: true
+        type: string
+      health_path:
+        description: "Path the smoke test polls"
+        required: false
+        type: string
+        default: "/"
+      health_status:
+        description: "HTTP status the smoke test waits for"
+        required: false
+        type: string
+        default: "200"
+      smoke_service:
+        description: "Which service to smoke-test; empty disables the smoke job"
+        required: false
+        type: string
+        default: ""
+      smoke_port:
+        description: "Port the smoke container listens on"
+        required: false
+        type: string
+        default: "8080"
+      smoke_env:
+        description: "Newline-separated KEY=VALUE passed to the smoke container"
+        required: false
+        type: string
+        default: ""
+      smoke_db_image:
+        description: "Optional throwaway database for the smoke job, e.g. postgres:18-alpine; empty disables"
+        required: false
+        type: string
+        default: ""
+      promote_sha:
+        description: "Rollback: promote this existing short SHA instead of building. Empty builds the commit."
+        required: false
+        type: string
+        default: ""
+    secrets:
+      COOLIFY_URL:
+        required: true
+      COOLIFY_TOKEN:
+        required: true
+      COOLIFY_APP_UUID:
+        required: true
+      # Newline-separated KEY=VALUE passed to `docker build --build-arg`.
+      #
+      # A secret rather than an input because a frontend bundle's build-time
+      # values routinely sit beside a real credential, and GitHub masks a secret
+      # in the build log where an input is echoed in plain text.
+      #
+      # Optional: a project that bakes nothing in omits it, and build-push-action
+      # treats the empty value as no arguments at all.
+      #
+      # Note the limit. A value passed here is baked into the image and readable
+      # with `docker history`, so it suits what is already public by
+      # construction - a Google client id, an api base url, anything compiled
+      # into JavaScript the browser downloads - and never a credential that has
+      # to stay server-side.
+      BUILD_ARGS:
+        required: false
+
+jobs:
+  # The short SHA is computed ONCE here and consumed everywhere else, so every
+  # service in a run carries the same tag and promotion cannot straddle two
+  # builds. No checkout: GITHUB_SHA is already the commit being built.
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.vars.outputs.sha }}
+    steps:
+      - id: vars
+        env:
+          PROMOTE_SHA: ${{ inputs.promote_sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "$PROMOTE_SHA" ]; then
+            sha="$PROMOTE_SHA"
+            echo "rollback: promoting existing sha-$sha, nothing will be built"
+          else
+            sha="${GITHUB_SHA::7}"
+            echo "building sha-$sha"
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    if: inputs.promote_sha == ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(inputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.service.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
+          push: true
+          tags: ghcr.io/${{ inputs.owner }}/${{ inputs.image_prefix }}-${{ matrix.service.name }}:sha-${{ needs.prepare.outputs.sha }}
+          # Empty when the caller passes no BUILD_ARGS, which is the same as
+          # omitting the key. Coolify's dockercompose build pack passes every
+          # environment variable as a --build-arg, so a project moving its build
+          # from Coolify to Actions loses values it never had to declare; this
+          # is where it declares them.
+          build-args: ${{ secrets.BUILD_ARGS }}
+          cache-from: type=gha,scope=${{ matrix.service.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
+
+  # Boots the image that was just built and proves it actually serves traffic.
+  # Skipped when smoke_service is empty, and on a rollback (that artifact
+  # already passed this job when it was built).
+  smoke:
+    needs: [prepare, build]
+    if: inputs.smoke_service != '' && inputs.promote_sha == ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Run as a plain container rather than a job `services:` block, because a
+      # service block cannot be conditional — every project without a database
+      # would otherwise inherit a broken job. Host networking puts it on
+      # 127.0.0.1:5432, exactly where a service container would be.
+      #
+      # The convention is FIXED: database `app`, user and password `postgres`.
+      # Reference it from smoke_env as
+      #   DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/app
+      - name: Start the throwaway database
+        if: inputs.smoke_db_image != ''
+        env:
+          DB_IMAGE: ${{ inputs.smoke_db_image }}
+        run: |
+          set -euo pipefail
+          docker run -d --name smoke-db --network host \
+            -e POSTGRES_DB=app \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            "$DB_IMAGE"
+          for _ in $(seq 1 30); do
+            if docker exec smoke-db pg_isready -U postgres -d app >/dev/null 2>&1; then
+              echo "postgres ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "postgres never became ready:"; docker logs smoke-db; exit 1
+
+      # --restart is load-bearing. Docker's default policy is `no`, and with it
+      # RestartCount stays 0 whether the container thrived or crash-looped —
+      # which turns the assertion below into decoration. This was a real defect
+      # in the hand-built pipeline this workflow generalises.
+      - name: Boot ${{ inputs.smoke_service }}
+        env:
+          SMOKE_ENV: ${{ inputs.smoke_env }}
+          IMAGE: ghcr.io/${{ inputs.owner }}/${{ inputs.image_prefix }}-${{ inputs.smoke_service }}:sha-${{ needs.prepare.outputs.sha }}
+        run: |
+          set -euo pipefail
+          args=()
+          while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            case "$line" in \#*) continue ;; esac
+            args+=(-e "$line")
+          done <<< "$SMOKE_ENV"
+          docker run -d --name smoke-app --network host --restart=on-failure:5 \
+            ${args[@]+"${args[@]}"} "$IMAGE"
+
+      - name: Wait for ${{ inputs.health_path }} to answer ${{ inputs.health_status }}
+        env:
+          URL: http://127.0.0.1:${{ inputs.smoke_port }}${{ inputs.health_path }}
+          WANT: ${{ inputs.health_status }}
+        run: |
+          set -uo pipefail
+          for _ in $(seq 1 30); do
+            code=$(curl -s -o /tmp/body -w '%{http_code}' "$URL" || echo 000)
+            if [ "$code" = "$WANT" ]; then
+              echo "got $code from $URL"; head -c 500 /tmp/body; exit 0
+            fi
+            sleep 2
+          done
+          echo "no $WANT from $URL after 60s; container logs:"
+          docker logs smoke-app
+          exit 1
+
+      - name: Assert the container did not restart
+        run: |
+          restarts=$(docker inspect smoke-app --format '{{.RestartCount}}')
+          echo "restart count: $restarts"
+          [ "$restarts" = "0" ] || { docker logs smoke-app; exit 1; }
+
+  # Moves the tier's pointer tag. Must still run when smoke was SKIPPED (no
+  # smoke service configured, or a rollback), but never when it failed.
+  promote:
+    needs: [prepare, build, smoke]
+    if: >-
+      always()
+      && needs.prepare.result == 'success'
+      && (inputs.promote_sha != '' || needs.build.result == 'success')
+      && needs.smoke.result != 'failure'
+      && needs.smoke.result != 'cancelled'
+    # Inlined rather than `uses: ./.github/workflows/promote.yml`.
+    #
+    # A relative `uses:` inside a workflow that was called from ANOTHER
+    # repository resolves against the CALLER's repository, not this one. So the
+    # relative form sent every consumer looking for promote.yml in its own repo,
+    # found nothing, and failed the run at startup - no jobs, no logs, and no
+    # annotation naming the cause. A reusable workflow consumed across repos has
+    # to be self-contained.
+    #
+    # promote.yml survives for manual tag moves via workflow_dispatch. The two
+    # copies of the imagetools call must be kept in step.
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(inputs.services) }}
+    steps:
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Nothing is rebuilt: imagetools repoints the tag at a manifest that
+      # already exists, so the promoted artifact is byte-identical to the one
+      # that was built and smoke-tested.
+      - name: Move :${{ inputs.tier }} onto sha-${{ needs.prepare.outputs.sha }} for ${{ matrix.service.name }}
+        env:
+          SRC: ghcr.io/${{ inputs.owner }}/${{ inputs.image_prefix }}-${{ matrix.service.name }}:sha-${{ needs.prepare.outputs.sha }}
+          DST: ghcr.io/${{ inputs.owner }}/${{ inputs.image_prefix }}-${{ matrix.service.name }}:${{ inputs.tier }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools create --tag "$DST" "$SRC"
+          echo "tagged $DST -> $SRC"
+
+  trigger:
+    needs: promote
+    # GitHub propagates `skipped` transitively through the dependency graph. On
+    # a rollback, build and smoke are skipped, so without this the trigger job
+    # inherits that skip through promote — the pointer tag would move and
+    # Coolify would never be told to pull it, leaving the bad image serving.
+    if: always() && needs.promote.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tell Coolify to redeploy
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          UUID: ${{ secrets.COOLIFY_APP_UUID }}
+        run: |
+          # Deliberately NOT `set -e`: when curl itself fails (DNS, refused,
+          # TLS) the assignment is what fails, and -e would abort before the
+          # diagnosis is printed — leaving a bare exit code in the log.
+          set -uo pipefail
+          url="${COOLIFY_URL%/}/api/v1/deploy?uuid=$UUID&force=true"
+          code=$(curl -sS -o /tmp/out -w '%{http_code}' --max-time 30 -X GET \
+            "$url" -H "Authorization: Bearer $COOLIFY_TOKEN") ; rc=$?
+          if [ $rc -ne 0 ]; then
+            # Path only, never the query string. The uuid is not secret, but
+            # GitHub masks only values it knows are secrets, so keep the habit.
+            echo "curl failed (exit $rc) calling: ${url%%\?*}"
+            case $rc in
+              6)  echo "  exit 6 = could not resolve host. Check the COOLIFY_URL secret" \
+                       "is a bare URL — a value copied out of deploy.env by text keeps" \
+                       "its quotes, and 'http://host becomes the hostname." ;;
+              7)  echo "  exit 7 = connection refused; is Coolify up and reachable?" ;;
+              28) echo "  exit 28 = timed out after 30s." ;;
+            esac
+            exit 1
+          fi
+          echo "HTTP $code"; cat /tmp/out; echo
+          [ "$code" = "200" ] || exit 1
