@@ -517,23 +517,6 @@
     }
   }
   
-  .mobile-menu {
-    width: 250px;
-    right: -250px;
-    
-    &.open {
-      right: 0;
-    }
-  }
-  
-  .mobile-filter-menu {
-    width: 250px;
-    left: -250px;
-    
-    &.open {
-      left: 0;
-    }
-  }
 }
 
 // Mobile filter slide-out menu (from left)
@@ -555,6 +538,32 @@
 
 .mobile-filter-close {
   @include slide-out-close;
+}
+
+// Both slide-out panels narrow on small screens.
+//
+// This must come after both base declarations. A media query carries no extra
+// specificity, so a later plain rule beats it: while this lived above
+// `.mobile-filter-menu`'s own rule, the filter panel stayed 280px on mobile
+// while the nav menu correctly became 250px.
+@media (max-width: 768px) {
+  .mobile-menu {
+    width: 250px;
+    right: -250px;
+
+    &.open {
+      right: 0;
+    }
+  }
+
+  .mobile-filter-menu {
+    width: 250px;
+    left: -250px;
+
+    &.open {
+      left: 0;
+    }
+  }
 }
 
 .mobile-filter-contents {
