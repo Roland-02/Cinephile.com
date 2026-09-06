@@ -7,3 +7,4 @@ dist/
 deploy.env
 .deploy-secrets/
 .playwright-mcp/
+.env.production
