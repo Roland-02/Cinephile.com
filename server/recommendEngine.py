@@ -952,7 +952,7 @@ def recommend_data_ready():
 @recommend_bp.before_request
 def _ensure_recommend_data():
     """Lazily warm the recommender on first request. If the DB is unreachable,
-    return 503 for recommendation endpoints only — the rest of the site stays up."""
+    return 503 for recommendation endpoints only - the rest of the site stays up."""
     try:
         init_recommend_data()
     except Exception as exc:

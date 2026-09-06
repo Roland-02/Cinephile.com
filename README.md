@@ -1,15 +1,15 @@
 # Cinephile.com
 
 A personalised film discovery platform built around a content-based recommendation
-engine. You tell it *what* you liked about a film — the plot, a particular actor,
-the director — and it weighs recommendations accordingly.
+engine. You tell it *what* you liked about a film - the plot, a particular actor,
+the director - and it weighs recommendations accordingly.
 
 ## Tech Stack
 
 - **Frontend:** React 18, Vite, SCSS, Bootstrap 5 (CDN)
 - **Backend:** Flask (Python 3.13), psycopg2
 - **Database:** Neon (managed PostgreSQL 18)
-- **ML:** scikit-learn — TF-IDF, K-Means, cosine similarity, Euclidean distance
+- **ML:** scikit-learn - TF-IDF, K-Means, cosine similarity, Euclidean distance
 - **Auth:** Google Identity Services
 - **Infrastructure:** Docker, Coolify VPS behind Traefik
 
@@ -39,7 +39,7 @@ unreachable, so the rest of the site stays up.
 
 ## Authentication
 
-Google is the identity provider — no credential ever reaches this application.
+Google is the identity provider - no credential ever reaches this application.
 The browser obtains a Google ID token, posts it once to `/api/auth/google`, and
 the server verifies it before issuing its own 30-day session token, which the
 SPA then sends as `Authorization: Bearer` on every request.
@@ -66,18 +66,18 @@ them via TMDB, and rebuilds the in-memory models.
 ## Features
 
 - Browse and filter films by genre, rating, runtime and decade
-- Like a film with granular attribute selection — plot, cast, crew, genre, meta
+- Like a film with granular attribute selection - plot, cast, crew, genre, meta
 - Love a film as a strong positive signal
 - Watchlist management
 - Personalised recommendations across the five categories above
-- Profile analytics — favourite actors, filmmakers, genre distribution
+- Profile analytics - favourite actors, filmmakers, genre distribution
 - Search across films and people
 - Sign in with Google
 
 ## Repository Layout
 
 ```
-client/          React SPA — pages, components, contexts, SCSS
+client/          React SPA - pages, components, contexts, SCSS
 server/
   server.py           Flask app: auth, film browsing, user interactions, SPA serving
   recommendEngine.py  Recommendation blueprint, dataset ingest, scheduled jobs
